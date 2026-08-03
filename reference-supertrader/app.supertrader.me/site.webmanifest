@@ -1,0 +1,18 @@
+{
+  "name": "SuperTrader",
+  "short_name": "SuperTrader",
+  "description": "AI-powered trading journal for smart traders",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00C896",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

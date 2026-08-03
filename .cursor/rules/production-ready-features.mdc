@@ -1,0 +1,37 @@
+---
+description: Production-ready features only — no static UI clones
+alwaysApply: true
+---
+
+# TradeFix: Production Features, Not UI Clones
+
+We build a **fully functional trading journal SaaS**, not a Figma/static replica.
+
+## Workflow (required order)
+
+1. Design database schema (constraints, indexes, migrations)
+2. Implement backend APIs (authz, validation, business logic, logging)
+3. Connect frontend to APIs
+4. Build responsive UI with loading / empty / error / success states
+5. Verify persistence after refresh and edge cases
+
+## Hard rules
+
+- Before any UI control exists, the behavior behind it must work end-to-end.
+- Every button, input, dropdown, modal, upload, filter, tab, pagination control, theme switch, export/import, and chart must be wired to real data/APIs where applicable.
+- No placeholders, dummy handlers, or “coming soon” interactive chrome unless the user explicitly asks for a stub.
+- Prefer completing one feature fully over scaffolding many half-features.
+
+## Every feature must include
+
+**Frontend:** responsive UI, skeletons, empty/error/success states, validation, toasts, a11y/keyboard, optimistic updates where appropriate.
+
+**Backend:** authenticated/authorized endpoint, validation, DB ops, error handling, logging.
+
+**Database:** proper schema, relationships, constraints, indexes, Alembic migrations.
+
+**Security:** input validation, authz, secure uploads (type + size + magic bytes), rate limits where needed.
+
+## Profile / uploads pattern
+
+Avatar (and similar uploads): click → file picker → validate PNG/JPG/WEBP + max size → upload with progress → store via `app.services.storage` → persist URL on user → update UI + toast → survive refresh. Use local `/uploads` now; keep URL-based API so S3/Cloudinary can replace storage later.
