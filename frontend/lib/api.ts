@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 const TOKEN_KEY = "tradefix_token";
 
@@ -96,9 +96,37 @@ export const api = {
   get: <T>(path: string) => request<T>(path, { method: "GET" }),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "POST", body: body !== undefined ? JSON.stringify(body) : undefined }),
+  put: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: "PUT", body: body !== undefined ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PATCH", body: body !== undefined ? JSON.stringify(body) : undefined }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   postForm: <T>(path: string, form: FormData) => request<T>(path, { method: "POST", body: form }),
   uploadWithProgress,
+  download: async (path: string, filename: string) => {
+    const token = getToken();
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "GET",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      let detail = res.statusText;
+      try {
+        const body = await res.json();
+        detail = body.detail || detail;
+      } catch {
+        // ignore
+      }
+      throw new ApiError(typeof detail === "string" ? detail : JSON.stringify(detail), res.status);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
 };

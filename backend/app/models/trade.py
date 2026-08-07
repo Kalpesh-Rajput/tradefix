@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -53,11 +53,26 @@ class Trade(Base):
 
     pnl: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
     fees: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
+    risk_amount: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
 
     setup_tag: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    setup_tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
+    emotion_tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
+    plan_compliance: Mapped[int | None] = mapped_column(Integer, nullable=True)
     mood: Mapped[str | None] = mapped_column(String(50), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     rules_broken: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    screenshot_urls: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
+    voice_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    voice_transcript: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    score_preparation: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score_risk: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score_entry: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score_exit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score_discipline: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score_psychology: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    auto_flags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
 
     status: Mapped[TradeStatus] = mapped_column(
         Enum(TradeStatus, name="trade_status", values_callable=lambda obj: [e.value for e in obj]),

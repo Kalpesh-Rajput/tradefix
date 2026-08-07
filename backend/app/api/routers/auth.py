@@ -36,7 +36,8 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.flush()
 
-    account = Account(user_id=user.id, name="Main Account")
+    account_name = (payload.name or "").strip() or "Main Account"
+    account = Account(user_id=user.id, name=account_name, is_default=True)
     db.add(account)
 
     db.commit()
@@ -82,7 +83,23 @@ def update_me(
         else:
             data["username"] = None
 
-    required_strings = {"timezone", "language", "date_format"}
+    required_strings = {"timezone", "language", "date_format", "theme", "accent_color"}
+    list_fields = {
+        "default_strategies",
+        "custom_strategies",
+        "strategy_order",
+        "custom_mistakes",
+        "mistake_order",
+    }
+    nullable_numerics = {
+        "default_quantity",
+        "default_fee",
+        "default_forex_leverage",
+        "weekly_goal",
+        "monthly_goal",
+        "yearly_goal",
+        "target_trades",
+    }
 
     for field, value in data.items():
         if field == "name":
@@ -97,6 +114,15 @@ def update_me(
             continue
         if field == "journal_template" and isinstance(value, str):
             setattr(current_user, field, value.strip() or None)
+            continue
+        if field == "default_symbol":
+            setattr(current_user, field, value.strip().upper() if isinstance(value, str) and value.strip() else None)
+            continue
+        if field in list_fields:
+            setattr(current_user, field, value if isinstance(value, list) else [])
+            continue
+        if field in nullable_numerics:
+            setattr(current_user, field, value)
             continue
         if isinstance(value, str):
             value = value.strip() or None

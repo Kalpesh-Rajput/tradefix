@@ -23,9 +23,11 @@ class Settings(BaseSettings):
 
     enable_scheduler: bool = True
 
-    # Local uploads (avatars). Served at /uploads; swap for S3 later via storage service.
+    # Local uploads (avatars, recap screenshots). Served at /uploads; swap for S3 later via storage service.
     upload_dir: str = "uploads"
     max_avatar_bytes: int = 2 * 1024 * 1024  # 2 MB
+    max_screenshot_bytes: int = 5 * 1024 * 1024  # 5 MB
+    max_recap_screenshots: int = 5
 
 
 @lru_cache

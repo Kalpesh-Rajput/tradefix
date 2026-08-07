@@ -12,7 +12,9 @@ import {
   YAxis,
 } from "recharts";
 
+import { useAppearance } from "@/components/providers/AppearanceProvider";
 import { fmtMoney, fmtPct } from "@/lib/format";
+import type { CalendarDay } from "@/lib/types";
 
 type Metric = {
   label: string;
@@ -28,6 +30,7 @@ export function PerformanceGrid({
   largestGain,
   largestLoss,
   bySetup,
+  weekDays,
 }: {
   metrics: Metric[];
   totalTrades: number;
@@ -35,8 +38,10 @@ export function PerformanceGrid({
   largestGain?: { symbol: string; pnl: number; date?: string } | null;
   largestLoss?: { symbol: string; pnl: number; date?: string } | null;
   bySetup?: { setup_tag: string; pnl: number; trades: number }[];
+  weekDays?: CalendarDay[];
 }) {
   const [open, setOpen] = useState(true);
+  const { accentHex } = useAppearance();
 
   return (
     <div>
@@ -71,11 +76,11 @@ export function PerformanceGrid({
 
           {totalTrades > 0 && (
             <p className="mb-4 text-[11px] text-zinc-600">
-              Includes <span className="text-primary">{totalTrades} manual trade{totalTrades === 1 ? "" : "s"}</span>
+              Based on <span className="text-primary">{totalTrades} logged trade{totalTrades === 1 ? "" : "s"}</span>
             </p>
           )}
 
-          <ThisWeekStrip />
+          <ThisWeekStrip days={weekDays ?? []} />
 
           <div className="mb-4 rounded-xl border border-white/[0.06] p-4">
             <div className="mb-3 flex items-center justify-between">
@@ -92,8 +97,8 @@ export function PerformanceGrid({
                   <AreaChart data={equitySeries}>
                     <defs>
                       <linearGradient id="pnlFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#00C896" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="#00C896" stopOpacity={0} />
+                        <stop offset="0%" stopColor={accentHex} stopOpacity={0.35} />
+                        <stop offset="100%" stopColor={accentHex} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="date" hide />
@@ -107,7 +112,7 @@ export function PerformanceGrid({
                       }}
                       formatter={(v: number) => [fmtMoney(v), "P&L"]}
                     />
-                    <Area type="monotone" dataKey="value" stroke="#00C896" fill="url(#pnlFill)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="value" stroke={accentHex} fill="url(#pnlFill)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
@@ -172,26 +177,38 @@ export function PerformanceGrid({
   );
 }
 
-function ThisWeekStrip() {
+function ThisWeekStrip({ days }: { days: CalendarDay[] }) {
   const today = new Date();
   const day = today.getDay();
   const start = new Date(today);
   start.setDate(today.getDate() - day);
 
-  const days = Array.from({ length: 7 }, (_, i) => {
+  const byDate = new Map(days.map((d) => [d.date, d]));
+  const labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const weekCells = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
-    return d;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const key = `${y}-${m}-${dd}`;
+    return { date: d, key, stats: byDate.get(key) };
   });
 
-  const labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const weekPnl = weekCells.reduce((s, c) => s + (c.stats?.pnl ?? 0), 0);
 
   return (
     <Link href="/calendar">
       <div className="group mb-4 cursor-pointer rounded-xl border border-white/[0.06] p-4 transition-colors hover:border-white/[0.14]">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-xs uppercase tracking-wider text-zinc-500">This Week</h3>
-          <ArrowRight className="h-3 w-3 text-zinc-600 transition-colors group-hover:text-zinc-400" />
+          <div className="flex items-center gap-2">
+            <span className={`font-mono text-[11px] ${weekPnl >= 0 ? "text-primary" : "text-destructive"}`}>
+              {fmtMoney(weekPnl)}
+            </span>
+            <ArrowRight className="h-3 w-3 text-zinc-600 transition-colors group-hover:text-zinc-400" />
+          </div>
         </div>
         <div className="grid grid-cols-7 gap-1.5">
           {labels.map((l) => (
@@ -199,19 +216,34 @@ function ThisWeekStrip() {
               {l}
             </div>
           ))}
-          {days.map((d) => {
+          {weekCells.map(({ date: d, key, stats }) => {
             const isToday = d.toDateString() === today.toDateString();
-            const inMonth = d.getMonth() === today.getMonth();
+            const pnl = stats?.pnl;
+            const hasTrades = (stats?.trades ?? 0) > 0;
+            let bg = "rgba(255, 255, 255, 0.03)";
+            if (hasTrades && pnl != null) {
+              bg = pnl >= 0 ? "rgba(34, 197, 94, 0.12)" : "rgba(239, 68, 68, 0.12)";
+            }
             return (
               <div
-                key={d.toISOString()}
+                key={key}
                 className={`flex h-14 flex-col justify-between rounded-lg p-1.5 ${
-                  inMonth ? "" : "bg-white/[0.01]"
-                } ${isToday ? "ring-1 ring-primary/60" : ""}`}
-                style={inMonth ? { background: "rgba(255, 255, 255, 0.03)" } : undefined}
+                  isToday ? "ring-1 ring-primary/60" : ""
+                }`}
+                style={{ background: bg }}
               >
-                {inMonth && (
-                  <span className="text-[11px] font-medium leading-none text-white/60">{d.getDate()}</span>
+                <span className="text-[11px] font-medium leading-none text-white/60">{d.getDate()}</span>
+                {hasTrades && pnl != null ? (
+                  <span
+                    className={`font-mono text-[9px] leading-none ${
+                      pnl >= 0 ? "text-primary" : "text-destructive"
+                    }`}
+                  >
+                    {pnl >= 0 ? "+" : ""}
+                    {Math.abs(pnl) >= 100 ? Math.round(pnl) : pnl.toFixed(0)}
+                  </span>
+                ) : (
+                  <span className="text-[9px] text-zinc-700">—</span>
                 )}
               </div>
             );
@@ -230,12 +262,13 @@ export function buildPerformanceMetrics(input: {
   totalTrades: number;
   wins: number;
   losses: number;
+  expectancy?: number;
 }): Metric[] {
   return [
     {
-      label: "Net P&L (USD)",
+      label: "Net P&L",
       value: fmtMoney(input.netPnl),
-      sub: "Equity · Crypto · Options · Futures",
+      sub: "Closed trades · this account",
       tone: "primary",
     },
     {
@@ -247,19 +280,19 @@ export function buildPerformanceMetrics(input: {
     {
       label: "Profit Factor",
       value: input.profitFactor ? input.profitFactor.toFixed(2) : "—",
-      sub: "avg win / avg loss",
+      sub: "Gross wins ÷ gross losses",
       tone: "primary",
     },
     {
       label: "Avg Win",
       value: fmtMoney(input.avgWin, { signed: false, digits: 0 }),
-      sub: "excl. forex",
+      sub: input.expectancy != null ? `Expectancy ${fmtMoney(input.expectancy)}` : "Per winning trade",
       tone: "primary",
     },
     {
       label: "Total Trades",
       value: String(input.totalTrades),
-      sub: "all asset classes",
+      sub: "Open + closed",
       tone: "white",
     },
   ];

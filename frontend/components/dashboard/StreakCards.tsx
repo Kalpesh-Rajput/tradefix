@@ -11,7 +11,7 @@ const CARDS = [
     wrap: "bg-amber-500/5 border-amber-500/15",
     iconColor: "text-amber-400",
     valueColor: "text-amber-400",
-    unit: "days",
+    unit: "trades",
   },
   {
     key: "journal" as const,

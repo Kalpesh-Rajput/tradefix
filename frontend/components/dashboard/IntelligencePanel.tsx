@@ -5,27 +5,41 @@ import {
   Brain,
   CircleAlert,
   MessageSquare,
-  Newspaper,
+  Activity,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useGenerateInsights, useInsights } from "@/lib/hooks/useInsights";
 import { OverviewStats } from "@/lib/types";
 
 export function IntelligencePanel({
   overview,
+  todaysPnl,
+  todaysTradeCount = 0,
+  openCount = 0,
+  todaysWinRate,
 }: {
   overview?: OverviewStats;
   todaysPnl?: number;
+  todaysTradeCount?: number;
+  openCount?: number;
+  todaysWinRate?: number | null;
 }) {
+  const { formatMoney } = useAccountPrefs();
   const { data: insights } = useInsights();
   const generate = useGenerateInsights();
 
   const performance = insights?.find((i) => i.severity === "info" || i.severity === "positive");
   const setup = insights?.find((i) => i.title?.toLowerCase().includes("setup"));
   const risk = insights?.find((i) => i.severity === "warning" || i.severity === "critical");
+
+  const streakLabel =
+    overview && overview.current_streak > 0 && overview.current_streak_type !== "none"
+      ? `${overview.current_streak} ${overview.current_streak_type}${overview.current_streak === 1 ? "" : "s"}`
+      : "No streak";
 
   return (
     <>
@@ -41,24 +55,31 @@ export function IntelligencePanel({
           </div>
 
           <div className="flex-1 divide-y divide-white/[0.04] overflow-y-auto">
-            <Section icon={<Newspaper className="h-3 w-3" />} title="Market Brief">
-              <p className="mb-1 text-xs font-medium text-white">
-                Broad market advance — all major indices in the green.
+            <Section icon={<Activity className="h-3 w-3" />} title="Session Snapshot">
+              <p className="mb-2 text-xs font-medium text-white">
+                {(todaysTradeCount ?? 0) === 0
+                  ? "No trades logged today yet"
+                  : `${todaysTradeCount} trade${todaysTradeCount === 1 ? "" : "s"} today`}
               </p>
-              <div className="mb-2 flex items-center gap-3">
-                {[
-                  { s: "SPY", c: "+0.54%" },
-                  { s: "QQQ", c: "+0.67%" },
-                  { s: "DJI", c: "+0.61%" },
-                ].map((t) => (
-                  <div key={t.s} className="flex items-center gap-1">
-                    <span className="font-mono text-[10px] text-zinc-500">{t.s}</span>
-                    <span className="font-mono text-[10px] font-medium text-emerald-400">{t.c}</span>
-                  </div>
-                ))}
+              <div className="mb-2 grid grid-cols-2 gap-2">
+                <StatChip
+                  label="Today P&L"
+                  value={formatMoney(todaysPnl ?? 0)}
+                  tone={(todaysPnl ?? 0) >= 0 ? "pos" : "neg"}
+                />
+                <StatChip
+                  label="Today WR"
+                  value={todaysWinRate != null ? `${todaysWinRate.toFixed(0)}%` : "—"}
+                />
+                <StatChip label="Open" value={String(openCount)} />
+                <StatChip label="Streak" value={streakLabel} />
               </div>
-              <p className="text-xs leading-relaxed text-zinc-400">VIX snapshot — indicative only</p>
-              <p className="mt-1.5 text-[10px] text-zinc-600">as of {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ET</p>
+              {(overview?.total_trades ?? 0) > 0 && (
+                <p className="text-[10px] leading-relaxed text-zinc-500">
+                  Best day {formatMoney(overview!.best_day_pnl)} · Worst{" "}
+                  {formatMoney(overview!.worst_day_pnl)}
+                </p>
+              )}
             </Section>
 
             <Section icon={<Brain className="h-3 w-3" />} title="Your Performance">
@@ -69,11 +90,15 @@ export function IntelligencePanel({
                 </>
               ) : (
                 <>
-                  <p className="mb-1 text-xs font-medium text-white">Keep logging trades to see strategy breakdown</p>
+                  <p className="mb-1 text-xs font-medium text-white">
+                    {(overview?.total_trades ?? 0) === 0
+                      ? "Start journaling to unlock insights"
+                      : "Generate insights from your trade history"}
+                  </p>
                   <p className="text-xs leading-relaxed text-zinc-400">
                     {(overview?.total_trades ?? 0) === 0
-                      ? "No trades logged yet — start journaling to see strategy insights."
-                      : "Generate insights from the AI Coach to populate this panel."}
+                      ? "No trades logged yet — add trades to see strategy insights."
+                      : `${overview!.total_trades} closed trades · ${overview!.win_rate}% win rate · ${formatMoney(overview!.total_pnl)} net`}
                   </p>
                 </>
               )}
@@ -88,13 +113,16 @@ export function IntelligencePanel({
 
             <Section icon={<Zap className="h-3 w-3" />} title="Setup Alert">
               <p className="text-xs text-zinc-500">
-                {setup?.body || "No setups matching your history today — check back tomorrow."}
+                {setup?.body || "No setup alerts yet — tag trades with strategies to surface patterns."}
               </p>
             </Section>
 
             <Section icon={<CircleAlert className="h-3 w-3" />} title="Risk Alert">
               <p className="text-xs text-zinc-500">
-                {risk?.body || "No concentration alerts — all exposure dimensions within threshold."}
+                {risk?.body ||
+                  (openCount > 0
+                    ? `${openCount} open position${openCount === 1 ? "" : "s"} on this account.`
+                    : "No open positions and no risk alerts.")}
               </p>
             </Section>
 
@@ -118,6 +146,29 @@ export function IntelligencePanel({
         <MessageSquare className="h-5 w-5" />
       </Link>
     </>
+  );
+}
+
+function StatChip({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "pos" | "neg";
+}) {
+  return (
+    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2 py-1.5">
+      <div className="text-[9px] uppercase tracking-wider text-zinc-600">{label}</div>
+      <div
+        className={`mt-0.5 font-mono text-[11px] font-medium ${
+          tone === "pos" ? "text-primary" : tone === "neg" ? "text-destructive" : "text-white"
+        }`}
+      >
+        {value}
+      </div>
+    </div>
   );
 }
 

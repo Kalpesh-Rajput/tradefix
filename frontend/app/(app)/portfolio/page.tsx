@@ -1,13 +1,18 @@
 "use client";
 
+import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { FeaturePage } from "@/components/ui/FeaturePage";
 import { useAnalytics } from "@/lib/hooks/useAnalytics";
 import { useTrades } from "@/lib/hooks/useTrades";
 import { fmtMoney, fmtPct } from "@/lib/format";
 
 export default function PortfolioPage() {
-  const { data: analytics } = useAnalytics();
-  const { data: trades = [] } = useTrades();
+  const { activeAccount } = useAccountPrefs();
+  const { data: analytics } = useAnalytics(activeAccount?.id, { enabled: !!activeAccount?.id });
+  const { data: trades = [] } = useTrades(
+    { account_id: activeAccount?.id },
+    { enabled: !!activeAccount?.id }
+  );
   const overview = analytics?.overview;
   const open = trades.filter((t) => t.status === "open");
 

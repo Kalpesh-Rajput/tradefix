@@ -10,7 +10,7 @@ export function Logo({ size = 36, showWordmark = false }: { size?: number; showW
         className="flex shrink-0 items-center justify-center rounded-full border-2 border-accent bg-black shadow-glow"
         style={{ width: size, height: size }}
       >
-        <span className="font-display text-accent" style={{ fontSize: size * 0.42, fontWeight: 700 }}>
+        <span className="font-sans font-bold text-accent" style={{ fontSize: size * 0.42 }}>
           TF
         </span>
       </div>

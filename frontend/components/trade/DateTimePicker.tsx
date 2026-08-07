@@ -121,18 +121,49 @@ export function PriceInputs({
   watch: UseFormWatch<AddTradeFormValues>;
 }) {
   const status = watch("status");
+  const assetType = watch("asset_type");
+  const showLeverage = assetType === "forex" || assetType === "crypto";
+
   return (
-    <div className="grid grid-cols-4 gap-3">
-      <NumField label="Entry" error={errors.entry_price?.message} placeholder="e.g. 168.50" {...register("entry_price")} />
-      <NumField
-        label="Exit"
-        error={errors.exit_price?.message}
-        placeholder="e.g. 168.50"
-        disabled={status === "open"}
-        {...register("exit_price")}
-      />
-      <NumField label="Qty" error={errors.quantity?.message} placeholder="Shares (e.g. 100)" {...register("quantity")} />
-      <NumField label="Fees" error={errors.fees?.message} placeholder="0" {...register("fees")} />
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 gap-3">
+        <NumField label="Entry" error={errors.entry_price?.message} placeholder="e.g. 168.50" {...register("entry_price")} />
+        <NumField
+          label="Exit"
+          error={errors.exit_price?.message}
+          placeholder="e.g. 168.50"
+          disabled={status === "open"}
+          {...register("exit_price")}
+        />
+        <NumField label="Qty" error={errors.quantity?.message} placeholder="Shares (e.g. 100)" {...register("quantity")} />
+        <NumField label="Fees" error={errors.fees?.message} placeholder="0" {...register("fees")} />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <NumField
+          label="Risk $"
+          error={errors.risk_amount?.message}
+          placeholder="e.g. 100"
+          {...register("risk_amount")}
+        />
+        <NumField
+          label="Plan 1–10"
+          error={errors.plan_compliance?.message}
+          placeholder="e.g. 8"
+          min={1}
+          max={10}
+          {...register("plan_compliance")}
+        />
+      </div>
+      {showLeverage && (
+        <div className="grid grid-cols-4 gap-3">
+          <NumField
+            label="Leverage"
+            error={errors.leverage?.message}
+            placeholder="e.g. 50"
+            {...register("leverage")}
+          />
+        </div>
+      )}
     </div>
   );
 }

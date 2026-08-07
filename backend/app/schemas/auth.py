@@ -2,12 +2,31 @@ import re
 import uuid
 from zoneinfo import ZoneInfo, available_timezones
 
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator, model_validator
 
 _URL_RE = re.compile(r"^https?://[^\s]+$", re.IGNORECASE)
 _USERNAME_RE = re.compile(r"^[a-zA-Z0-9_.-]*$")
 _LANGUAGE_RE = re.compile(r"^[a-z]{2,3}(-[A-Za-z]{2,8})?$")
 _DATE_FORMATS = {"MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"}
+_THEMES = {"dark", "light", "system"}
+_ACCENT_COLORS = {"teal", "blue", "purple", "orange", "red", "pink", "emerald", "periwinkle"}
+_SUPPORTED_LANGUAGES = {
+    "en",
+    "es",
+    "fr",
+    "de",
+    "pt",
+    "hi",
+    "zh",
+    "ja",
+    "ko",
+    "ar",
+    "it",
+    "nl",
+    "ru",
+    "tr",
+    "pl",
+}
 _TIMEZONES = available_timezones()
 
 
@@ -58,8 +77,64 @@ class UserResponse(BaseModel):
     date_format: str = "MM/DD/YYYY"
     save_filters: bool = False
     journal_template: str | None = None
+    default_symbol: str | None = None
+    default_quantity: float | None = None
+    default_fee: float | None = None
+    default_forex_leverage: float | None = None
+    default_strategies: list[str] = Field(default_factory=list)
+    custom_strategies: list[str] = Field(default_factory=list)
+    strategy_order: list[str] = Field(default_factory=list)
+    custom_mistakes: list[str] = Field(default_factory=list)
+    mistake_order: list[str] = Field(default_factory=list)
+    weekly_goal: float | None = None
+    monthly_goal: float | None = None
+    yearly_goal: float | None = None
+    target_trades: int | None = None
+    theme: str = "dark"
+    accent_color: str = "teal"
+    plan: str = "free"
+    role: str = "trader"
+    custom_emotion_tags: list[str] = Field(default_factory=list)
+    emotion_tag_order: list[str] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
+
+    @field_validator(
+        "default_strategies",
+        "custom_strategies",
+        "strategy_order",
+        "custom_mistakes",
+        "mistake_order",
+        "custom_emotion_tags",
+        "emotion_tag_order",
+        mode="before",
+    )
+    @classmethod
+    def coerce_list_fields(cls, value: object) -> object:
+        return [] if value is None else value
+
+
+def _normalize_label_list(value: list[str] | None, *, field_name: str, max_items: int = 100) -> list[str]:
+    if value is None:
+        return []
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for raw in value:
+        if not isinstance(raw, str):
+            raise ValueError(f"{field_name} must be a list of strings")
+        label = " ".join(raw.strip().split())
+        if not label:
+            continue
+        if len(label) > 80:
+            raise ValueError(f"{field_name} entries must be at most 80 characters")
+        key = label.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(label)
+        if len(cleaned) > max_items:
+            raise ValueError(f"{field_name} may contain at most {max_items} items")
+    return cleaned
 
 
 class UserUpdateRequest(BaseModel):
@@ -79,6 +154,24 @@ class UserUpdateRequest(BaseModel):
     date_format: str | None = Field(default=None, max_length=32)
     save_filters: bool | None = None
     journal_template: str | None = Field(default=None, max_length=10000)
+    default_symbol: str | None = Field(default=None, max_length=32)
+    default_quantity: float | None = Field(default=None, ge=0)
+    default_fee: float | None = Field(default=None, ge=0)
+    default_forex_leverage: float | None = Field(default=None, ge=0)
+    default_strategies: list[str] | None = None
+    custom_strategies: list[str] | None = None
+    strategy_order: list[str] | None = None
+    custom_mistakes: list[str] | None = None
+    mistake_order: list[str] | None = None
+    custom_emotion_tags: list[str] | None = None
+    emotion_tag_order: list[str] | None = None
+    weekly_goal: float | None = Field(default=None, ge=0)
+    monthly_goal: float | None = Field(default=None, ge=0)
+    yearly_goal: float | None = Field(default=None, ge=0)
+    target_trades: int | None = Field(default=None, ge=0)
+    theme: str | None = Field(default=None, max_length=16)
+    accent_color: str | None = Field(default=None, max_length=32)
+    plan: str | None = Field(default=None, max_length=16)
 
     @field_validator("username")
     @classmethod
@@ -119,7 +212,10 @@ class UserUpdateRequest(BaseModel):
         cleaned = value.strip()
         if not _LANGUAGE_RE.match(cleaned):
             raise ValueError("Invalid language code")
-        return cleaned
+        base = cleaned.split("-", 1)[0].lower()
+        if base not in _SUPPORTED_LANGUAGES and cleaned not in _SUPPORTED_LANGUAGES:
+            raise ValueError("Unsupported language")
+        return base if base in _SUPPORTED_LANGUAGES else cleaned
 
     @field_validator("date_format")
     @classmethod
@@ -129,6 +225,59 @@ class UserUpdateRequest(BaseModel):
         cleaned = value.strip()
         if cleaned not in _DATE_FORMATS:
             raise ValueError("Invalid date format")
+        return cleaned
+
+    @field_validator("default_symbol")
+    @classmethod
+    def validate_default_symbol(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().upper()
+        return cleaned or None
+
+    @field_validator(
+        "default_strategies",
+        "custom_strategies",
+        "strategy_order",
+        "custom_mistakes",
+        "mistake_order",
+        "custom_emotion_tags",
+        "emotion_tag_order",
+    )
+    @classmethod
+    def validate_label_lists(cls, value: list[str] | None, info: ValidationInfo) -> list[str] | None:
+        if value is None:
+            return None
+        return _normalize_label_list(value, field_name=str(info.field_name))
+
+    @field_validator("theme")
+    @classmethod
+    def validate_theme(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().lower()
+        if cleaned not in _THEMES:
+            raise ValueError("Invalid theme")
+        return cleaned
+
+    @field_validator("plan")
+    @classmethod
+    def validate_plan(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().lower()
+        if cleaned not in ("free", "pro"):
+            raise ValueError("Invalid plan")
+        return cleaned
+
+    @field_validator("accent_color")
+    @classmethod
+    def validate_accent_color(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().lower()
+        if cleaned not in _ACCENT_COLORS:
+            raise ValueError("Invalid accent color")
         return cleaned
 
 

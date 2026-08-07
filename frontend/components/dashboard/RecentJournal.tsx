@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { MoodCheckin, Trade } from "@/lib/types";
 
 export function RecentJournal({
@@ -15,14 +16,16 @@ export function RecentJournal({
   mood: MoodCheckin[];
   trades: Trade[];
 }) {
+  const { dateKey, formatChartDate } = useLocale();
   const cards = mood.slice(0, 3).map((m) => {
-    const dayTrades = trades.filter((t) => new Date(t.opened_at).toDateString() === new Date(m.date).toDateString());
+    const moodDay = dateKey(m.date);
+    const dayTrades = trades.filter((t) => dateKey(t.opened_at) === moodDay);
     const emotion =
       m.mood_score >= 8 ? "Confident" : m.mood_score >= 5 ? "Neutral" : m.mood_score >= 3 ? "Cautious" : "Stressed";
     return {
       id: m.id,
       emotion,
-      session: new Date(m.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }),
+      session: formatChartDate(m.date),
       summary: m.notes || "No written notes for this check-in.",
       tradeCount: dayTrades.length,
       score: m.mood_score,

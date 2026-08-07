@@ -10,6 +10,7 @@ import {
   Monitor,
   Palette,
   Settings2,
+  Shield,
   Sparkles,
   Target,
   UserRound,
@@ -19,21 +20,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
-const NAV = [
-  { href: "/settings/system", label: "System", icon: Monitor },
-  { href: "/settings/profile", label: "Profile", icon: UserRound },
-  { href: "/settings/subscription", label: "Subscription", icon: CreditCard },
-  { href: "/settings/accounts", label: "Accounts", icon: Wallet },
-  { href: "/settings/trading-defaults", label: "Trading Defaults", icon: Settings2 },
-  { href: "/settings/goals", label: "Goals", icon: Goal },
-  { href: "/settings/appearance", label: "Appearance", icon: Palette },
-  { href: "/settings/notifications", label: "Notifications", icon: Bell },
-  { href: "/settings/coaching", label: "Coaching", icon: Sparkles },
-  { href: "/settings/support", label: "Support", icon: HelpCircle },
-] as const;
+import { useLocale } from "@/components/providers/LocaleProvider";
+import type { MessageKey } from "@/lib/i18n";
+
+const NAV: { href: string; labelKey: MessageKey; icon: typeof Monitor }[] = [
+  { href: "/settings/system", labelKey: "settings.nav.system", icon: Monitor },
+  { href: "/settings/profile", labelKey: "settings.nav.profile", icon: UserRound },
+  { href: "/settings/subscription", labelKey: "settings.nav.subscription", icon: CreditCard },
+  { href: "/settings/accounts", labelKey: "settings.nav.accounts", icon: Wallet },
+  { href: "/settings/trading-defaults", labelKey: "settings.nav.tradingDefaults", icon: Settings2 },
+  { href: "/settings/goals", labelKey: "settings.nav.goals", icon: Goal },
+  { href: "/settings/prop-firm", labelKey: "settings.nav.propFirm", icon: Shield },
+  { href: "/settings/appearance", labelKey: "settings.nav.appearance", icon: Palette },
+  { href: "/settings/notifications", labelKey: "settings.nav.notifications", icon: Bell },
+  { href: "/settings/coaching", labelKey: "settings.nav.coaching", icon: Sparkles },
+  { href: "/settings/support", labelKey: "settings.nav.support", icon: HelpCircle },
+];
 
 export function SettingsShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { t } = useLocale();
 
   return (
     <div className="flex min-h-full flex-col bg-black md:flex-row">
@@ -44,11 +50,11 @@ export function SettingsShell({ children }: { children: ReactNode }) {
             className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-zinc-500 transition hover:text-white"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Back
+            {t("common.back")}
           </Link>
           <div className="flex items-center gap-2">
             <Target className="h-4 w-4 text-primary" />
-            <h1 className="text-lg font-semibold tracking-tight text-white">Settings</h1>
+            <h1 className="text-lg font-semibold tracking-tight text-white">{t("settings.title")}</h1>
           </div>
         </div>
 
@@ -68,7 +74,7 @@ export function SettingsShell({ children }: { children: ReactNode }) {
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span className="whitespace-nowrap">{item.label}</span>
+                <span className="whitespace-nowrap">{t(item.labelKey)}</span>
               </Link>
             );
           })}
@@ -82,11 +88,11 @@ export function SettingsShell({ children }: { children: ReactNode }) {
   );
 }
 
-export function SettingsPageHeader({ title, subtitle }: { title: string; subtitle: string }) {
+export function SettingsPageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="mb-8">
       <h2 className="text-2xl font-semibold tracking-tight text-white">{title}</h2>
-      <p className="mt-1.5 text-sm text-zinc-500">{subtitle}</p>
+      {subtitle ? <p className="mt-1.5 text-sm text-zinc-500">{subtitle}</p> : null}
     </div>
   );
 }

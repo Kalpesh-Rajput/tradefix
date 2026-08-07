@@ -1,19 +1,27 @@
 "use client";
 
-import { ComingFeature, SettingsPlaceholder } from "@/components/settings/SettingsPlaceholder";
+import {
+  SettingsCard,
+  SettingsPageHeader,
+  SettingsShell,
+} from "@/components/settings/SettingsShell";
 
 export default function SubscriptionSettingsPage() {
   return (
-    <SettingsPlaceholder
-      title="Subscription"
-      subtitle="Manage your plan and billing."
-      cardTitle="Current plan"
-    >
-      <ComingFeature
-        title="TradeFix Free"
-        body="You're on the free plan with unlimited manual trades, CSV import, and AI agents via OpenRouter."
-        cta="View plans"
+    <SettingsShell>
+      <SettingsPageHeader
+        title="Billing"
+        subtitle="Subscriptions are paused while we finish the core journal."
       />
-    </SettingsPlaceholder>
+      <SettingsCard
+        title="Coming later"
+        description="All TradeFix features are unlocked for now. Paid plans (Free vs Pro) will return once the product is ready to monetize."
+      >
+        <p className="text-sm text-zinc-400">
+          No payment method is required. Use Analytics, Coach, Prop Firm rules, Wiki, and Mentor
+          without upgrading.
+        </p>
+      </SettingsCard>
+    </SettingsShell>
   );
 }

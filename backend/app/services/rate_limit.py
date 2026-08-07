@@ -36,6 +36,13 @@ avatar_upload_limiter = SlidingWindowRateLimiter(
     detail="Too many upload attempts. Please wait and try again.",
 )
 
+# 30 recap screenshot uploads per user per hour
+screenshot_upload_limiter = SlidingWindowRateLimiter(
+    max_calls=30,
+    window_seconds=3600,
+    detail="Too many upload attempts. Please wait and try again.",
+)
+
 # 5 password changes per user per hour
 password_change_limiter = SlidingWindowRateLimiter(
     max_calls=5,

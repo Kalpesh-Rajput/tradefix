@@ -12,7 +12,7 @@ export default function MindsetPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="font-serif text-3xl tracking-tight text-white">Mindset</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-white">Mindset</h1>
         <p className="mt-2 text-sm text-zinc-500">
           Pre-session check-ins{avg != null ? ` · avg mood ${avg.toFixed(1)}/10` : ""}.
         </p>

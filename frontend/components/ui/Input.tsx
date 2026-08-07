@@ -5,7 +5,7 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   return (
     <input
       className={clsx(
-        "w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold",
+        "w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary",
         className
       )}
       {...props}
@@ -17,7 +17,7 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
   return (
     <select
       className={clsx(
-        "w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-white focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold",
+        "w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary",
         className
       )}
       {...props}
@@ -31,7 +31,7 @@ export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
   return (
     <textarea
       className={clsx(
-        "w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold",
+        "w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary",
         className
       )}
       {...props}

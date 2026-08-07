@@ -1,23 +1,20 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, Inter } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 
+import { AppearanceProvider } from "@/components/providers/AppearanceProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { LocaleProvider } from "@/components/providers/LocaleProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ToastProvider } from "@/components/ui/Toast";
+import { APPEARANCE_BOOT_SCRIPT } from "@/lib/appearance";
 
 import "./globals.css";
 
-const sans = Inter({
+const sans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
-});
-
-const display = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-display",
-  display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -28,11 +25,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`dark ${sans.variable} ${display.variable}`}>
-      <body className="bg-background font-sans text-white antialiased">
+    <html lang="en" className={`dark ${sans.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOT_SCRIPT }} />
+      </head>
+      <body className="bg-background font-sans text-foreground antialiased">
         <QueryProvider>
           <ToastProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <AppearanceProvider>
+                <LocaleProvider>{children}</LocaleProvider>
+              </AppearanceProvider>
+            </AuthProvider>
           </ToastProvider>
         </QueryProvider>
       </body>

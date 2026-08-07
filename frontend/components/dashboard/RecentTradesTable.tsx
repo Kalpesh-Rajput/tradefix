@@ -8,12 +8,13 @@ import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { fmtMoney } from "@/lib/format";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { Trade } from "@/lib/types";
 
 const PAGE_SIZE = 6;
 
 export function RecentTradesTable({ trades }: { trades: Trade[] }) {
+  const { formatDate, fmtMoney, t } = useLocale();
   const [q, setQ] = useState("");
   const [side, setSide] = useState<"all" | "long" | "short">("all");
   const [page, setPage] = useState(0);
@@ -102,7 +103,7 @@ export function RecentTradesTable({ trades }: { trades: Trade[] }) {
             {slice.length === 0 && (
               <tr>
                 <td colSpan={11} className="px-4 py-10 text-center text-sm text-muted">
-                  No trades match your filters.
+                  {t("journal.noMatch")}
                 </td>
               </tr>
             )}
@@ -116,9 +117,7 @@ export function RecentTradesTable({ trades }: { trades: Trade[] }) {
                   animate={{ opacity: 1 }}
                   className="border-b border-white/[0.04] transition hover:bg-white/[0.02]"
                 >
-                  <td className="whitespace-nowrap px-4 py-3 text-muted">
-                    {new Date(t.opened_at).toLocaleDateString()}
-                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-muted">{formatDate(t.opened_at)}</td>
                   <td className="px-4 py-3 font-medium text-white">{t.symbol}</td>
                   <td className="px-4 py-3">
                     <Badge tone={t.side === "long" ? "positive" : "negative"}>{t.side}</Badge>
@@ -137,7 +136,7 @@ export function RecentTradesTable({ trades }: { trades: Trade[] }) {
                     <Badge tone={t.status === "open" ? "warning" : "neutral"}>{t.status}</Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Link href={`/journal/${t.id}`} className="text-xs text-secondary hover:underline">
+                    <Link href={`/trades/${t.id}`} className="text-xs text-secondary hover:underline">
                       View
                     </Link>
                   </td>

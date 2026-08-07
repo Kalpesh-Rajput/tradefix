@@ -1,3 +1,4 @@
+import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
@@ -16,7 +17,8 @@ router = APIRouter(prefix="/api/calendar", tags=["calendar"])
 def get_calendar(
     start: date = Query(...),
     end: date = Query(...),
+    account_id: uuid.UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return stats_service.calendar_days(db, current_user.id, start, end)
+    return stats_service.calendar_days(db, current_user.id, start, end, account_id=account_id)

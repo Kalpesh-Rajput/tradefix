@@ -15,7 +15,7 @@ export function Button({ variant = "primary", size = "md", className, ...props }
         size === "sm" && "px-3 py-1.5 text-xs",
         size === "md" && "px-3.5 py-2 text-sm",
         size === "lg" && "px-5 py-2.5 text-sm",
-        variant === "primary" && "bg-primary font-semibold text-black hover:opacity-90",
+        variant === "primary" && "bg-primary font-semibold text-primary-foreground hover:opacity-90",
         variant === "secondary" &&
           "border border-white/10 bg-zinc-900 text-white hover:bg-zinc-800",
         variant === "ghost" && "text-zinc-500 hover:bg-white/5 hover:text-white",

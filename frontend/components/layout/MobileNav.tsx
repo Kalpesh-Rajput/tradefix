@@ -4,9 +4,11 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 import { Sidebar } from "@/components/layout/Sidebar";
+import { useLocale } from "@/components/providers/LocaleProvider";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
+  const { t } = useLocale();
 
   return (
     <>
@@ -20,7 +22,7 @@ export function MobileNav() {
           type="button"
           onClick={() => setOpen(true)}
           className="rounded-lg border border-white/10 p-2 text-zinc-500"
-          aria-label="Open menu"
+          aria-label={t("common.openMenu")}
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -31,7 +33,7 @@ export function MobileNav() {
           <button
             type="button"
             className="absolute inset-0 bg-black/70"
-            aria-label="Close menu"
+            aria-label={t("common.closeMenu")}
             onClick={() => setOpen(false)}
           />
           <div className="relative h-full w-[220px] shadow-lift" onClick={() => setOpen(false)}>
@@ -39,6 +41,7 @@ export function MobileNav() {
               type="button"
               onClick={() => setOpen(false)}
               className="absolute right-2 top-3 z-10 rounded-lg p-1.5 text-zinc-500"
+              aria-label={t("common.closeMenu")}
             >
               <X className="h-4 w-4" />
             </button>

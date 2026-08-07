@@ -9,26 +9,31 @@ export type Shot = { id: string; file: File; preview: string };
 export function ScreenshotUploader({
   files,
   onChange,
+  max = 5,
 }: {
   files: Shot[];
   onChange: (files: Shot[]) => void;
+  max?: number;
 }) {
   const onDrop = useCallback(
     (accepted: File[]) => {
-      const next = accepted.map((file) => ({
+      const room = Math.max(0, max - files.length);
+      const next = accepted.slice(0, room).map((file) => ({
         id: `${file.name}-${file.size}-${Math.random()}`,
         file,
         preview: URL.createObjectURL(file),
       }));
+      if (!next.length) return;
       onChange([...files, ...next]);
     },
-    [files, onChange]
+    [files, onChange, max]
   );
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
     accept: { "image/png": [], "image/jpeg": [], "image/webp": [] },
     multiple: true,
+    disabled: files.length >= max,
   });
 
   useEffect(() => {

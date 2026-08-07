@@ -4,10 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Check, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import {
   SettingsCard,
   SettingsField,
@@ -20,14 +21,13 @@ import {
 import { Button } from "@/components/ui/Button";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { useToast } from "@/components/ui/Toast";
+import { DATE_FORMATS, type DateFormat } from "@/lib/i18n";
 import { getLanguageOptions } from "@/lib/languages";
 import { getTimezoneOptions } from "@/lib/timezones";
 
-const DATE_FORMATS = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"] as const;
-
 const systemSchema = z.object({
-  timezone: z.string().min(1, "Timezone is required"),
-  language: z.string().min(1, "Language is required"),
+  timezone: z.string().min(1),
+  language: z.string().min(1),
   date_format: z.enum(DATE_FORMATS),
   save_filters: z.boolean(),
   journal_template: z.string().max(10000).optional().or(z.literal("")),
@@ -37,6 +37,7 @@ type SystemFormValues = z.infer<typeof systemSchema>;
 
 export function SystemSettingsPage() {
   const { user, loading, updateProfile } = useAuth();
+  const { t, setPreview } = useLocale();
   const toast = useToast();
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -55,7 +56,7 @@ export function SystemSettingsPage() {
     if (!languageValues.has(language)) language = "en";
 
     const date_format = (DATE_FORMATS as readonly string[]).includes(user?.date_format || "")
-      ? (user!.date_format as (typeof DATE_FORMATS)[number])
+      ? (user!.date_format as DateFormat)
       : "MM/DD/YYYY";
 
     return {
@@ -78,9 +79,25 @@ export function SystemSettingsPage() {
     defaultValues: defaults,
   });
 
+  const watched = useWatch({ control });
+
   useEffect(() => {
     reset(defaults);
   }, [defaults, reset]);
+
+  // Live-apply language / timezone / date format while editing (and clear on leave).
+  useEffect(() => {
+    if (!watched) return;
+    setPreview({
+      language: watched.language,
+      timezone: watched.timezone,
+      dateFormat: watched.date_format as DateFormat | undefined,
+    });
+  }, [watched?.language, watched?.timezone, watched?.date_format, setPreview]);
+
+  useEffect(() => {
+    return () => setPreview(null);
+  }, [setPreview]);
 
   const onSubmit = handleSubmit(async (values) => {
     setSaveState("saving");
@@ -93,19 +110,21 @@ export function SystemSettingsPage() {
         save_filters: values.save_filters,
         journal_template: values.journal_template?.trim() || null,
       });
+      setPreview(null);
       setSaveState("saved");
-      toast.success("System settings saved");
+      toast.success(t("settings.system.savedToast"));
       window.setTimeout(() => setSaveState("idle"), 2000);
     } catch (err) {
       setSaveState("error");
-      const message = err instanceof Error ? err.message : "Failed to save settings";
+      const message = err instanceof Error ? err.message : t("common.error");
       setErrorMsg(message);
-      toast.error("Could not save settings", message);
+      toast.error(t("settings.system.saveErrorToast"), message);
     }
   });
 
   function handleCancel() {
     reset(defaults);
+    setPreview(null);
     setErrorMsg(null);
     setSaveState("idle");
   }
@@ -125,15 +144,15 @@ export function SystemSettingsPage() {
 
   return (
     <SettingsShell>
-      <SettingsPageHeader
-        title="System Settings"
-        subtitle="Configure application preferences and defaults."
-      />
+      <SettingsPageHeader title={t("settings.system.title")} subtitle={t("settings.system.subtitle")} />
 
       <form onSubmit={onSubmit} className="space-y-5">
-        <SettingsCard title="Timezone" description="Used for calendars, journals, and daily briefings.">
+        <SettingsCard title={t("settings.system.timezoneCard")} description={t("settings.system.timezoneDesc")}>
           <div className="grid gap-5 sm:grid-cols-2">
-            <SettingsField label="Timezone" error={errors.timezone?.message}>
+            <SettingsField
+              label={t("settings.system.timezone")}
+              error={errors.timezone ? t("settings.system.timezoneRequired") : undefined}
+            >
               <Controller
                 control={control}
                 name="timezone"
@@ -144,14 +163,17 @@ export function SystemSettingsPage() {
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     name={field.name}
-                    searchPlaceholder="Search timezones…"
-                    aria-label="Timezone"
+                    searchPlaceholder={t("settings.system.searchTimezones")}
+                    aria-label={t("settings.system.timezone")}
                   />
                 )}
               />
             </SettingsField>
 
-            <SettingsField label="Language" error={errors.language?.message}>
+            <SettingsField
+              label={t("settings.system.language")}
+              error={errors.language ? t("settings.system.languageRequired") : undefined}
+            >
               <Controller
                 control={control}
                 name="language"
@@ -162,14 +184,14 @@ export function SystemSettingsPage() {
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     name={field.name}
-                    searchPlaceholder="Search languages…"
-                    aria-label="Language"
+                    searchPlaceholder={t("settings.system.searchLanguages")}
+                    aria-label={t("settings.system.language")}
                   />
                 )}
               />
             </SettingsField>
 
-            <SettingsField label="Date Format" error={errors.date_format?.message}>
+            <SettingsField label={t("settings.system.dateFormat")} error={errors.date_format?.message}>
               <SettingsSelect {...register("date_format")}>
                 {DATE_FORMATS.map((fmt) => (
                   <option key={fmt} value={fmt}>
@@ -181,7 +203,7 @@ export function SystemSettingsPage() {
           </div>
         </SettingsCard>
 
-        <SettingsCard title="Filters">
+        <SettingsCard title={t("settings.system.filtersCard")}>
           <Controller
             control={control}
             name="save_filters"
@@ -189,23 +211,23 @@ export function SystemSettingsPage() {
               <SettingsToggle
                 checked={field.value}
                 onChange={field.onChange}
-                label="Save Filters"
-                description="Remember Trade Log filters between sessions"
+                label={t("settings.system.saveFilters")}
+                description={t("settings.system.saveFiltersDesc")}
               />
             )}
           />
         </SettingsCard>
 
-        <SettingsCard title="Default Templates">
+        <SettingsCard title={t("settings.system.templatesCard")}>
           <SettingsField
-            label="Default Journal Template"
-            hint="This template will be pre-filled when creating a new journal entry."
+            label={t("settings.system.journalTemplate")}
+            hint={t("settings.system.journalTemplateHint")}
             error={errors.journal_template?.message}
           >
             <SettingsTextarea
               {...register("journal_template")}
               rows={5}
-              placeholder={"What went well today?\nWhat can I improve?"}
+              placeholder={t("settings.system.journalTemplatePlaceholder")}
             />
           </SettingsField>
         </SettingsCard>
@@ -219,20 +241,20 @@ export function SystemSettingsPage() {
               className="mr-auto inline-flex items-center gap-1.5 text-xs text-primary"
             >
               <Check className="h-3.5 w-3.5" />
-              Settings saved
+              {t("common.saved")}
             </motion.p>
           )}
           <Button type="button" variant="ghost" disabled={!isDirty || saveState === "saving"} onClick={handleCancel}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="submit" disabled={saveState === "saving" || !isDirty} className="min-w-[120px]">
             {saveState === "saving" ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Saving…
+                {t("common.saving")}
               </>
             ) : (
-              "Save changes"
+              t("common.save")
             )}
           </Button>
         </div>

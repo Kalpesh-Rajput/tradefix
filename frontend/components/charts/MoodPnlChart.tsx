@@ -2,9 +2,13 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { useAppearance } from "@/components/providers/AppearanceProvider";
+import { NEGATIVE_HEX } from "@/lib/appearance";
 import { MoodPnlPoint } from "@/lib/types";
 
 export function MoodPnlChart({ data }: { data: MoodPnlPoint[] }) {
+  const { accentHex } = useAppearance();
+
   if (data.length === 0) {
     return <p className="text-sm text-gray-500">Log mood check-ins or tag trade mood to see this chart.</p>;
   }
@@ -20,7 +24,7 @@ export function MoodPnlChart({ data }: { data: MoodPnlPoint[] }) {
         <Tooltip contentStyle={{ background: "#1c1c1f", border: "1px solid #2a2a2e", borderRadius: 8, fontSize: 12 }} />
         <Bar dataKey="avg_pnl" radius={[4, 4, 0, 0]}>
           {chartData.map((entry, index) => (
-            <Cell key={index} fill={entry.avg_pnl >= 0 ? "#2FBF71" : "#E5484D"} />
+            <Cell key={index} fill={entry.avg_pnl >= 0 ? accentHex : NEGATIVE_HEX} />
           ))}
         </Bar>
       </BarChart>

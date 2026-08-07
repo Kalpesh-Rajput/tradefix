@@ -4,27 +4,49 @@
 
 :root {
   --primary: 165 100% 39%;
-  --primary-foreground: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
+  --accent: 165 100% 39%;
+  --ring: 165 100% 39%;
+  --accent-hex: #00c896;
   --background: 0 0% 0%;
   --foreground: 0 0% 98%;
+  --surface: 240 6% 4%;
+  --surface-2: 240 4% 10%;
+  --sidebar: 0 0% 0%;
   --border: 0 0% 100% / 0.06;
+  --muted: 240 4% 46%;
+  --card: 240 6% 4%;
   --destructive: 0 84% 60%;
 }
 
 html,
 body {
-  background-color: #000000;
-  color: #fafafa;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.light,
+html.light body {
+  color-scheme: light;
 }
 
 * {
-  border-color: rgba(255, 255, 255, 0.06);
+  border-color: hsl(var(--border));
 }
 
 ::selection {
-  background: hsl(165 100% 39% / 0.25);
-  color: #fff;
+  background: hsl(var(--primary) / 0.25);
+  color: hsl(var(--foreground));
+}
+
+input[type="range"],
+input[type="checkbox"],
+input[type="radio"],
+progress {
+  accent-color: hsl(var(--primary));
 }
 
 ::-webkit-scrollbar {
@@ -33,12 +55,64 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: hsl(var(--foreground) / 0.12);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-track {
   background-color: transparent;
+}
+
+/* Light-mode overrides for common dark utility patterns used across the app */
+html.light .bg-black {
+  background-color: hsl(var(--background)) !important;
+}
+
+html.light .bg-zinc-950,
+html.light .bg-zinc-950\/80 {
+  background-color: hsl(var(--surface)) !important;
+}
+
+html.light .bg-zinc-900 {
+  background-color: hsl(var(--surface-2)) !important;
+}
+
+html.light .text-white {
+  color: hsl(var(--foreground)) !important;
+}
+
+html.light .border-white\/\[0\.06\],
+html.light .border-white\/10,
+html.light .border-white\/\[0\.08\] {
+  border-color: hsl(var(--border)) !important;
+}
+
+html.light .bg-white\/5,
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/\[0\.06\],
+html.light .bg-white\/\[0\.08\] {
+  background-color: hsl(var(--foreground) / 0.06) !important;
+}
+
+html.light .hover\:bg-white\/\[0\.04\]:hover,
+html.light .hover\:bg-white\/5:hover {
+  background-color: hsl(var(--foreground) / 0.06) !important;
+}
+
+html.light .text-zinc-300,
+html.light .text-zinc-400 {
+  color: hsl(240 4% 30%) !important;
+}
+
+html.light .text-zinc-500,
+html.light .text-zinc-600 {
+  color: hsl(240 4% 46%) !important;
+}
+
+html.light input,
+html.light textarea,
+html.light select {
+  color-scheme: light;
 }
 
 @layer utilities {

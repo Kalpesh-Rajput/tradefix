@@ -18,6 +18,9 @@ import {
 } from "recharts";
 
 import { Card } from "@/components/ui/Card";
+import { useAppearance } from "@/components/providers/AppearanceProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { NEGATIVE_HEX } from "@/lib/appearance";
 import { Trade } from "@/lib/types";
 
 type Tab = "weekly" | "monthly" | "equity" | "distribution" | "ratio" | "strategy";
@@ -38,6 +41,8 @@ export function PerformanceCharts({
   trades: Trade[];
   bySetup: { setup_tag: string; pnl: number; trades: number }[];
 }) {
+  const { formatChartDate } = useLocale();
+  const { accentHex } = useAppearance();
   const [tab, setTab] = useState<Tab>("equity");
 
   const closed = useMemo(
@@ -56,8 +61,8 @@ export function PerformanceCharts({
     });
   }, [closed]);
 
-  const weekly = useMemo(() => bucketBy(closed, "week"), [closed]);
-  const monthly = useMemo(() => bucketBy(closed, "month"), [closed]);
+  const weekly = useMemo(() => bucketBy(closed, "week", formatChartDate), [closed, formatChartDate]);
+  const monthly = useMemo(() => bucketBy(closed, "month", formatChartDate), [closed, formatChartDate]);
   const distribution = useMemo(() => {
     const bins = [
       { name: "< -$200", min: -Infinity, max: -200 },
@@ -76,10 +81,10 @@ export function PerformanceCharts({
     const wins = closed.filter((t) => (t.pnl ?? 0) > 0).length;
     const losses = closed.filter((t) => (t.pnl ?? 0) < 0).length;
     return [
-      { name: "Wins", value: wins, color: "#14F195" },
-      { name: "Losses", value: losses, color: "#FF5C5C" },
+      { name: "Wins", value: wins, color: accentHex },
+      { name: "Losses", value: losses, color: NEGATIVE_HEX },
     ];
-  }, [closed]);
+  }, [closed, accentHex]);
 
   const strategy = useMemo(
     () =>
@@ -126,15 +131,15 @@ export function PerformanceCharts({
                 <AreaChart data={equity}>
                   <defs>
                     <linearGradient id="eq" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#14F195" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#14F195" stopOpacity={0} />
+                      <stop offset="0%" stopColor={accentHex} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={accentHex} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
                   <XAxis dataKey="i" stroke="#A1A1AA" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis stroke="#A1A1AA" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Area type="monotone" dataKey="equity" stroke="#14F195" fill="url(#eq)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="equity" stroke={accentHex} fill="url(#eq)" strokeWidth={2} />
                 </AreaChart>
               ) : tab === "ratio" ? (
                 <PieChart>
@@ -153,7 +158,7 @@ export function PerformanceCharts({
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="pnl" radius={[8, 8, 0, 0]}>
                     {strategy.map((s) => (
-                      <Cell key={s.name} fill={s.pnl >= 0 ? "#14F195" : "#FF5C5C"} />
+                      <Cell key={s.name} fill={s.pnl >= 0 ? accentHex : NEGATIVE_HEX} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -171,7 +176,7 @@ export function PerformanceCharts({
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar
                     dataKey={tab === "distribution" ? "count" : "pnl"}
-                    fill="#4F8BFF"
+                    fill={accentHex}
                     radius={[8, 8, 0, 0]}
                   />
                 </BarChart>
@@ -191,14 +196,15 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
-function bucketBy(trades: Trade[], mode: "week" | "month") {
+function bucketBy(
+  trades: Trade[],
+  mode: "week" | "month",
+  formatMonth: (value: Date | string | number, style?: "short" | "monthYear") => string
+) {
   const map = new Map<string, number>();
   for (const t of trades) {
     const d = new Date(t.closed_at || t.opened_at);
-    const key =
-      mode === "month"
-        ? d.toLocaleDateString(undefined, { month: "short", year: "2-digit" })
-        : `W${getWeek(d)}`;
+    const key = mode === "month" ? formatMonth(d, "monthYear") : `W${getWeek(d)}`;
     map.set(key, (map.get(key) ?? 0) + (t.pnl ?? 0));
   }
   return [...map.entries()].slice(-8).map(([name, pnl]) => ({ name, pnl: Number(pnl.toFixed(2)) }));

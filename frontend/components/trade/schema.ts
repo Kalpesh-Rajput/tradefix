@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { BUILTIN_EMOTIONS } from "@/lib/emotions";
+import { BUILTIN_MISTAKES, BUILTIN_STRATEGIES } from "@/lib/tradingDefaults";
+
 export const ASSET_OPTIONS = [
   { value: "stock", label: "Equity" },
   { value: "forex", label: "Forex" },
@@ -8,38 +11,9 @@ export const ASSET_OPTIONS = [
   { value: "future", label: "Futures" },
 ] as const;
 
-export const STRATEGIES = [
-  "Breakout",
-  "Trend Following",
-  "Mean Reversion",
-  "Scalping",
-  "Swing Trade",
-  "Momentum",
-  "Gap Fill",
-  "Support/Resistance",
-  "News/Catalyst",
-  "Earnings Play",
-  "Options Spread",
-  "Reversal",
-] as const;
-
-export const MISTAKES = [
-  "Broke Rules",
-  "FOMO Entry",
-  "Revenge Trading",
-  "Overtrading",
-  "Ignored Stop Loss",
-  "Moved Stop Loss",
-  "Position Too Large",
-  "Exited Too Early",
-  "Exited Too Late",
-  "Chased Entry",
-  "No Trading Plan",
-  "Emotional Decision",
-  "Poor Risk/Reward",
-  "Wrong Timeframe",
-  "Ignored Signals",
-] as const;
+export const STRATEGIES = BUILTIN_STRATEGIES;
+export const MISTAKES = BUILTIN_MISTAKES;
+export const EMOTIONS = BUILTIN_EMOTIONS;
 
 export const WENT_WELL = [
   "Followed Plan",
@@ -97,8 +71,11 @@ export const addTradeSchema = z
     leverage: z.any().optional().nullable(),
     expiry: z.string().optional().nullable(),
     strategies: z.array(z.string()).default([]),
+    emotions: z.array(z.string()).default([]),
     mistakes: z.array(z.string()).default([]),
     wentWell: z.array(z.string()).default([]),
+    plan_compliance: z.any().optional().nullable(),
+    risk_amount: z.any().optional().nullable(),
     notes: z.string().max(5000).optional().nullable(),
   })
   .superRefine((data, ctx) => {
@@ -106,6 +83,8 @@ export const addTradeSchema = z
     const qty = num(data.quantity);
     const fees = num(data.fees) ?? 0;
     const exit = num(data.exit_price);
+    const risk = num(data.risk_amount);
+    const compliance = num(data.plan_compliance);
 
     if (entry == null || entry <= 0) {
       ctx.addIssue({ code: "custom", message: "Entry price must be > 0", path: ["entry_price"] });
@@ -115,6 +94,16 @@ export const addTradeSchema = z
     }
     if (fees < 0) {
       ctx.addIssue({ code: "custom", message: "Fees cannot be negative", path: ["fees"] });
+    }
+    if (risk != null && risk < 0) {
+      ctx.addIssue({ code: "custom", message: "Risk cannot be negative", path: ["risk_amount"] });
+    }
+    if (compliance != null && (compliance < 1 || compliance > 10)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Plan compliance must be 1–10",
+        path: ["plan_compliance"],
+      });
     }
     if (data.status === "closed") {
       if (exit == null || exit <= 0) {
@@ -135,9 +124,12 @@ export const addTradeSchema = z
     quantity: num(data.quantity) ?? 0,
     fees: num(data.fees) ?? 0,
     leverage: num(data.leverage),
+    risk_amount: num(data.risk_amount),
+    plan_compliance: num(data.plan_compliance),
     expiry: data.expiry || null,
     notes: data.notes || "",
     strategies: data.strategies ?? [],
+    emotions: data.emotions ?? [],
     mistakes: data.mistakes ?? [],
     wentWell: data.wentWell ?? [],
   }));
@@ -156,20 +148,31 @@ export type AddTradeFormValues = {
   quantity: number;
   fees: number;
   leverage?: number | null;
+  risk_amount?: number | null;
+  plan_compliance?: number | null;
   expiry?: string | null;
   strategies: string[];
+  emotions: string[];
   mistakes: string[];
   wentWell: string[];
   notes?: string | null;
 };
 
-export function defaultAddTradeValues(): AddTradeFormValues {
+export function defaultAddTradeValues(opts?: {
+  defaultFee?: number;
+  defaultSymbol?: string | null;
+  defaultQuantity?: number | null;
+  defaultLeverage?: number | null;
+  defaultStrategies?: string[] | null;
+}): AddTradeFormValues {
   const now = new Date();
   const date = now.toISOString().slice(0, 10);
   const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const fee = Math.abs(Number(opts?.defaultFee ?? 0));
+  const qty = opts?.defaultQuantity != null && opts.defaultQuantity > 0 ? Number(opts.defaultQuantity) : 1;
   return {
     asset_type: "stock",
-    symbol: "",
+    symbol: (opts?.defaultSymbol || "").trim().toUpperCase(),
     side: "long",
     status: "closed",
     entryDate: date,
@@ -178,11 +181,14 @@ export function defaultAddTradeValues(): AddTradeFormValues {
     exitTime: time,
     entry_price: "" as unknown as number,
     exit_price: "" as unknown as number,
-    quantity: 1,
-    fees: 0,
-    leverage: null,
+    quantity: qty,
+    fees: fee,
+    leverage: opts?.defaultLeverage != null && opts.defaultLeverage > 0 ? Number(opts.defaultLeverage) : null,
+    risk_amount: null,
+    plan_compliance: null,
     expiry: null,
-    strategies: [],
+    strategies: [...(opts?.defaultStrategies ?? [])],
+    emotions: [],
     mistakes: [],
     wentWell: [],
     notes: "",

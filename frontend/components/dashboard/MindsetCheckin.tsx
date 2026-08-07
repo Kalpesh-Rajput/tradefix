@@ -137,7 +137,7 @@ function SliderRow({
         max={10}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/[0.08] accent-[#00C896]"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/[0.08] accent-primary"
       />
     </div>
   );

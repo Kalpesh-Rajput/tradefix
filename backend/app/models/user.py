@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
@@ -33,11 +34,34 @@ class User(Base):
     )
     save_filters: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     journal_template: Mapped[str | None] = mapped_column(Text, nullable=True)
+    default_symbol: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    default_quantity: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    default_fee: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    default_forex_leverage: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    default_strategies: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    custom_strategies: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    strategy_order: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    custom_mistakes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    mistake_order: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    weekly_goal: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
+    monthly_goal: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
+    yearly_goal: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
+    target_trades: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    theme: Mapped[str] = mapped_column(String(16), nullable=False, default="dark", server_default="dark")
+    accent_color: Mapped[str] = mapped_column(String(32), nullable=False, default="teal", server_default="teal")
+    plan: Mapped[str] = mapped_column(String(16), nullable=False, default="free", server_default="free")
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    custom_emotion_tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    emotion_tag_order: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    role: Mapped[str] = mapped_column(String(16), nullable=False, default="trader", server_default="trader")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     accounts: Mapped[list["Account"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     trades: Mapped[list["Trade"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     watchlist_items: Mapped[list["WatchlistItem"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     mood_checkins: Mapped[list["MoodCheckin"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    daily_recaps: Mapped[list["DailyRecap"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    daily_checkins: Mapped[list["DailyCheckin"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    prop_settings: Mapped[list["PropSettings"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     insights: Mapped[list["Insight"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     agent_runs: Mapped[list["AgentRun"]] = relationship(back_populates="user", cascade="all, delete-orphan")

@@ -2,9 +2,13 @@
 
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
+import { useAppearance } from "@/components/providers/AppearanceProvider";
+import { NEGATIVE_HEX } from "@/lib/appearance";
+
 export function Sparkline({ data, positive = true }: { data: number[]; positive?: boolean }) {
+  const { accentHex } = useAppearance();
   const chartData = data.map((v, i) => ({ i, v }));
-  const color = positive ? "#14F195" : "#FF5C5C";
+  const color = positive ? accentHex : NEGATIVE_HEX;
   const id = `spark-${positive ? "p" : "n"}-${data.length}-${data[0] ?? 0}`;
 
   return (

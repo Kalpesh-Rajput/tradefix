@@ -3,10 +3,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, Cable, CheckCircle2, FileSpreadsheet, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Resolver, useForm } from "react-hook-form";
 import { useDropzone } from "react-dropzone";
 
+import { useAccountPrefs } from "@/components/providers/AccountProvider";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { AssetSelector } from "@/components/trade/AssetSelector";
 import { DateTimeFields, PriceInputs } from "@/components/trade/DateTimePicker";
 import { DirectionSelector, TradeStatusSelector } from "@/components/trade/DirectionSelector";
@@ -19,7 +21,7 @@ import {
   combineDateTime,
   defaultAddTradeValues,
 } from "@/components/trade/schema";
-import { MistakeSelector, PositiveSelector, StrategySelector } from "@/components/trade/StrategySelector";
+import { MistakeSelector, EmotionSelector, PositiveSelector, StrategySelector } from "@/components/trade/StrategySelector";
 import { SymbolSearch } from "@/components/trade/SymbolSearch";
 import { TradeFooter } from "@/components/trade/TradeFooter";
 import { TradeTabs } from "@/components/trade/TradeTabs";
@@ -27,22 +29,49 @@ import { Section } from "@/components/trade/ui";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
-import { useCreateTrade, useImportCsv } from "@/lib/hooks/useTrades";
+import { useCreateTrade, useImportCsv, useUploadTradeScreenshot } from "@/lib/hooks/useTrades";
 import { useUpsertMoodCheckin } from "@/lib/hooks/useMood";
 import { TradeInput } from "@/lib/types";
 
 const DRAFT_KEY = "tradefix_add_trade_draft";
 
 export function AddTradeModal() {
+  const { user } = useAuth();
+  const { activeAccount } = useAccountPrefs();
   const { open, closeModal, tab } = useAddTradeModal();
   const createTrade = useCreateTrade();
+  const uploadShot = useUploadTradeScreenshot();
   const [shots, setShots] = useState<Shot[]>([]);
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const accountFee = Math.abs(Number(activeAccount?.default_fee_per_trade ?? 0));
+  const userFee =
+    user?.default_fee != null && Number.isFinite(Number(user.default_fee))
+      ? Math.abs(Number(user.default_fee))
+      : null;
+  const defaultFee = userFee ?? accountFee;
+  const tradeDefaults = useMemo(
+    () => ({
+      defaultFee,
+      defaultSymbol: user?.default_symbol ?? "",
+      defaultQuantity: user?.default_quantity != null ? Number(user.default_quantity) : null,
+      defaultLeverage: user?.default_forex_leverage != null ? Number(user.default_forex_leverage) : null,
+      defaultStrategies: user?.default_strategies ?? [],
+    }),
+    [
+      defaultFee,
+      user?.default_symbol,
+      user?.default_quantity,
+      user?.default_forex_leverage,
+      user?.default_strategies,
+    ]
+  );
 
   const form = useForm<AddTradeFormValues>({
     resolver: zodResolver(addTradeSchema) as Resolver<AddTradeFormValues>,
-    defaultValues: defaultAddTradeValues(),
+    defaultValues: defaultAddTradeValues(tradeDefaults),
     mode: "onSubmit",
   });
 
@@ -59,20 +88,37 @@ export function AddTradeModal() {
 
   useEffect(() => {
     if (!open) return;
+    const template = user?.journal_template?.trim() || "";
+    const defaults = defaultAddTradeValues(tradeDefaults);
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (raw) {
-        reset({ ...defaultAddTradeValues(), ...JSON.parse(raw) });
+        const parsed = JSON.parse(raw) as Partial<AddTradeFormValues>;
+        reset({
+          ...defaults,
+          ...parsed,
+          notes: parsed.notes || template || "",
+          fees: parsed.fees ?? defaults.fees,
+          symbol: parsed.symbol || defaults.symbol,
+          quantity: parsed.quantity ?? defaults.quantity,
+          leverage: parsed.leverage ?? defaults.leverage,
+          strategies: parsed.strategies?.length ? parsed.strategies : defaults.strategies,
+          emotions: parsed.emotions ?? [],
+          mistakes: parsed.mistakes ?? [],
+          wentWell: parsed.wentWell ?? [],
+          risk_amount: parsed.risk_amount ?? null,
+          plan_compliance: parsed.plan_compliance ?? null,
+        });
       } else {
-        reset(defaultAddTradeValues());
+        reset({ ...defaults, notes: template });
       }
     } catch {
-      reset(defaultAddTradeValues());
+      reset({ ...defaults, notes: template });
     }
     setShots([]);
     setSuccess(false);
     setSaveError(null);
-  }, [open, reset]);
+  }, [open, reset, user?.journal_template, tradeDefaults]);
 
   useEffect(() => {
     if (!open || tab !== "manual") return;
@@ -110,11 +156,9 @@ export function AddTradeModal() {
 
     const closed_at = data.status === "closed" ? combineDateTime(data.exitDate, data.exitTime) : null;
 
-    let notes = buildNotes(data);
-    if (shots.length) {
-      notes = `${notes}${notes ? "\n\n" : ""}Screenshots: ${shots.map((s) => s.file.name).join(", ")}`;
-    }
+    const notes = buildNotes(data);
 
+    const setupTags = data.strategies;
     const payload: TradeInput = {
       symbol: data.symbol.trim().toUpperCase(),
       asset_type: data.asset_type,
@@ -124,16 +168,30 @@ export function AddTradeModal() {
       exit_price: data.status === "closed" ? Number(data.exit_price) : null,
       opened_at,
       closed_at,
-      fees: Number(data.fees || 0),
-      setup_tag: data.strategies[0] || (data.strategies.length ? data.strategies.join(", ") : null),
+      fees: Number(data.fees ?? defaultFee),
+      risk_amount: data.risk_amount != null ? Number(data.risk_amount) : null,
+      plan_compliance: data.plan_compliance != null ? Number(data.plan_compliance) : null,
+      setup_tag: setupTags[0] ?? null,
+      setup_tags: setupTags,
+      emotion_tags: data.emotions,
       mood: null,
       notes: notes || null,
       rules_broken: data.mistakes,
       status: data.status,
+      account_id: activeAccount?.id,
     };
 
+    setSaving(true);
     try {
-      await createTrade.mutateAsync(payload);
+      const created = await createTrade.mutateAsync(payload);
+      for (const shot of shots.slice(0, 5)) {
+        try {
+          await uploadShot.mutateAsync({ id: created.id, file: shot.file });
+        } catch {
+          // Trade is saved; surface screenshot failures without blocking success UX
+          setSaveError((prev) => prev ?? "Trade saved, but some screenshots failed to upload");
+        }
+      }
       localStorage.removeItem(DRAFT_KEY);
       setSuccess(true);
       window.setTimeout(() => {
@@ -142,6 +200,8 @@ export function AddTradeModal() {
       }, 900);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to save trade");
+    } finally {
+      setSaving(false);
     }
   });
 
@@ -167,7 +227,7 @@ export function AddTradeModal() {
             className="relative flex max-h-[90vh] w-[520px] max-w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-zinc-950"
           >
             <header className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-5 py-4">
-              <h2 id="add-trade-title" className="font-serif text-base text-white">
+              <h2 id="add-trade-title" className="font-semibold text-base text-white">
                 Add Entry
               </h2>
               <button
@@ -202,6 +262,10 @@ export function AddTradeModal() {
                     <StrategySelector control={control} />
                   </Section>
 
+                  <Section title="Emotions">
+                    <EmotionSelector control={control} />
+                  </Section>
+
                   <Section title="Mistakes">
                     <MistakeSelector control={control} />
                   </Section>
@@ -212,7 +276,7 @@ export function AddTradeModal() {
 
                   <NotesEditor register={register} watch={watch} />
 
-                  <ScreenshotUploader files={shots} onChange={setShots} />
+                  <ScreenshotUploader files={shots} onChange={setShots} max={5} />
                 </div>
               )}
 
@@ -235,9 +299,9 @@ export function AddTradeModal() {
                   </div>
                 )}
                 <TradeFooter
-                  saving={createTrade.isPending}
+                  saving={saving || createTrade.isPending || uploadShot.isPending}
                   onSave={() => onSave()}
-                  disabled={createTrade.isPending}
+                  disabled={saving || createTrade.isPending || uploadShot.isPending}
                 />
               </>
             )}
@@ -254,7 +318,7 @@ export function AddTradeModal() {
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
                       <CheckCircle2 className="h-7 w-7" />
                     </div>
-                    <p className="font-serif text-xl text-white">Trade saved</p>
+                    <p className="font-semibold text-xl text-white">Trade saved</p>
                   </div>
                 </motion.div>
               )}
@@ -286,7 +350,7 @@ function DailyJournalTab({ onDone }: { onDone: () => void }) {
         <BookOpen className="h-5 w-5" />
       </div>
       <div>
-        <h3 className="font-serif text-xl text-white">Daily Journal</h3>
+        <h3 className="font-semibold text-xl text-white">Daily Journal</h3>
         <p className="mt-1 text-sm text-zinc-500">Quick mood pulse for today.</p>
       </div>
       <div>
@@ -297,7 +361,7 @@ function DailyJournalTab({ onDone }: { onDone: () => void }) {
           max={10}
           value={score}
           onChange={(e) => setScore(Number(e.target.value))}
-          className="w-full accent-[#00C896]"
+          className="w-full accent-primary"
         />
       </div>
       <Textarea
@@ -345,7 +409,7 @@ function CsvTab({ onDone }: { onDone: () => void }) {
         <FileSpreadsheet className="h-5 w-5" />
       </div>
       <div>
-        <h3 className="font-serif text-xl text-white">Import CSV</h3>
+        <h3 className="font-semibold text-xl text-white">Import CSV</h3>
         <p className="mt-1 text-sm text-zinc-500">Drop a broker export — columns are auto-mapped when possible.</p>
       </div>
       <div
@@ -370,7 +434,7 @@ function BrokerTab() {
       <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
         <Cable className="h-5 w-5" />
       </div>
-      <h3 className="font-serif text-xl text-white">Connect Broker</h3>
+      <h3 className="font-semibold text-xl text-white">Connect Broker</h3>
       <p className="text-sm leading-relaxed text-zinc-500">
         Prefer CSV for now, or log trades manually. Connection UI is open — pick a broker when you are ready to wire
         credentials.

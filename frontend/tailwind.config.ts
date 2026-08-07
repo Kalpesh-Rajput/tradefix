@@ -6,20 +6,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#000000",
-        sidebar: "#000000",
-        surface: "#09090b",
-        "surface-2": "#18181b",
-        border: "rgba(255,255,255,0.06)",
+        background: "hsl(var(--background) / <alpha-value>)",
+        foreground: "hsl(var(--foreground) / <alpha-value>)",
+        sidebar: "hsl(var(--sidebar) / <alpha-value>)",
+        surface: "hsl(var(--surface) / <alpha-value>)",
+        "surface-2": "hsl(var(--surface-2) / <alpha-value>)",
+        card: "hsl(var(--card) / <alpha-value>)",
+        border: "hsl(var(--border))",
         primary: {
-          DEFAULT: "#00C896",
-          foreground: "#000000",
+          DEFAULT: "hsl(var(--primary) / <alpha-value>)",
+          foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "#00C896",
-          light: "#33D4AB",
-          dim: "#00A87E",
-          muted: "rgba(0,200,150,0.12)",
+          DEFAULT: "hsl(var(--accent) / <alpha-value>)",
+          light: "hsl(var(--primary) / 0.85)",
+          dim: "hsl(var(--primary) / 0.75)",
+          muted: "hsl(var(--primary) / 0.12)",
         },
         secondary: {
           DEFAULT: "#60a5fa",
@@ -28,19 +30,20 @@ const config: Config = {
         warning: "#f59e0b",
         danger: "#ef4444",
         destructive: "#ef4444",
-        muted: "#71717a",
+        muted: "hsl(var(--muted) / <alpha-value>)",
         gold: {
-          DEFAULT: "#00C896",
-          light: "#33D4AB",
-          dark: "#00A87E",
+          DEFAULT: "hsl(var(--primary) / <alpha-value>)",
+          light: "hsl(var(--primary) / 0.85)",
+          dark: "hsl(var(--primary) / 0.75)",
         },
-        positive: "#00C896",
+        positive: "hsl(var(--primary) / <alpha-value>)",
         negative: "#ef4444",
+        ring: "hsl(var(--ring) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
-        display: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
+        serif: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
       },
       borderRadius: {
@@ -48,9 +51,9 @@ const config: Config = {
         "2xl": "16px",
       },
       boxShadow: {
-        card: "0 0 0 1px rgba(255,255,255,0.04), 0 8px 32px rgba(0,0,0,0.45)",
-        glow: "0 0 24px rgba(0,200,150,0.3)",
-        lift: "0 12px 40px rgba(0,0,0,0.55)",
+        card: "0 0 0 1px hsl(var(--border)), 0 8px 32px rgba(0,0,0,0.12)",
+        glow: "0 0 24px hsl(var(--primary) / 0.3)",
+        lift: "0 12px 40px rgba(0,0,0,0.18)",
       },
       keyframes: {
         "fade-up": {

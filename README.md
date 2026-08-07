@@ -71,7 +71,7 @@ Frontend runs at `http://localhost:3000`. Sign up, and you'll land on `/today`.
 ## What's implemented
 
 - **Auth** — signup/login/JWT, `/api/auth/*`
-- **Journal** — manual trade CRUD + CSV import (`/journal`), auto-mapped columns for common broker CSV exports
+- **Trades** — manual trade CRUD + CSV import (`/trades`), auto-mapped columns for common broker CSV exports
 - **Today** — daily P&L, open positions, combined insight feed (`/today`)
 - **Calendar** — month grid + year heatmap of P&L (`/calendar`)
 - **Analytics** — win rate by hour/day-of-week, setup breakdown with 30-day trend, mood vs P&L (`/analytics`)

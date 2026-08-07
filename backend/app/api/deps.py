@@ -27,3 +27,8 @@ def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
     return user
+
+
+def require_pro(current_user: User = Depends(get_current_user)) -> User:
+    """Deprecated: subscriptions deferred — kept as alias for get_current_user."""
+    return current_user
