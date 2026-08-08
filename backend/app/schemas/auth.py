@@ -1,5 +1,6 @@
 import re
 import uuid
+from datetime import datetime
 from zoneinfo import ZoneInfo, available_timezones
 
 from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator, model_validator
@@ -41,6 +42,33 @@ def _optional_http_url(value: str | None) -> str | None:
     return cleaned
 
 
+_EXPERIENCE = {"newbie", "climbing", "ninja", "monk"}
+_CAPITAL = {"personal", "prop", "not_started"}
+_MARKETS = {"stocks", "options", "forex", "crypto", "futures", "cfd", "other"}
+_GOALS = {"journal", "analyze", "backtest", "learn"}
+_REFERRALS = {
+    "google",
+    "ai",
+    "x",
+    "instagram",
+    "tiktok",
+    "youtube",
+    "reddit",
+    "community",
+    "friend",
+    "other",
+}
+_REFERRAL_DETAILS: dict[str, set[str]] = {
+    "google": {"organic", "ads", "unknown"},
+    "ai": {"chatgpt", "grok", "gemini", "claude", "perplexity"},
+    "instagram": {"tradefix", "affiliate"},
+    "x": {"tradefix", "affiliate"},
+    "tiktok": {"tradefix", "affiliate"},
+    "youtube": {"tradefix", "affiliate"},
+    "community": {"discord", "affiliate_community"},
+}
+
+
 class SignupRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
@@ -50,6 +78,10 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str = Field(min_length=1)
 
 
 class TokenResponse(BaseModel):
@@ -96,6 +128,15 @@ class UserResponse(BaseModel):
     role: str = "trader"
     custom_emotion_tags: list[str] = Field(default_factory=list)
     emotion_tag_order: list[str] = Field(default_factory=list)
+    onboarding_step: int = 0
+    trading_experience: str | None = None
+    capital_sources: list[str] = Field(default_factory=list)
+    primary_broker: str | None = None
+    markets_traded: list[str] = Field(default_factory=list)
+    onboarding_goals: list[str] = Field(default_factory=list)
+    referral_source: str | None = None
+    referral_detail: str | None = None
+    onboarding_completed_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -107,11 +148,110 @@ class UserResponse(BaseModel):
         "mistake_order",
         "custom_emotion_tags",
         "emotion_tag_order",
+        "capital_sources",
+        "markets_traded",
+        "onboarding_goals",
         mode="before",
     )
     @classmethod
     def coerce_list_fields(cls, value: object) -> object:
         return [] if value is None else value
+
+
+def _normalize_choice_list(
+    value: list[str] | None,
+    *,
+    allowed: set[str],
+    field_name: str,
+    max_items: int = 20,
+) -> list[str]:
+    if value is None:
+        return []
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for raw in value:
+        if not isinstance(raw, str):
+            raise ValueError(f"{field_name} must be a list of strings")
+        item = raw.strip().lower()
+        if not item:
+            continue
+        if item not in allowed:
+            raise ValueError(f"Invalid {field_name} value: {raw}")
+        if item in seen:
+            continue
+        seen.add(item)
+        cleaned.append(item)
+        if len(cleaned) > max_items:
+            raise ValueError(f"{field_name} may contain at most {max_items} items")
+    return cleaned
+
+
+class OnboardingUpdateRequest(BaseModel):
+    onboarding_step: int | None = Field(default=None, ge=0, le=6)
+    trading_experience: str | None = Field(default=None, max_length=32)
+    capital_sources: list[str] | None = None
+    primary_broker: str | None = Field(default=None, max_length=128)
+    markets_traded: list[str] | None = None
+    onboarding_goals: list[str] | None = None
+    referral_source: str | None = Field(default=None, max_length=64)
+    referral_detail: str | None = Field(default=None, max_length=255)
+
+    @field_validator("trading_experience")
+    @classmethod
+    def validate_experience(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().lower()
+        if cleaned not in _EXPERIENCE:
+            raise ValueError("Invalid trading experience")
+        return cleaned
+
+    @field_validator("capital_sources")
+    @classmethod
+    def validate_capital(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        return _normalize_choice_list(value, allowed=_CAPITAL, field_name="capital_sources")
+
+    @field_validator("markets_traded")
+    @classmethod
+    def validate_markets(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        return _normalize_choice_list(value, allowed=_MARKETS, field_name="markets_traded")
+
+    @field_validator("onboarding_goals")
+    @classmethod
+    def validate_goals(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        return _normalize_choice_list(value, allowed=_GOALS, field_name="onboarding_goals")
+
+    @field_validator("referral_source")
+    @classmethod
+    def validate_referral(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().lower()
+        if cleaned not in _REFERRALS:
+            raise ValueError("Invalid referral source")
+        return cleaned
+
+    @field_validator("primary_broker")
+    @classmethod
+    def validate_broker(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = " ".join(value.strip().split())
+        return cleaned or None
+
+    @field_validator("referral_detail")
+    @classmethod
+    def validate_referral_detail(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = " ".join(value.strip().split())
+        return cleaned or None
 
 
 def _normalize_label_list(value: list[str] | None, *, field_name: str, max_items: int = 100) -> list[str]:

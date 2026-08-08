@@ -29,10 +29,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isSettings = pathname?.startsWith("/settings");
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
+    if (loading) return;
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    if (!user.onboarding_completed_at) {
+      router.replace("/onboarding");
+    }
   }, [loading, user, router]);
 
-  if (loading || !user) {
+  if (loading || !user || !user.onboarding_completed_at) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">

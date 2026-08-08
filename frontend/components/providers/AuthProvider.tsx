@@ -4,16 +4,20 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 import { api, clearToken, getToken, setToken } from "@/lib/api";
-import { User, UserUpdateInput } from "@/lib/types";
+import { postAuthPath } from "@/lib/onboarding";
+import { OnboardingUpdateInput, User, UserUpdateInput } from "@/lib/types";
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
   updateProfile: (data: UserUpdateInput) => Promise<User>;
+  updateOnboarding: (data: OnboardingUpdateInput) => Promise<User>;
+  completeOnboarding: () => Promise<User>;
   changePassword: (data: {
     current_password: string;
     new_password: string;
@@ -34,14 +38,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!getToken()) {
       setUser(null);
       setLoading(false);
-      return;
+      return null;
     }
     try {
       const me = await api.get<User>("/api/auth/me");
       setUser(me);
+      return me;
     } catch {
       clearToken();
       setUser(null);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -51,20 +57,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
+  async function afterAuth() {
+    setLoading(true);
+    const me = await refreshUser();
+    router.push(postAuthPath(me));
+  }
+
   async function login(email: string, password: string) {
     const res = await api.post<{ access_token: string }>("/api/auth/login", { email, password });
     setToken(res.access_token);
-    setLoading(true);
-    await refreshUser();
-    router.push("/today");
+    await afterAuth();
   }
 
   async function signup(email: string, password: string, name: string) {
     const res = await api.post<{ access_token: string }>("/api/auth/signup", { email, password, name });
     setToken(res.access_token);
-    setLoading(true);
-    await refreshUser();
-    router.push("/today");
+    await afterAuth();
+  }
+
+  async function loginWithGoogle(idToken: string) {
+    const res = await api.post<{ access_token: string }>("/api/auth/google", { id_token: idToken });
+    setToken(res.access_token);
+    await afterAuth();
   }
 
   function logout() {
@@ -75,6 +89,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function updateProfile(data: UserUpdateInput) {
     const updated = await api.patch<User>("/api/auth/me", data);
+    setUser(updated);
+    return updated;
+  }
+
+  async function updateOnboarding(data: OnboardingUpdateInput) {
+    const updated = await api.patch<User>("/api/auth/me/onboarding", data);
+    setUser(updated);
+    return updated;
+  }
+
+  async function completeOnboarding() {
+    const updated = await api.post<User>("/api/auth/me/onboarding/complete");
     setUser(updated);
     return updated;
   }
@@ -108,9 +134,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         login,
         signup,
+        loginWithGoogle,
         logout,
         refreshUser,
         updateProfile,
+        updateOnboarding,
+        completeOnboarding,
         changePassword,
         uploadAvatar,
         removeAvatar,

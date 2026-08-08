@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { postAuthPath } from "@/lib/onboarding";
 
 export default function RootPage() {
   const { user, loading } = useAuth();
@@ -11,7 +12,7 @@ export default function RootPage() {
 
   useEffect(() => {
     if (loading) return;
-    router.replace(user ? "/today" : "/login");
+    router.replace(postAuthPath(user));
   }, [loading, user, router]);
 
   return null;

@@ -14,7 +14,11 @@ class User(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    google_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
+    auth_provider: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="email", server_default="email"
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     username: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -54,6 +58,15 @@ class User(Base):
     custom_emotion_tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     emotion_tag_order: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     role: Mapped[str] = mapped_column(String(16), nullable=False, default="trader", server_default="trader")
+    onboarding_step: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    trading_experience: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    capital_sources: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    primary_broker: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    markets_traded: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    onboarding_goals: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    referral_source: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    referral_detail: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    onboarding_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     accounts: Mapped[list["Account"]] = relationship(back_populates="user", cascade="all, delete-orphan")

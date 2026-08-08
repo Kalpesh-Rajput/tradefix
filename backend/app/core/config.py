@@ -21,6 +21,9 @@ class Settings(BaseSettings):
 
     frontend_origin: str = "http://localhost:3000"
 
+    google_client_id: str = ""
+    google_client_secret: str = ""
+
     enable_scheduler: bool = True
 
     # Local uploads (avatars, recap screenshots). Served at /uploads; swap for S3 later via storage service.

@@ -345,6 +345,26 @@ export interface User {
   role?: string;
   custom_emotion_tags?: string[];
   emotion_tag_order?: string[];
+  onboarding_step?: number;
+  trading_experience?: string | null;
+  capital_sources?: string[];
+  primary_broker?: string | null;
+  markets_traded?: string[];
+  onboarding_goals?: string[];
+  referral_source?: string | null;
+  referral_detail?: string | null;
+  onboarding_completed_at?: string | null;
+}
+
+export interface OnboardingUpdateInput {
+  onboarding_step?: number;
+  trading_experience?: string | null;
+  capital_sources?: string[];
+  primary_broker?: string | null;
+  markets_traded?: string[];
+  onboarding_goals?: string[];
+  referral_source?: string | null;
+  referral_detail?: string | null;
 }
 
 export interface UserUpdateInput {

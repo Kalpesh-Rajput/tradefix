@@ -1,21 +1,21 @@
-import clsx from "clsx";
+import Image from "next/image";
 
 /**
- * TradeFix mark — emerald ring + monogram. Swap for /public/logo.png when ready.
+ * TradeFix brand mark — circular logo from /public/logo.png.
  */
 export function Logo({ size = 36, showWordmark = false }: { size?: number; showWordmark?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div
-        className="flex shrink-0 items-center justify-center rounded-full border-2 border-accent bg-black shadow-glow"
-        style={{ width: size, height: size }}
-      >
-        <span className="font-sans font-bold text-accent" style={{ fontSize: size * 0.42 }}>
-          TF
-        </span>
-      </div>
+      <Image
+        src="/logo.png"
+        alt="TradeFix"
+        width={size}
+        height={size}
+        className="shrink-0 rounded-full"
+        priority
+      />
       {showWordmark && (
-        <span className="text-[15px] font-semibold tracking-tight text-white">
+        <span className="text-[15px] font-semibold tracking-tight text-foreground">
           trade<span className="text-accent">fix</span>
         </span>
       )}
