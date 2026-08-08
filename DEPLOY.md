@@ -227,6 +227,7 @@ Local database and cloud database are **separate**. Data your brother creates on
 
 | Problem | What to check |
 |---------|----------------|
+| Build fails: Vulnerable Next.js detected | Upgrade `frontend` Next.js and push (`package.json` + lockfile). Current target: `15.5.23` |
 | Build fails on `pydantic-core` / Python 3.14 | Set Render env `PYTHON_VERSION=3.11.11`, then **Manual Deploy → Clear build cache & deploy** |
 | Site loads but login / API fails | Vercel `NEXT_PUBLIC_API_URL` must match the Render URL (https, no trailing slash) |
 | Browser CORS / blocked request | Render `FRONTEND_ORIGIN` must match the Vercel URL exactly |
