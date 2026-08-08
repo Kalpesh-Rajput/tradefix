@@ -42,7 +42,11 @@ class Settings(BaseSettings):
     openrouter_model: str = "openrouter/free"
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
 
+    # Comma-separated list is supported, e.g.
+    # https://tradefix.vercel.app,https://tradefix-xxx-kalpesh-rajput.vercel.app
     frontend_origin: str = "http://localhost:3000"
+    # Allow Vercel production + preview URLs without listing every deploy hash.
+    frontend_origin_regex: str = r"https://.*\.vercel\.app"
 
     google_client_id: str = ""
     google_client_secret: str = ""
@@ -54,6 +58,19 @@ class Settings(BaseSettings):
     max_avatar_bytes: int = 2 * 1024 * 1024  # 2 MB
     max_screenshot_bytes: int = 5 * 1024 * 1024  # 5 MB
     max_recap_screenshots: int = 5
+
+    @property
+    def cors_origins(self) -> list[str]:
+        origins = [part.strip() for part in self.frontend_origin.split(",") if part.strip()]
+        for local in (
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3001",
+        ):
+            if local not in origins:
+                origins.append(local)
+        return origins
 
 
 @lru_cache

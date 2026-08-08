@@ -171,15 +171,19 @@ If health fails, open **Logs** on Render and check for database URL / migration 
 ### 1. Update CORS on Render
 
 1. Render → your web service → **Environment**.
-2. Set:
+2. Set `FRONTEND_ORIGIN` to your **stable Production** Vercel domain (Project → **Domains**), e.g.:
 
    ```text
-   FRONTEND_ORIGIN=https://tradefix-xxxx.vercel.app
+   FRONTEND_ORIGIN=https://tradefix.vercel.app
    ```
 
-   Use your **exact** Vercel URL. No trailing slash.
+   No trailing slash. You can also comma-separate multiple URLs.
 
-3. Save — Render will redeploy.
+3. Optional: keep the default `FRONTEND_ORIGIN_REGEX=https://.*\.vercel\.app` (built into the app) so preview URLs like `https://tradefix-xxxx-kalpesh-rajput.vercel.app` also work after you deploy the latest backend.
+
+4. Save — Render will redeploy.
+
+**Prefer the Production domain** for your brother (not a one-off preview URL that changes every deploy).
 
 ### 2. Google login (optional)
 
