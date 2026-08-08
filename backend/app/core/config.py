@@ -1,6 +1,22 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def normalize_database_url(url: str) -> str:
+    """Force the psycopg (v3) SQLAlchemy dialect.
+
+    Neon/Render often provide postgresql:// or postgres:// URLs. Those default
+    to psycopg2, which is not in requirements.txt.
+    """
+    if url.startswith("postgres://"):
+        return "postgresql+psycopg://" + url.removeprefix("postgres://")
+    if url.startswith("postgresql+psycopg2://"):
+        return "postgresql+psycopg://" + url.removeprefix("postgresql+psycopg2://")
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url.removeprefix("postgresql://")
+    return url
 
 
 class Settings(BaseSettings):
@@ -9,6 +25,13 @@ class Settings(BaseSettings):
     app_name: str = "TradeFix"
 
     database_url: str = "postgresql+psycopg://tradefix_user:yourpassword@localhost:5432/tradefix"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalize_database_url(cls, value: object) -> object:
+        if isinstance(value, str):
+            return normalize_database_url(value.strip())
+        return value
 
     jwt_secret: str = "change-this-to-a-long-random-string"
     jwt_algorithm: str = "HS256"
