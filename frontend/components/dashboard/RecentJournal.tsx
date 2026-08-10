@@ -51,7 +51,7 @@ export function RecentJournal({
                 <Badge tone="gold">{c.emotion}</Badge>
                 <span className="text-[11px] text-muted">{c.session}</span>
               </div>
-              <p className="mt-3 line-clamp-3 text-sm text-white/90">{c.summary}</p>
+              <p className="mt-3 line-clamp-3 text-sm text-foreground/90">{c.summary}</p>
               <p className="mt-3 text-xs text-muted">
                 Mood {c.score}/10 · {c.tradeCount} trade{c.tradeCount === 1 ? "" : "s"}
               </p>

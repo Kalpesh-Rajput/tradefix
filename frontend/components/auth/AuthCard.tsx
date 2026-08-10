@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Input, PasswordInput } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api";
 import { isGoogleConfigured, requestGoogleIdToken } from "@/lib/google";
 
@@ -106,7 +106,7 @@ export function AuthCard({ mode }: AuthCardProps) {
       </motion.div>
 
       <motion.h1
-        className="text-center text-2xl font-semibold tracking-tight text-white"
+        className="text-center text-2xl font-semibold tracking-tight text-foreground"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.14 }}
@@ -114,7 +114,7 @@ export function AuthCard({ mode }: AuthCardProps) {
         {isSignup ? "Create account" : "Sign in"}
       </motion.h1>
       <motion.p
-        className="mt-1.5 text-center text-sm text-zinc-400"
+        className="mt-1.5 text-center text-sm text-muted"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -129,8 +129,8 @@ export function AuthCard({ mode }: AuthCardProps) {
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.98 }}
         className={clsx(
-          "mt-6 flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-surface-2 px-4 py-2.5 text-sm font-medium text-zinc-200 transition-colors",
-          "hover:bg-zinc-800/80 disabled:cursor-not-allowed disabled:opacity-50"
+          "mt-6 flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-sm font-medium text-foreground transition-colors",
+          "hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-50"
         )}
       >
         <GoogleIcon />
@@ -138,15 +138,15 @@ export function AuthCard({ mode }: AuthCardProps) {
       </motion.button>
 
       {!googleReady && (
-        <p className="mt-2 text-center text-xs text-zinc-500">
-          Set <span className="font-mono text-zinc-400">NEXT_PUBLIC_GOOGLE_CLIENT_ID</span> to enable Google.
+        <p className="mt-2 text-center text-xs text-muted">
+          Set <span className="font-mono text-foreground/80">NEXT_PUBLIC_GOOGLE_CLIENT_ID</span> to enable Google.
         </p>
       )}
 
       <div className="my-5 flex items-center gap-3">
-        <div className="h-px flex-1 bg-white/10" />
-        <span className="text-xs uppercase tracking-wide text-zinc-500">or</span>
-        <div className="h-px flex-1 bg-white/10" />
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs uppercase tracking-wide text-muted">or</span>
+        <div className="h-px flex-1 bg-border" />
       </div>
 
       <form onSubmit={onSubmit} className="space-y-3">
@@ -169,8 +169,7 @@ export function AuthCard({ mode }: AuthCardProps) {
           autoComplete="email"
           disabled={submitting || googleLoading}
         />
-        <Input
-          type="password"
+        <PasswordInput
           required
           minLength={isSignup ? 8 : undefined}
           value={password}
@@ -197,7 +196,7 @@ export function AuthCard({ mode }: AuthCardProps) {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-zinc-400">
+      <p className="mt-6 text-center text-sm text-muted">
         {isSignup ? (
           <>
             Already have an account?{" "}

@@ -18,7 +18,7 @@ export function SegmentedControl<T extends string>({
   layoutId?: string;
 }) {
   return (
-    <div className="inline-flex w-full items-center gap-0.5 rounded-lg bg-zinc-900 p-1">
+    <div className="inline-flex w-full items-center gap-0.5 rounded-lg bg-surface-2 p-1">
       {options.map((opt) => {
         const active = opt.value === value;
         return (
@@ -29,13 +29,13 @@ export function SegmentedControl<T extends string>({
             className={clsx(
               "relative flex-1 rounded-md text-xs font-semibold capitalize transition-all",
               size === "sm" ? "px-3 py-1.5" : "py-1.5",
-              active ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-white"
+              active ? "text-background shadow-sm" : "text-muted hover:text-foreground"
             )}
           >
             {active && (
               <motion.span
                 layoutId={layoutId}
-                className="absolute inset-0 rounded-md bg-white shadow-sm"
+                className="absolute inset-0 rounded-md bg-foreground shadow-sm"
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}
@@ -77,7 +77,7 @@ export function ChipGroup({
                 ? tone === "danger"
                   ? "border-destructive/40 bg-destructive/10 text-destructive"
                   : "border-primary/30 bg-primary/10 text-primary"
-                : "border-white/10 text-zinc-400 hover:text-white"
+                : "border-border text-muted hover:text-foreground"
             )}
           >
             {item}
@@ -100,7 +100,7 @@ export function Section({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[10px] uppercase tracking-wider text-zinc-500">
+      <label className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted">
         {title}
         {subtitle ? <span className="sr-only"> {subtitle}</span> : null}
       </label>
@@ -112,7 +112,7 @@ export function Section({
 export function FieldLabel({ children, error }: { children: ReactNode; error?: string }) {
   return (
     <div className="mb-1 flex items-center justify-between">
-      <label className="text-[10px] uppercase tracking-wider text-zinc-500">{children}</label>
+      <label className="text-[10px] uppercase tracking-wider text-muted">{children}</label>
       {error && <span className="text-[10px] text-destructive">{error}</span>}
     </div>
   );

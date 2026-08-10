@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { Check, ChevronLeft, Loader2, Moon, Star, Sun } from "lucide-react";
+import { Check, ChevronLeft, Loader2, Star } from "lucide-react";
 import {
   MouseEvent,
   ReactNode,
@@ -12,9 +12,8 @@ import {
   useState,
 } from "react";
 
-import { useAppearance } from "@/components/providers/AppearanceProvider";
 import { Logo } from "@/components/ui/Logo";
-import { resolveTheme } from "@/lib/appearance";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 interface OnboardingShellProps {
   step: number;
@@ -103,37 +102,6 @@ function SegmentProgress({ step }: { step: number }) {
   );
 }
 
-function ThemeToggle() {
-  const { theme, setTheme, saving } = useAppearance();
-  const [systemDark, setSystemDark] = useState(true);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    setSystemDark(mq.matches);
-    const onChange = () => setSystemDark(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  const resolved = resolveTheme(theme, systemDark);
-  const isLight = resolved === "light";
-
-  return (
-    <motion.button
-      type="button"
-      disabled={saving}
-      whileHover={{ scale: 1.06 }}
-      whileTap={{ scale: 0.94 }}
-      onClick={() => setTheme(isLight ? "dark" : "light")}
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-foreground/70 transition hover:bg-surface-2 hover:text-foreground disabled:opacity-60"
-      aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}
-      title={isLight ? "Dark mode" : "Light mode"}
-    >
-      {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-    </motion.button>
-  );
-}
-
 function StarRating() {
   return (
     <div className="flex items-center gap-0.5" aria-label="4.8 out of 5 stars">
@@ -141,7 +109,7 @@ function StarRating() {
         <span
           key={i}
           className={clsx(
-            "flex h-2.5 w-2.5 items-center justify-center rounded-[2px]",
+            "flex h-3 w-3 items-center justify-center rounded-[2px]",
             i < 4 ? "bg-primary" : "bg-gradient-to-r from-primary from-50% to-primary/25 to-50%"
           )}
         >
@@ -154,46 +122,60 @@ function StarRating() {
 
 function SocialProofFooter() {
   const stats = [
-    {
-      id: "rated",
-      title: "Top Rated by Traders",
-      custom: (
-        <div className="mt-0.5 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-[10px] italic text-muted sm:justify-start">
-          <span>800+ Reviews</span>
-          <StarRating />
-          <span>4.8 stars</span>
-        </div>
-      ),
-    },
-    { id: "traders", value: "51,000+", label: "Active Traders" },
-    { id: "backtests", value: "200,000+", label: "Backtesting Sessions" },
+    { id: "traders", value: "10k+", label: "Active Traders" },
+    { id: "rated", value: "4.8★", label: "800+ Reviews" },
+    { id: "backtests", value: "200k+", label: "Backtesting Sessions" },
     { id: "trades", value: "20.5B+", label: "Trades Journaled" },
   ] as const;
 
   return (
-    <footer className="z-20 shrink-0 border-t border-border bg-surface-2/95 px-3 py-1.5 backdrop-blur-md sm:px-6">
-      <div className="mx-auto grid max-w-4xl scale-[0.92] grid-cols-2 gap-x-3 gap-y-1.5 sm:scale-100 sm:grid-cols-4 sm:gap-4 origin-bottom">
-        {stats.map((stat, i) => (
-          <motion.div
-            key={stat.id}
-            className="text-center sm:text-left"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 + i * 0.04 }}
-          >
-            {"title" in stat ? (
-              <>
-                <p className="text-[11px] font-medium leading-tight text-foreground sm:text-xs">{stat.title}</p>
-                {stat.custom}
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-semibold tracking-tight text-foreground sm:text-base">{stat.value}</p>
-                <p className="text-[10px] italic leading-tight text-muted">{stat.label}</p>
-              </>
-            )}
-          </motion.div>
-        ))}
+    <footer className="z-20 shrink-0 border-t border-border bg-surface-2/95 px-3 py-2.5 backdrop-blur-md sm:px-6 sm:py-3">
+      <div className="mx-auto flex max-w-4xl flex-col items-center gap-2.5 text-center">
+        <motion.div
+          className="space-y-1"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <p className="text-sm font-semibold tracking-tight text-foreground sm:text-base">
+            The{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              #1 Trading Journal App
+            </span>{" "}
+            for Serious Traders
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted">
+            <span className="font-medium text-foreground/75">Trusted by traders worldwide</span>
+            <StarRating />
+          </div>
+        </motion.div>
+
+        <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.id}
+              className={clsx(
+                "rounded-lg border border-border/80 bg-background/50 px-2.5 py-2 sm:px-3 sm:py-2.5",
+                stat.id === "traders" && "border-primary/30 bg-primary/5"
+              )}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.06 + i * 0.04 }}
+            >
+              <p
+                className={clsx(
+                  "text-base font-bold tracking-tight sm:text-lg",
+                  stat.id === "traders" ? "text-primary" : "text-foreground"
+                )}
+              >
+                {stat.value}
+              </p>
+              <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
+                {stat.label}
+              </p>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </footer>
   );
@@ -208,11 +190,11 @@ export function OnboardingShell({ step, onBack, children }: OnboardingShellProps
 
       <header className="relative z-10 flex shrink-0 items-center justify-between gap-4 px-4 py-2.5 sm:px-8">
         <motion.div
-          className="flex w-[120px] min-w-0 shrink-0 items-center gap-2 sm:w-[140px]"
+          className="flex w-[150px] min-w-0 shrink-0 items-center gap-2 sm:w-[180px]"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Logo size={28} showWordmark />
+          <Logo size={44} showWordmark />
         </motion.div>
 
         {showProgress ? (
@@ -238,17 +220,17 @@ export function OnboardingShell({ step, onBack, children }: OnboardingShellProps
         )}
 
         <div className="flex w-[120px] shrink-0 justify-end sm:w-[140px]">
-          <ThemeToggle />
+          <ThemeToggle className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-foreground/70 transition hover:bg-surface-2 hover:text-foreground disabled:opacity-60" />
         </div>
       </header>
 
       <main className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-1 pt-1 sm:px-8">
-        <div className="mx-auto flex h-full w-full max-w-2xl min-h-0 flex-1 flex-col overflow-hidden [perspective:1200px]">
+        <div className="mx-auto flex h-full min-h-0 w-full max-w-2xl flex-1 flex-col overflow-hidden [perspective:1200px]">
           {children}
         </div>
       </main>
 
-      <SocialProofFooter />
+      {showProgress ? <SocialProofFooter /> : null}
     </div>
   );
 }
@@ -385,6 +367,7 @@ export function ContinueButton({
 
   return (
     <motion.button
+      id="onboarding-continue"
       type="button"
       disabled={disabled || loading}
       onClick={onClick}

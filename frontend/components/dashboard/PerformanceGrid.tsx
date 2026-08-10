@@ -232,7 +232,7 @@ function ThisWeekStrip({ days }: { days: CalendarDay[] }) {
                 }`}
                 style={{ background: bg }}
               >
-                <span className="text-[11px] font-medium leading-none text-white/60">{d.getDate()}</span>
+                <span className="text-[11px] font-medium leading-none text-foreground/60">{d.getDate()}</span>
                 {hasTrades && pnl != null ? (
                   <span
                     className={`font-mono text-[9px] leading-none ${

@@ -77,18 +77,18 @@ export function Sidebar({ expanded: forceExpanded = false }: { expanded?: boolea
         onMouseEnter={() => !forceExpanded && setHovered(true)}
         onMouseLeave={() => !forceExpanded && setHovered(false)}
         className={clsx(
-          "absolute left-0 top-0 z-40 flex h-screen [height:100dvh] flex-col overflow-hidden border-r border-white/[0.06] bg-black py-4 transition-[width,box-shadow] duration-200 ease-out",
+          "absolute left-0 top-0 z-40 flex h-screen [height:100dvh] flex-col overflow-hidden border-r border-border bg-sidebar py-4 transition-[width,box-shadow] duration-200 ease-out",
           open ? "w-[220px]" : "w-12",
-          open && !forceExpanded && "shadow-[8px_0_24px_rgba(0,0,0,0.45)]"
+          open && !forceExpanded && "shadow-[8px_0_24px_rgba(0,0,0,0.12)]"
         )}
       >
         <Link href="/today" className="mb-8 flex shrink-0 items-center gap-2.5 px-3">
-          <span className="flex w-6 shrink-0 items-center justify-center text-white">
+          <span className="flex w-6 shrink-0 items-center justify-center text-foreground">
             <CandlestickMark />
           </span>
           <span
             className={clsx(
-              "whitespace-nowrap text-sm font-semibold tracking-tight text-white transition-opacity duration-150",
+              "whitespace-nowrap text-sm font-semibold tracking-tight text-foreground transition-opacity duration-150",
               open ? "opacity-100" : "pointer-events-none opacity-0"
             )}
           >
@@ -115,7 +115,7 @@ export function Sidebar({ expanded: forceExpanded = false }: { expanded?: boolea
                   "relative flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors",
                   active
                     ? "bg-primary/10 text-primary"
-                    : "text-zinc-500 hover:bg-white/5 hover:text-white"
+                    : "text-muted hover:bg-foreground/5 hover:text-foreground"
                 )}
               >
                 {active && <div className="absolute bottom-1 left-0 top-1 w-0.5 rounded-r bg-primary" />}
@@ -135,10 +135,10 @@ export function Sidebar({ expanded: forceExpanded = false }: { expanded?: boolea
           })}
         </nav>
 
-        <div className="mt-2 flex w-full flex-col gap-0.5 border-t border-white/[0.06] px-1.5 pt-3">
+        <div className="mt-2 flex w-full flex-col gap-0.5 border-t border-border px-1.5 pt-3">
           <button
             type="button"
-            className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-zinc-500 transition-colors hover:bg-white/5 hover:text-white"
+            className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-muted transition-colors hover:bg-foreground/5 hover:text-foreground"
             title={t("nav.getApp")}
           >
             <Smartphone className="h-4 w-4 shrink-0" />
@@ -149,10 +149,10 @@ export function Sidebar({ expanded: forceExpanded = false }: { expanded?: boolea
 
           <Link
             href="/settings/profile"
-            className="flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5"
+            className="flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-foreground/5"
             title={t("common.settings")}
           >
-            <span className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-white/20">
+            <span className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border">
               {user?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -161,12 +161,12 @@ export function Sidebar({ expanded: forceExpanded = false }: { expanded?: boolea
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="flex h-full w-full items-center justify-center bg-zinc-800 text-[10px] font-semibold text-white">
+                <span className="flex h-full w-full items-center justify-center bg-surface-2 text-[10px] font-semibold text-foreground">
                   {initial}
                 </span>
               )}
             </span>
-            <span className={clsx("truncate text-sm text-zinc-300 transition-opacity", open ? "opacity-100" : "opacity-0")}>
+            <span className={clsx("truncate text-sm text-foreground/80 transition-opacity", open ? "opacity-100" : "opacity-0")}>
               {user?.name || name}
             </span>
           </Link>
@@ -174,7 +174,7 @@ export function Sidebar({ expanded: forceExpanded = false }: { expanded?: boolea
           <button
             type="button"
             onClick={() => logout()}
-            className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-zinc-500 transition-colors hover:bg-destructive/10 hover:text-destructive"
+            className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-muted transition-colors hover:bg-destructive/10 hover:text-destructive"
             title={t("common.signOut")}
             data-testid="nav-sign-out"
           >

@@ -12,16 +12,16 @@ export function MobileNav() {
 
   return (
     <>
-      <div className="flex items-center justify-between border-b border-white/[0.06] bg-black px-4 py-3 md:hidden">
+      <div className="flex items-center justify-between border-b border-border bg-background px-4 py-3 md:hidden">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold tracking-tight text-white">
+          <span className="text-sm font-semibold tracking-tight text-foreground">
             trade<span className="text-primary">fix</span>
           </span>
         </div>
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="rounded-lg border border-white/10 p-2 text-zinc-500"
+          className="rounded-lg border border-border p-2 text-muted"
           aria-label={t("common.openMenu")}
         >
           <Menu className="h-5 w-5" />
@@ -40,7 +40,7 @@ export function MobileNav() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="absolute right-2 top-3 z-10 rounded-lg p-1.5 text-zinc-500"
+              className="absolute right-2 top-3 z-10 rounded-lg p-1.5 text-muted"
               aria-label={t("common.closeMenu")}
             >
               <X className="h-4 w-4" />

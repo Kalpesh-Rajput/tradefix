@@ -7,6 +7,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { firstName, fmtPct } from "@/lib/format";
 
 export function DashboardHeader({
@@ -28,11 +29,11 @@ export function DashboardHeader({
   const positive = todaysPnl >= 0;
 
   return (
-    <header className="z-30 shrink-0 border-b border-white/[0.06] bg-black px-6 pb-4 pt-5" data-layout="today-header-v2">
+    <header className="z-30 shrink-0 border-b border-border bg-background px-6 pb-4 pt-5" data-layout="today-header-v2">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="mb-1.5 text-[10px] uppercase tracking-widest text-zinc-500">{formatTodayLabelShort()}</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-white">{t("dashboard.hey", { name })}</h1>
+          <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted">{formatTodayLabelShort()}</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground">{t("dashboard.hey", { name })}</h1>
         </div>
 
         <div className="mt-1 flex shrink-0 items-center gap-2">
@@ -45,6 +46,7 @@ export function DashboardHeader({
             {t("common.addTrade")}
           </button>
           <PortfolioSwitcher />
+          <ThemeToggle />
         </div>
       </div>
 
@@ -53,7 +55,7 @@ export function DashboardHeader({
           <span className={`font-mono text-3xl font-semibold ${positive ? "text-primary" : "text-destructive"}`}>
             {formatMoney(todaysPnl, { digits: todaysPnl === 0 ? 0 : 2 })}
           </span>
-          <span className="mb-0.5 text-sm text-zinc-500">{t("common.today")}</span>
+          <span className="mb-0.5 text-sm text-muted">{t("common.today")}</span>
         </div>
 
         <div className="flex shrink-0 items-center gap-6">
@@ -69,7 +71,7 @@ export function DashboardHeader({
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-right">
-      <div className="mb-0.5 text-[10px] uppercase tracking-wider text-zinc-500">{label}</div>
+      <div className="mb-0.5 text-[10px] uppercase tracking-wider text-muted">{label}</div>
       <div className="font-mono text-sm text-primary">{value}</div>
     </div>
   );

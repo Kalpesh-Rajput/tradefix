@@ -38,9 +38,9 @@ const ICONS = {
 } as const;
 
 const STYLES = {
-  success: "border-primary/30 bg-zinc-950 text-primary",
-  error: "border-destructive/40 bg-zinc-950 text-destructive",
-  info: "border-white/10 bg-zinc-950 text-zinc-200",
+  success: "border-primary/30 bg-surface text-primary",
+  error: "border-destructive/40 bg-surface text-destructive",
+  info: "border-border bg-surface text-foreground",
 } as const;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -98,15 +98,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   >
                     <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-white">{item.title}</p>
+                      <p className="text-sm font-medium text-foreground">{item.title}</p>
                       {item.description && (
-                        <p className="mt-0.5 text-xs text-zinc-400">{item.description}</p>
+                        <p className="mt-0.5 text-xs text-muted">{item.description}</p>
                       )}
                     </div>
                     <button
                       type="button"
                       onClick={() => dismiss(item.id)}
-                      className="rounded p-0.5 text-zinc-500 transition hover:text-white"
+                      className="rounded p-0.5 text-muted transition hover:text-foreground"
                       aria-label="Dismiss notification"
                     >
                       <X className="h-3.5 w-3.5" />

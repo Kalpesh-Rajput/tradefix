@@ -11,10 +11,11 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 
-type Option = { value: string; label: string };
+type Option = { value: string; label: string; icon?: ReactNode };
 
 type SearchableSelectProps = {
   options: Option[];
@@ -27,6 +28,7 @@ type SearchableSelectProps = {
   id?: string;
   name?: string;
   className?: string;
+  triggerClassName?: string;
   "aria-label"?: string;
 };
 
@@ -52,6 +54,7 @@ export function SearchableSelect({
   id,
   name,
   className,
+  triggerClassName,
   "aria-label": ariaLabel,
 }: SearchableSelectProps) {
   const listId = useId();
@@ -82,18 +85,36 @@ export function SearchableSelect({
   const updatePosition = useCallback(() => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const gap = 4;
-    const spaceBelow = window.innerHeight - rect.bottom - 12;
-    const spaceAbove = rect.top - 12;
-    // Prefer opening downward; only flip up if below has almost no room
-    const openDown = spaceBelow >= 160 || spaceBelow >= spaceAbove;
-    const maxHeight = Math.min(280, Math.max(140, openDown ? spaceBelow : spaceAbove));
-    const top = openDown ? rect.bottom + gap : rect.top - gap - maxHeight;
+    const gap = 6;
+    const pad = 8;
+    const preferredMax = 280;
+    const minPanel = 140;
+    const spaceBelow = window.innerHeight - rect.bottom - pad;
+    const spaceAbove = rect.top - pad;
+
+    // Prefer opening below the trigger. Only open upward when below is too tight
+    // and there is clearly more room above — never let the panel leave the viewport.
+    const openDown = spaceBelow >= minPanel || spaceBelow >= spaceAbove;
+    const available = Math.max(80, openDown ? spaceBelow : spaceAbove);
+    const maxHeight = Math.min(preferredMax, available);
+
+    let top = openDown ? rect.bottom + gap : rect.top - gap - maxHeight;
+    top = Math.max(pad, top);
+
+    // Keep panel fully inside the viewport after clamping top.
+    const maxHeightClamped = Math.max(80, Math.min(maxHeight, window.innerHeight - top - pad));
+    if (!openDown) {
+      top = Math.max(pad, rect.top - gap - maxHeightClamped);
+    }
+
+    const width = Math.min(rect.width, window.innerWidth - pad * 2);
+    const left = Math.max(pad, Math.min(rect.left, window.innerWidth - width - pad));
+
     setPos({
       top,
-      left: rect.left,
-      width: rect.width,
-      maxHeight,
+      left,
+      width,
+      maxHeight: maxHeightClamped,
     });
   }, []);
 
@@ -203,7 +224,7 @@ export function SearchableSelect({
       ? createPortal(
           <div
             ref={panelRef}
-            className="fixed z-[200] flex flex-col overflow-hidden rounded-lg border border-white/10 bg-zinc-950 shadow-xl shadow-black/60"
+            className="fixed z-[200] flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl shadow-black/20"
             style={{
               top: pos.top,
               left: pos.left,
@@ -211,9 +232,9 @@ export function SearchableSelect({
               maxHeight: pos.maxHeight,
             }}
           >
-            <div className="shrink-0 border-b border-white/[0.06] p-2">
+            <div className="shrink-0 border-b border-border p-2">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
                 <input
                   ref={searchRef}
                   type="search"
@@ -224,7 +245,7 @@ export function SearchableSelect({
                   }}
                   onKeyDown={onSearchKeyDown}
                   placeholder={searchPlaceholder}
-                  className="w-full rounded-md border border-white/10 bg-black py-2 pl-8 pr-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-primary/40"
+                  className="w-full rounded-md border border-border bg-background py-2 pl-8 pr-2 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary/40"
                   aria-autocomplete="list"
                   aria-controls={listId}
                   autoComplete="off"
@@ -240,7 +261,7 @@ export function SearchableSelect({
               className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1"
             >
               {filtered.length === 0 ? (
-                <li className="px-3 py-6 text-center text-xs text-zinc-500">No matches</li>
+                <li className="px-3 py-6 text-center text-xs text-muted">No matches</li>
               ) : (
                 filtered.map((opt, index) => {
                   const isSelected = opt.value === value;
@@ -253,9 +274,9 @@ export function SearchableSelect({
                       aria-selected={isSelected}
                       className={clsx(
                         "flex cursor-pointer items-center gap-2 px-3 py-2 text-sm transition-colors",
-                        isActive && "bg-white/[0.06]",
-                        isSelected ? "text-primary" : "text-zinc-200",
-                        !isActive && "hover:bg-white/[0.04]"
+                        isActive && "bg-foreground/5",
+                        isSelected ? "text-primary" : "text-foreground",
+                        !isActive && "hover:bg-foreground/5"
                       )}
                       onMouseEnter={() => setHighlight(index)}
                       onMouseDown={(e) => {
@@ -263,6 +284,7 @@ export function SearchableSelect({
                         selectOption(opt);
                       }}
                     >
+                      {opt.icon ? <span className="shrink-0">{opt.icon}</span> : null}
                       <span className="min-w-0 flex-1 truncate">{opt.label}</span>
                       {isSelected && (
                         <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
@@ -273,7 +295,7 @@ export function SearchableSelect({
               )}
             </ul>
 
-            <div className="shrink-0 border-t border-white/[0.06] px-3 py-1.5 text-[10px] text-zinc-600">
+            <div className="shrink-0 border-t border-border px-3 py-1.5 text-[10px] text-muted">
               {filtered.length === options.length
                 ? `${options.length} options`
                 : `${filtered.length} of ${options.length}`}
@@ -299,17 +321,21 @@ export function SearchableSelect({
         onClick={() => (open ? close() : openPanel())}
         onKeyDown={onTriggerKeyDown}
         className={clsx(
-          "flex w-full items-center justify-between gap-2 rounded-lg border border-white/10 bg-black px-3 py-2.5 text-left text-sm outline-none transition",
-          "focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/30",
-          disabled ? "cursor-not-allowed opacity-50" : "hover:border-white/20",
-          open && "border-primary/40"
+          "flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2.5 text-left text-sm outline-none transition",
+          "focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary",
+          disabled ? "cursor-not-allowed opacity-50" : "hover:border-foreground/20",
+          open && "border-primary ring-1 ring-primary",
+          triggerClassName
         )}
       >
-        <span className={clsx("min-w-0 truncate", selected ? "text-white" : "text-zinc-600")}>
-          {selected?.label || placeholder}
+        <span className="flex min-w-0 flex-1 items-center gap-2.5">
+          {selected?.icon ? <span className="shrink-0">{selected.icon}</span> : null}
+          <span className={clsx("min-w-0 truncate", selected ? "text-foreground" : "text-muted")}>
+            {selected?.label || placeholder}
+          </span>
         </span>
         <ChevronDown
-          className={clsx("h-4 w-4 shrink-0 text-zinc-500 transition", open && "rotate-180")}
+          className={clsx("h-4 w-4 shrink-0 text-muted transition", open && "rotate-180")}
           aria-hidden
         />
       </button>

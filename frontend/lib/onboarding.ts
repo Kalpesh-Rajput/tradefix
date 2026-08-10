@@ -13,22 +13,7 @@ export const CAPITAL_OPTIONS = [
   { id: "not_started", label: "I haven't started yet" },
 ] as const;
 
-export const BROKER_OPTIONS = [
-  "Interactive Brokers",
-  "TD Ameritrade / Thinkorswim",
-  "Robinhood",
-  "E-TRADE",
-  "Fidelity",
-  "Charles Schwab",
-  "Webull",
-  "TradingView Paper",
-  "MetaTrader / Forex broker",
-  "Binance",
-  "Coinbase",
-  "NinjaTrader",
-  "Tradovate",
-  "Other",
-] as const;
+export { BROKER_OPTIONS, isKnownBroker } from "@/lib/brokers";
 
 export const MARKET_OPTIONS = [
   { id: "stocks", label: "Stocks" },

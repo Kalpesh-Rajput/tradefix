@@ -73,21 +73,64 @@ html.light .bg-zinc-950\/80 {
   background-color: hsl(var(--surface)) !important;
 }
 
-html.light .bg-zinc-900 {
+html.light .bg-zinc-900,
+html.light .bg-zinc-800,
+html.light .bg-zinc-800\/80 {
   background-color: hsl(var(--surface-2)) !important;
 }
 
-html.light .text-white {
+/* Primary text on light surfaces (skip forced white on accent swatches) */
+html.light .text-white:not(.text-on-accent) {
   color: hsl(var(--foreground)) !important;
+}
+
+html.light .text-white\/90:not(.text-on-accent),
+html.light .text-white\/80:not(.text-on-accent),
+html.light .text-white\/70:not(.text-on-accent),
+html.light .text-white\/60:not(.text-on-accent),
+html.light .text-white\/50:not(.text-on-accent) {
+  color: hsl(var(--foreground) / 0.75) !important;
+}
+
+html.light .hover\:text-white:hover:not(.text-on-accent),
+html.light .hover\:text-zinc-200:hover {
+  color: hsl(var(--foreground)) !important;
+}
+
+html.light .text-zinc-100,
+html.light .text-zinc-200 {
+  color: hsl(var(--foreground)) !important;
+}
+
+html.light .text-zinc-300,
+html.light .text-zinc-400,
+html.light .text-gray-300,
+html.light .text-gray-400 {
+  color: hsl(240 4% 32%) !important;
+}
+
+html.light .text-zinc-500,
+html.light .text-zinc-600,
+html.light .text-gray-500 {
+  color: hsl(var(--muted)) !important;
+}
+
+html.light .placeholder\:text-gray-500::placeholder,
+html.light .placeholder\:text-zinc-500::placeholder,
+html.light .placeholder\:text-zinc-600::placeholder {
+  color: hsl(var(--muted)) !important;
 }
 
 html.light .border-white\/\[0\.06\],
 html.light .border-white\/10,
-html.light .border-white\/\[0\.08\] {
+html.light .border-white\/\[0\.08\],
+html.light .border-white\/20 {
   border-color: hsl(var(--border)) !important;
 }
 
 html.light .bg-white\/5,
+html.light .bg-white\/10,
+html.light .bg-white\/\[0\.02\],
 html.light .bg-white\/\[0\.04\],
 html.light .bg-white\/\[0\.06\],
 html.light .bg-white\/\[0\.08\] {
@@ -95,18 +138,10 @@ html.light .bg-white\/\[0\.08\] {
 }
 
 html.light .hover\:bg-white\/\[0\.04\]:hover,
-html.light .hover\:bg-white\/5:hover {
+html.light .hover\:bg-white\/5:hover,
+html.light .hover\:bg-zinc-800:hover,
+html.light .hover\:bg-zinc-800\/80:hover {
   background-color: hsl(var(--foreground) / 0.06) !important;
-}
-
-html.light .text-zinc-300,
-html.light .text-zinc-400 {
-  color: hsl(240 4% 30%) !important;
-}
-
-html.light .text-zinc-500,
-html.light .text-zinc-600 {
-  color: hsl(240 4% 46%) !important;
 }
 
 html.light input,

@@ -23,10 +23,12 @@ import { useRouter } from "next/navigation";
 
 import { ContinueButton, KineticTitle, OnboardingShell, OptionCard } from "@/components/onboarding/OnboardingShell";
 import { Logo } from "@/components/ui/Logo";
+import { BrokerIcon } from "@/components/ui/BrokerIcon";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { ApiError } from "@/lib/api";
+import { BROKER_OPTIONS, isKnownBroker } from "@/lib/brokers";
 import {
-  BROKER_OPTIONS,
   CAPITAL_OPTIONS,
   EXPERIENCE_OPTIONS,
   GOAL_OPTIONS,
@@ -108,7 +110,7 @@ export function OnboardingWizard() {
     setExperience(user.trading_experience ?? null);
     setCapital(user.capital_sources ?? []);
     const savedBroker = user.primary_broker ?? "";
-    if (savedBroker && !(BROKER_OPTIONS as readonly string[]).includes(savedBroker)) {
+    if (savedBroker && !isKnownBroker(savedBroker)) {
       setBroker("Other");
       setBrokerOther(savedBroker);
     } else {
@@ -122,6 +124,16 @@ export function OnboardingWizard() {
   }, [user, hydrated]);
 
   const brokerValue = broker === "Other" ? brokerOther.trim() : broker;
+
+  const brokerSelectOptions = useMemo(
+    () =>
+      BROKER_OPTIONS.map((b) => ({
+        value: b,
+        label: b,
+        icon: <BrokerIcon name={b} size={18} />,
+      })),
+    []
+  );
 
   const canContinue = useMemo(() => {
     switch (step) {
@@ -283,13 +295,13 @@ export function OnboardingWizard() {
                   />
                 ))}
                 <motion.div
-                  className="relative z-10 rounded-xl border border-border bg-surface/90 p-2.5 shadow-[0_20px_60px_-20px_hsl(var(--primary)/0.7)]"
+                  className="relative z-10"
                   initial={{ scale: 0.7, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", stiffness: 200, damping: 14 }}
-                  whileHover={{ scale: 1.06, rotate: 2 }}
+                  whileHover={{ scale: 1.04 }}
                 >
-                  <Logo size={64} />
+                  <Logo size={112} />
                 </motion.div>
               </div>
               <KineticTitle text="Welcome to TradeFix" className="sm:text-3xl" />
@@ -371,22 +383,18 @@ export function OnboardingWizard() {
               subtitle="Select only one"
               heroSrc="/onboarding/broker-hero.png"
             >
-              <motion.select
+              <SearchableSelect
                 value={broker}
-                onChange={(e) => {
-                  setBroker(e.target.value);
-                  if (e.target.value !== "Other") setBrokerOther("");
+                onChange={(next) => {
+                  setBroker(next);
+                  if (next !== "Other") setBrokerOther("");
                 }}
-                whileFocus={{ scale: 1.01 }}
-                className="w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="">Select broker</option>
-                {BROKER_OPTIONS.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </motion.select>
+                options={brokerSelectOptions}
+                placeholder="Select broker"
+                searchPlaceholder="Search brokers…"
+                aria-label="Primary broker"
+                triggerClassName="rounded-xl border-border bg-surface-2 px-4 py-3"
+              />
               <AnimatePresence>
                 {broker === "Other" && (
                   <motion.div
@@ -478,13 +486,21 @@ export function OnboardingWizard() {
                 ))}
               </div>
 
-              <AnimatePresence>
+              <AnimatePresence
+                onExitComplete={() => undefined}
+              >
                 {referral && needsReferralDetail(referral) && (
                   <motion.div
                     key={referral}
                     initial={{ opacity: 0, y: 10, height: 0 }}
                     animate={{ opacity: 1, y: 0, height: "auto" }}
                     exit={{ opacity: 0, y: -6, height: 0 }}
+                    onAnimationComplete={() => {
+                      // Keep Finish visible when the detail panel expands
+                      document
+                        .getElementById("onboarding-continue")
+                        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    }}
                     className="mt-5 overflow-hidden rounded-xl border border-border bg-surface-2 p-4"
                   >
                     <p className="mb-3 text-center text-xs font-medium uppercase tracking-wide text-muted">
@@ -561,41 +577,39 @@ function StepFrame({
   children: ReactNode;
 }) {
   return (
-    <div
-      className={`mx-auto flex w-full max-w-xl min-h-0 flex-1 flex-col justify-center overflow-hidden ${
-        heroSrc ? "py-1" : "py-1 sm:py-2"
-      }`}
-    >
-      {heroSrc && (
-        <motion.div
-          className="mb-2 flex justify-center sm:mb-3"
-          initial={{ opacity: 0, scale: 0.85, rotate: -4 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          whileHover={{ scale: 1.06, rotate: 1 }}
-          transition={{ type: "spring", stiffness: 220, damping: 16 }}
-        >
-          <Image
-            src={heroSrc}
-            alt=""
-            width={200}
-            height={208}
-            className="h-auto w-full max-w-[120px] object-contain drop-shadow-[0_12px_40px_hsl(var(--primary)/0.25)] sm:max-w-[140px]"
-            priority
-          />
-        </motion.div>
-      )}
-      <KineticTitle text={title} />
-      {subtitle && (
-        <motion.p
-          className="mt-1 text-center text-xs text-muted sm:text-sm"
-          initial={{ opacity: 0, letterSpacing: "0.08em" }}
-          animate={{ opacity: 1, letterSpacing: "0.01em" }}
-          transition={{ delay: 0.2, duration: 0.45 }}
-        >
-          {subtitle}
-        </motion.p>
-      )}
-      <div className="mt-3 [perspective:900px] sm:mt-4">{children}</div>
+    <div className="mx-auto flex w-full max-w-xl min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+      <div className={`my-auto w-full ${heroSrc ? "py-2" : "py-2 sm:py-3"}`}>
+        {heroSrc && (
+          <motion.div
+            className="mb-2 flex justify-center sm:mb-3"
+            initial={{ opacity: 0, scale: 0.85, rotate: -4 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            whileHover={{ scale: 1.06, rotate: 1 }}
+            transition={{ type: "spring", stiffness: 220, damping: 16 }}
+          >
+            <Image
+              src={heroSrc}
+              alt=""
+              width={200}
+              height={208}
+              className="h-auto w-full max-w-[120px] object-contain drop-shadow-[0_12px_40px_hsl(var(--primary)/0.25)] sm:max-w-[140px]"
+              priority
+            />
+          </motion.div>
+        )}
+        <KineticTitle text={title} />
+        {subtitle && (
+          <motion.p
+            className="mt-1 text-center text-xs text-muted sm:text-sm"
+            initial={{ opacity: 0, letterSpacing: "0.08em" }}
+            animate={{ opacity: 1, letterSpacing: "0.01em" }}
+            transition={{ delay: 0.2, duration: 0.45 }}
+          >
+            {subtitle}
+          </motion.p>
+        )}
+        <div className="mt-3 pb-4 sm:mt-4 sm:pb-5">{children}</div>
+      </div>
     </div>
   );
 }

@@ -108,7 +108,9 @@ export function AppearanceSettingsPage() {
                   )}
                   style={{ backgroundColor: swatch.hex }}
                 >
-                  {selected && <Check className="h-4 w-4 text-white drop-shadow" strokeWidth={3} />}
+                  {selected && (
+                    <Check className="h-4 w-4 text-primary-foreground drop-shadow" strokeWidth={3} />
+                  )}
                 </button>
               );
             })}
