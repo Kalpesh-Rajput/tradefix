@@ -40,6 +40,9 @@ type LocalFilters = {
 
 const FILTERS_STORAGE_KEY = "tradefix_trades_log_filters";
 
+const fieldClass =
+  "h-9 rounded-md border border-[#E2E2E7] bg-white text-[13px] text-[var(--color-text-primary)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-primary/40";
+
 function assetLabel(type: AssetType): string {
   return ASSET_OPTIONS.find((a) => a.value === type)?.label.toLowerCase() ?? type;
 }
@@ -139,7 +142,16 @@ export function TradesLogPage() {
 
   useEffect(() => {
     setSelected(new Set());
-  }, [filters.status, filters.search, filters.dateFrom, filters.dateTo, filters.asset_type, filters.side, filters.setup_tag, accountId]);
+  }, [
+    filters.status,
+    filters.search,
+    filters.dateFrom,
+    filters.dateTo,
+    filters.asset_type,
+    filters.side,
+    filters.setup_tag,
+    accountId,
+  ]);
 
   const apiFilters = useMemo(
     () => ({
@@ -250,17 +262,19 @@ export function TradesLogPage() {
   const loading = accountsLoading || (isLoading && !!accountId);
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-      <header className="shrink-0 border-b border-white/[0.06] px-6 pb-4 pt-5">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-background)]">
+      <header className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 pb-4 pt-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-white">Trades</h1>
+          <h1 className="text-[20px] font-semibold tracking-tight text-[var(--color-text-primary)]">
+            Trades
+          </h1>
           <div className="flex items-center gap-2">
-            <PortfolioSwitcher />
+            <PortfolioSwitcher className="[&_button]:h-9 [&_button]:rounded-md [&_button]:border-[#E2E2E7] [&_button]:bg-white [&_button]:shadow-none [&_button]:text-[12px]" />
             <button
               type="button"
               onClick={() => openQuickLog(lastClosedTradeId)}
               disabled={!lastClosedTradeId}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/10 bg-zinc-900 px-3.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+              className="dash-btn-secondary disabled:cursor-not-allowed disabled:opacity-40"
               title={lastClosedTradeId ? "Quick log last closed trade" : "No closed trades yet"}
             >
               Quick Log
@@ -268,22 +282,22 @@ export function TradesLogPage() {
             <button
               type="button"
               onClick={() => openModal("manual")}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              className="dash-btn-primary text-on-accent"
             >
-              <Plus className="h-4 w-4" strokeWidth={2.5} />
+              <Plus className="h-4 w-4" strokeWidth={2.25} />
               Add Trade
             </button>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-3.5 flex flex-wrap items-center gap-2">
           <div className="relative min-w-[220px] flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
             <input
               value={filters.search}
               onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
               placeholder="Search symbol or strategy…"
-              className="h-9 w-full rounded-lg border border-white/10 bg-zinc-900/80 pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-primary/40"
+              className={clsx(fieldClass, "w-full pl-9 pr-3")}
             />
           </div>
 
@@ -293,7 +307,7 @@ export function TradesLogPage() {
               onChange={(v) => setFilters((f) => ({ ...f, dateFrom: v }))}
               ariaLabel="From date"
             />
-            <span className="text-zinc-600">–</span>
+            <span className="text-[var(--color-text-muted)]">–</span>
             <DateField
               value={filters.dateTo}
               onChange={(v) => setFilters((f) => ({ ...f, dateTo: v }))}
@@ -306,28 +320,30 @@ export function TradesLogPage() {
               type="button"
               onClick={() => setFiltersOpen((v) => !v)}
               className={clsx(
-                "inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm transition",
+                "inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-[13px] font-medium transition-colors duration-150",
                 activeExtraFilters || filtersOpen
-                  ? "border-primary/40 bg-primary/10 text-primary"
-                  : "border-white/10 bg-zinc-900/80 text-zinc-300 hover:border-white/20"
+                  ? "border-primary/40 bg-[var(--color-primary-light)] text-primary"
+                  : "border-[#E2E2E7] bg-white text-[var(--color-text-primary)] hover:bg-[var(--color-primary-very-light)]"
               )}
             >
-              <Filter className="h-3.5 w-3.5" />
+              <Filter className="h-3.5 w-3.5" strokeWidth={1.75} />
               Filters
               {activeExtraFilters && (
-                <span className="ml-0.5 rounded-full bg-primary/20 px-1.5 text-[10px] font-semibold text-primary">
+                <span className="ml-0.5 rounded-full bg-primary/15 px-1.5 text-[10px] font-semibold text-primary">
                   {[filters.asset_type, filters.side, filters.setup_tag].filter(Boolean).length}
                 </span>
               )}
             </button>
 
             {filtersOpen && (
-              <div className="absolute right-0 z-30 mt-2 w-72 rounded-xl border border-white/10 bg-zinc-950 p-3 shadow-xl">
+              <div className="absolute right-0 z-30 mt-1.5 w-72 rounded-md border border-[var(--color-border)] bg-white p-3 shadow-dropdown">
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-xs font-medium text-zinc-400">Filter trades</span>
+                  <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                    Filter trades
+                  </span>
                   <button
                     type="button"
-                    className="text-[11px] text-zinc-500 hover:text-white"
+                    className="text-[11px] font-medium text-[var(--color-text-tertiary)] hover:text-primary"
                     onClick={() =>
                       setFilters((f) => ({ ...f, asset_type: "", side: "", setup_tag: "" }))
                     }
@@ -335,13 +351,15 @@ export function TradesLogPage() {
                     Clear
                   </button>
                 </div>
-                <label className="mb-2 block text-[10px] uppercase tracking-wider text-zinc-600">Class</label>
+                <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  Class
+                </label>
                 <select
                   value={filters.asset_type}
                   onChange={(e) =>
                     setFilters((f) => ({ ...f, asset_type: e.target.value as AssetType | "" }))
                   }
-                  className="mb-3 h-9 w-full rounded-lg border border-white/10 bg-zinc-900 px-2 text-sm text-white outline-none"
+                  className={clsx(fieldClass, "mb-3 w-full px-2")}
                 >
                   <option value="">All classes</option>
                   {ASSET_OPTIONS.map((a) => (
@@ -350,30 +368,34 @@ export function TradesLogPage() {
                     </option>
                   ))}
                 </select>
-                <label className="mb-2 block text-[10px] uppercase tracking-wider text-zinc-600">Side</label>
+                <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  Side
+                </label>
                 <select
                   value={filters.side}
                   onChange={(e) =>
                     setFilters((f) => ({ ...f, side: e.target.value as TradeSide | "" }))
                   }
-                  className="mb-3 h-9 w-full rounded-lg border border-white/10 bg-zinc-900 px-2 text-sm text-white outline-none"
+                  className={clsx(fieldClass, "mb-3 w-full px-2")}
                 >
                   <option value="">All sides</option>
                   <option value="long">Long</option>
                   <option value="short">Short</option>
                 </select>
-                <label className="mb-2 block text-[10px] uppercase tracking-wider text-zinc-600">Strategy</label>
+                <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  Strategy
+                </label>
                 <input
                   value={filters.setup_tag}
                   onChange={(e) => setFilters((f) => ({ ...f, setup_tag: e.target.value }))}
                   placeholder="e.g. Breakout"
-                  className="h-9 w-full rounded-lg border border-white/10 bg-zinc-900 px-2 text-sm text-white outline-none placeholder:text-zinc-600"
+                  className={clsx(fieldClass, "w-full px-2")}
                 />
               </div>
             )}
           </div>
 
-          <div className="ml-auto flex items-center rounded-lg border border-white/10 p-0.5">
+          <div className="ml-auto flex items-center rounded-md border border-[#E2E2E7] bg-white p-0.5">
             {(
               [
                 { key: "all", label: "All", count: counts.all },
@@ -386,27 +408,29 @@ export function TradesLogPage() {
                 type="button"
                 onClick={() => setFilters((f) => ({ ...f, status: tab.key }))}
                 className={clsx(
-                  "h-8 rounded-md px-3 text-xs font-medium transition",
+                  "h-8 rounded-[5px] px-3 text-xs font-medium transition-colors duration-150",
                   filters.status === tab.key
-                    ? "bg-zinc-800 text-white"
-                    : "text-zinc-500 hover:text-zinc-300"
+                    ? "bg-[var(--color-primary-light)] text-primary"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 )}
               >
                 {tab.label}{" "}
-                <span className="tabular-nums text-zinc-500">({tab.count})</span>
+                <span className="tabular-nums text-[var(--color-text-tertiary)]">({tab.count})</span>
               </button>
             ))}
           </div>
         </div>
 
         {someSelected && (
-          <div className="mt-3 flex items-center gap-3 rounded-lg border border-white/10 bg-zinc-900/60 px-3 py-2">
-            <span className="text-xs text-zinc-400">{selected.size} selected</span>
+          <div className="mt-3 flex items-center gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-primary-very-light)] px-3 py-2">
+            <span className="text-xs font-medium text-[var(--color-text-primary)]">
+              {selected.size} selected
+            </span>
             <button
               type="button"
               onClick={handleBulkDelete}
               disabled={deleteTrades.isPending}
-              className="inline-flex items-center gap-1 text-xs text-destructive hover:underline disabled:opacity-50"
+              className="inline-flex items-center gap-1 text-xs font-medium text-negative hover:underline disabled:opacity-50"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Delete selected
@@ -414,7 +438,7 @@ export function TradesLogPage() {
             <button
               type="button"
               onClick={() => setSelected(new Set())}
-              className="ml-auto text-zinc-500 hover:text-white"
+              className="ml-auto rounded p-0.5 text-[var(--color-text-tertiary)] hover:bg-white hover:text-[var(--color-text-primary)]"
               aria-label="Clear selection"
             >
               <X className="h-3.5 w-3.5" />
@@ -423,23 +447,23 @@ export function TradesLogPage() {
         )}
       </header>
 
-      <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
+      <div className="min-h-0 flex-1 overflow-auto px-5 py-4 sm:px-6">
         {loading ? (
           <div className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-12" />
+              <Skeleton key={i} className="h-12 rounded-md" />
             ))}
           </div>
         ) : isError ? (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-zinc-300">
+          <div className="dash-card border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-[var(--color-text-primary)]">
             Couldn’t load trades.{" "}
-            <button type="button" onClick={() => refetch()} className="text-primary hover:underline">
+            <button type="button" onClick={() => refetch()} className="font-medium text-primary hover:underline">
               Try again
             </button>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/10 px-6 py-16 text-center">
-            <p className="text-sm text-zinc-400">
+          <div className="dash-card border-dashed px-6 py-16 text-center">
+            <p className="text-sm text-[var(--color-text-secondary)]">
               {trades.length === 0
                 ? "No trades yet — add your first trade or import a CSV."
                 : "No trades match these filters."}
@@ -448,7 +472,7 @@ export function TradesLogPage() {
               <button
                 type="button"
                 onClick={() => openModal("manual")}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground"
+                className="dash-btn-primary text-on-accent mt-4"
               >
                 <Plus className="h-4 w-4" />
                 Add Trade
@@ -456,30 +480,30 @@ export function TradesLogPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="dash-card overflow-x-auto">
             <table className="w-full min-w-[1100px] text-left text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06] text-[10px] uppercase tracking-wider text-zinc-500">
-                  <th className="w-10 py-3 pr-2">
+                <tr className="border-b border-[var(--color-border-light)] bg-[#F5F4F8] text-[11px] font-medium uppercase tracking-wider text-[#70717A]">
+                  <th className="w-10 py-2.5 pl-4 pr-2">
                     <input
                       type="checkbox"
                       checked={allVisibleSelected}
                       onChange={toggleAll}
-                      className="h-3.5 w-3.5 rounded border-white/20 bg-transparent"
+                      className="h-3.5 w-3.5 rounded border-[#D1D5DB] text-primary focus:ring-primary"
                       aria-label="Select all"
                     />
                   </th>
-                  <th className="px-2 py-3 font-medium">Date</th>
-                  <th className="px-2 py-3 font-medium">Ticker</th>
-                  <th className="px-2 py-3 font-medium">Class</th>
-                  <th className="px-2 py-3 font-medium">Side</th>
-                  <th className="px-2 py-3 font-medium">Qty</th>
-                  <th className="px-2 py-3 font-medium">Entry</th>
-                  <th className="px-2 py-3 font-medium">Exit</th>
-                  <th className="px-2 py-3 font-medium">Strategy</th>
-                  <th className="px-2 py-3 font-medium">P&amp;L</th>
-                  <th className="px-2 py-3 font-medium">Notes</th>
-                  <th className="w-20 px-2 py-3" />
+                  <th className="px-2 py-2.5 font-medium">Date</th>
+                  <th className="px-2 py-2.5 font-medium">Ticker</th>
+                  <th className="px-2 py-2.5 font-medium">Class</th>
+                  <th className="px-2 py-2.5 font-medium">Side</th>
+                  <th className="px-2 py-2.5 font-medium">Qty</th>
+                  <th className="px-2 py-2.5 font-medium">Entry</th>
+                  <th className="px-2 py-2.5 font-medium">Exit</th>
+                  <th className="px-2 py-2.5 font-medium">Strategy</th>
+                  <th className="px-2 py-2.5 font-medium">P&amp;L</th>
+                  <th className="px-2 py-2.5 font-medium">Notes</th>
+                  <th className="w-20 px-2 py-2.5 pr-4" />
                 </tr>
               </thead>
               <tbody>
@@ -489,78 +513,80 @@ export function TradesLogPage() {
                   return (
                     <tr
                       key={trade.id}
-                      className="border-b border-white/[0.04] transition hover:bg-white/[0.02]"
+                      className="border-b border-[var(--color-border-light)] transition-colors duration-150 last:border-0 hover:bg-[var(--color-primary-very-light)]"
                     >
-                      <td className="py-3.5 pr-2">
+                      <td className="py-3 pl-4 pr-2">
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={() => toggleOne(trade.id)}
-                          className="h-3.5 w-3.5 rounded border-white/20 bg-transparent"
+                          className="h-3.5 w-3.5 rounded border-[#D1D5DB] text-primary focus:ring-primary"
                           aria-label={`Select ${trade.symbol}`}
                         />
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3.5 font-mono text-xs text-zinc-400">
+                      <td className="whitespace-nowrap px-2 py-3 font-mono text-xs text-[var(--color-text-secondary)]">
                         {tradeDateKey(trade)}
                       </td>
-                      <td className="px-2 py-3.5">
+                      <td className="px-2 py-3">
                         <Link
                           href={`/trades/${trade.id}`}
-                          className="inline-flex rounded-md bg-zinc-800/80 px-2 py-0.5 font-mono text-xs font-medium text-white hover:bg-zinc-700"
+                          className="inline-flex rounded-md bg-[var(--color-primary-light)] px-2 py-0.5 font-mono text-xs font-semibold text-[var(--color-text-primary)] hover:bg-primary/15 hover:text-primary"
                         >
                           {trade.symbol}
                         </Link>
                       </td>
-                      <td className="px-2 py-3.5">
+                      <td className="px-2 py-3">
                         <ClassPill type={trade.asset_type} />
                       </td>
-                      <td className="px-2 py-3.5">
+                      <td className="px-2 py-3">
                         <SidePill side={trade.side} />
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3.5 text-xs text-zinc-400">
+                      <td className="whitespace-nowrap px-2 py-3 text-xs text-[var(--color-text-secondary)]">
                         {qtyLabel(trade)}
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3.5 font-mono text-xs text-zinc-300">
+                      <td className="whitespace-nowrap px-2 py-3 font-mono text-xs text-[var(--color-text-primary)]">
                         {moneyPrice(trade.entry_price)}
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3.5 font-mono text-xs text-zinc-300">
+                      <td className="whitespace-nowrap px-2 py-3 font-mono text-xs text-[var(--color-text-primary)]">
                         {moneyPrice(trade.exit_price)}
                       </td>
-                      <td className="max-w-[140px] truncate px-2 py-3.5 text-xs text-zinc-400">
+                      <td className="max-w-[140px] truncate px-2 py-3 text-xs text-[var(--color-text-secondary)]">
                         {trade.setup_tag || "—"}
                       </td>
                       <td
                         className={clsx(
-                          "whitespace-nowrap px-2 py-3.5 font-mono text-xs font-medium",
+                          "whitespace-nowrap px-2 py-3 font-mono text-xs font-semibold",
                           pnl == null
-                            ? "text-zinc-600"
+                            ? "text-[var(--color-text-muted)]"
                             : pnl >= 0
                               ? "text-positive"
                               : "text-negative"
                         )}
                       >
-                        {pnl == null ? "—" : formatMoney(pnl, { digits: Math.abs(pnl) < 10 ? 2 : 0 })}
+                        {pnl == null
+                          ? "—"
+                          : formatMoney(pnl, { digits: Math.abs(pnl) < 10 ? 2 : 0 })}
                       </td>
-                      <td className="max-w-[160px] truncate px-2 py-3.5 text-xs text-zinc-500">
+                      <td className="max-w-[160px] truncate px-2 py-3 text-xs text-[var(--color-text-secondary)]">
                         {trade.notes?.trim() || "—"}
                       </td>
-                      <td className="px-2 py-3.5">
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="px-2 py-3 pr-4">
+                        <div className="flex items-center justify-end gap-0.5">
                           <Link
                             href={`/trades/${trade.id}`}
-                            className="rounded-md p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-white"
+                            className="rounded-md p-1.5 text-[var(--color-text-tertiary)] transition-colors duration-150 hover:bg-[var(--color-primary-light)] hover:text-primary"
                             title="Edit"
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
                           </Link>
                           <button
                             type="button"
                             onClick={() => handleDeleteOne(trade)}
                             disabled={deleteTrade.isPending}
-                            className="rounded-md p-1.5 text-zinc-500 transition hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                            className="rounded-md p-1.5 text-[var(--color-text-tertiary)] transition-colors duration-150 hover:bg-[var(--color-danger-bg)] hover:text-negative disabled:opacity-50"
                             title="Delete"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
                           </button>
                         </div>
                       </td>
@@ -587,13 +613,13 @@ function DateField({
 }) {
   return (
     <div className="relative">
-      <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+      <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
       <input
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={ariaLabel}
-        className="h-9 w-[148px] rounded-lg border border-white/10 bg-zinc-900/80 pl-8 pr-2 text-xs text-white outline-none [color-scheme:dark] focus:border-primary/40"
+        className="h-9 w-[148px] rounded-md border border-[#E2E2E7] bg-white pl-8 pr-2 text-xs text-[var(--color-text-primary)] outline-none [color-scheme:light] focus:border-primary/40"
       />
     </div>
   );
@@ -601,7 +627,7 @@ function DateField({
 
 function ClassPill({ type }: { type: AssetType }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-violet-500/15 px-2 py-0.5 text-[11px] font-medium capitalize text-violet-300">
+    <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-primary-light)] px-2 py-0.5 text-[11px] font-medium capitalize text-primary">
       <span className="opacity-70">⌁</span>
       {assetLabel(type)}
     </span>
@@ -614,7 +640,7 @@ function SidePill({ side }: { side: TradeSide }) {
     <span
       className={clsx(
         "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
-        isLong ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"
+        isLong ? "bg-primary/15 text-primary" : "bg-amber-500/15 text-amber-700"
       )}
     >
       {isLong ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}

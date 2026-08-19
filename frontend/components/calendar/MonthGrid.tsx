@@ -56,7 +56,7 @@ export function MonthGrid({
 
   return (
     <div>
-      <div className="mb-2 grid grid-cols-7 gap-2 text-center text-[10px] font-medium uppercase tracking-wider text-zinc-600">
+      <div className="mb-2 grid grid-cols-7 gap-2 text-center text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d}>{d}</div>
         ))}
@@ -77,21 +77,21 @@ export function MonthGrid({
               type="button"
               onClick={() => onSelectDate?.(cell.iso)}
               className={clsx(
-                "flex min-h-[88px] flex-col rounded-xl border p-2 text-left transition",
+                "flex min-h-[88px] flex-col rounded-lg border p-2 text-left transition-colors duration-150",
                 hasTrades
                   ? pnl >= 0
-                    ? "border-primary/25 bg-primary/5"
-                    : "border-destructive/25 bg-destructive/5"
-                  : "border-white/[0.06] bg-white/[0.02] hover:border-white/10",
-                isToday && "ring-1 ring-primary/50",
-                isSelected && "ring-1 ring-white/30"
+                    ? "border-primary/25 bg-primary/10"
+                    : "border-[var(--color-danger-light)] bg-[var(--color-danger-bg)]"
+                  : "border-[var(--color-border)] bg-white hover:bg-[var(--color-primary-very-light)]",
+                isToday && "ring-1 ring-primary/40",
+                isSelected && "ring-2 ring-primary/50"
               )}
             >
               <div className="flex items-start justify-between gap-1">
                 <span
                   className={clsx(
-                    "text-xs font-medium",
-                    isToday ? "text-primary" : "text-zinc-500"
+                    "text-xs font-semibold",
+                    isToday ? "text-primary" : "text-[var(--color-text-primary)]"
                   )}
                 >
                   {Number(cell.iso.split("-")[2])}
@@ -103,12 +103,12 @@ export function MonthGrid({
                   <div
                     className={clsx(
                       "font-mono text-xs font-semibold",
-                      pnl >= 0 ? "text-primary" : "text-destructive"
+                      pnl >= 0 ? "text-positive" : "text-negative"
                     )}
                   >
                     {fmtCellPnl(pnl)}
                   </div>
-                  <div className="mt-0.5 text-[10px] text-zinc-600">
+                  <div className="mt-0.5 text-[10px] font-medium text-[var(--color-text-secondary)]">
                     {stats!.trades} trade{stats!.trades === 1 ? "" : "s"}
                   </div>
                 </div>
@@ -127,9 +127,9 @@ function DayIcons({ mark }: { mark?: DayMarks }) {
   if (!mark?.mood && !mark?.journaled && !mark?.routines) return null;
   return (
     <div className="flex items-center gap-0.5">
-      {mark.mood && <Sun className="h-3 w-3 text-amber-400/80" aria-label="Mood" />}
-      {mark.journaled && <BookOpen className="h-3 w-3 text-sky-400/80" aria-label="Journaled" />}
-      {mark.routines && <RefreshCw className="h-3 w-3 text-violet-400/80" aria-label="Routines" />}
+      {mark.mood && <Sun className="h-3 w-3 text-amber-600" aria-label="Mood" />}
+      {mark.journaled && <BookOpen className="h-3 w-3 text-sky-600" aria-label="Journaled" />}
+      {mark.routines && <RefreshCw className="h-3 w-3 text-violet-600" aria-label="Routines" />}
     </div>
   );
 }

@@ -50,10 +50,10 @@ copy .env.example .env
 # then edit .env: set DATABASE_URL password, JWT_SECRET, and OPENROUTER_API_KEY
 
 alembic upgrade head
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8001
 ```
 
-Backend runs at `http://localhost:8000`. Interactive API docs at `http://localhost:8000/docs`.
+Backend runs at `http://localhost:8001`. Interactive API docs at `http://localhost:8001/docs`.
 
 ## 3. Frontend setup
 

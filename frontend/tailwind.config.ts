@@ -8,7 +8,16 @@ const config: Config = {
       colors: {
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
-        sidebar: "hsl(var(--sidebar) / <alpha-value>)",
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar) / <alpha-value>)",
+          foreground: "hsl(var(--sidebar-foreground) / <alpha-value>)",
+          muted: "hsl(var(--sidebar-muted) / <alpha-value>)",
+          border: "hsl(var(--sidebar-border))",
+          active: "#4B4554",
+          hover: "#383241",
+          icon: "#AAA4B5",
+          divider: "#3A3343",
+        },
         surface: "hsl(var(--surface) / <alpha-value>)",
         "surface-2": "hsl(var(--surface-2) / <alpha-value>)",
         card: "hsl(var(--card) / <alpha-value>)",
@@ -16,6 +25,8 @@ const config: Config = {
         primary: {
           DEFAULT: "hsl(var(--primary) / <alpha-value>)",
           foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
+          hover: "#4F3C87",
+          light: "#F0ECFA",
         },
         accent: {
           DEFAULT: "hsl(var(--accent) / <alpha-value>)",
@@ -24,36 +35,54 @@ const config: Config = {
           muted: "hsl(var(--primary) / 0.12)",
         },
         secondary: {
-          DEFAULT: "#60a5fa",
-          muted: "rgba(96,165,250,0.12)",
+          DEFAULT: "#7B8DB8",
+          muted: "rgba(123,141,184,0.12)",
         },
-        warning: "#f59e0b",
-        danger: "#ef4444",
-        destructive: "#ef4444",
+        warning: {
+          DEFAULT: "#F3C623",
+          bg: "#FFF5C9",
+        },
+        danger: {
+          DEFAULT: "hsl(var(--negative) / <alpha-value>)",
+          soft: "hsl(var(--negative-soft) / <alpha-value>)",
+        },
+        destructive: "hsl(var(--destructive) / <alpha-value>)",
         muted: "hsl(var(--muted) / <alpha-value>)",
         gold: {
           DEFAULT: "hsl(var(--primary) / <alpha-value>)",
           light: "hsl(var(--primary) / 0.85)",
           dark: "hsl(var(--primary) / 0.75)",
         },
-        positive: "hsl(var(--primary) / <alpha-value>)",
-        negative: "#ef4444",
+        positive: {
+          DEFAULT: "hsl(var(--positive) / <alpha-value>)",
+          soft: "hsl(var(--positive-soft) / <alpha-value>)",
+        },
+        negative: {
+          DEFAULT: "hsl(var(--negative) / <alpha-value>)",
+          soft: "hsl(var(--negative-soft) / <alpha-value>)",
+        },
         ring: "hsl(var(--ring) / <alpha-value>)",
       },
+      boxShadow: {
+        card: "var(--shadow-sm)",
+        "card-md": "var(--shadow-md)",
+        dropdown: "var(--shadow-dropdown)",
+        glow: "0 0 24px hsl(var(--primary) / 0.2)",
+        lift: "0 4px 12px rgba(20, 20, 30, 0.06)",
+      },
       fontFamily: {
-        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        serif: ["var(--font-brand)", "Playfair Display", "Georgia", "serif"],
+        brand: ["var(--font-brand)", "Playfair Display", "Georgia", "serif"],
+        display: ["var(--font-brand)", "Playfair Display", "Georgia", "serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
       },
       borderRadius: {
+        sm: "6px",
+        md: "8px",
+        lg: "10px",
         xl: "12px",
-        "2xl": "16px",
-      },
-      boxShadow: {
-        card: "0 0 0 1px hsl(var(--border)), 0 8px 32px rgba(0,0,0,0.12)",
-        glow: "0 0 24px hsl(var(--primary) / 0.3)",
-        lift: "0 12px 40px rgba(0,0,0,0.18)",
+        "2xl": "12px",
       },
       keyframes: {
         "fade-up": {
@@ -67,6 +96,9 @@ const config: Config = {
       animation: {
         "fade-up": "fade-up 0.5s ease-out both",
         shimmer: "shimmer 1.4s infinite",
+      },
+      transitionDuration: {
+        DEFAULT: "160ms",
       },
     },
   },

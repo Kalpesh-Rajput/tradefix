@@ -165,25 +165,29 @@ export default function CalendarPage() {
   const loading = accountsLoading || (isLoading && !!accountId);
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-background)] lg:flex-row">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-6 py-5">
-          <h1 className="text-3xl font-semibold tracking-tight text-white">Calendar</h1>
-          <div className="flex items-center rounded-full border border-white/10 p-0.5">
-            {([
-              { key: "week", label: "Week" },
-              { key: "month", label: "Month" },
-              { key: "year", label: "Year" },
-            ] as const).map((tab) => (
+        <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4 sm:px-6">
+          <h1 className="text-[20px] font-semibold tracking-tight text-[var(--color-text-primary)]">
+            Calendar
+          </h1>
+          <div className="flex items-center rounded-md border border-[#E2E2E7] bg-white p-0.5">
+            {(
+              [
+                { key: "week", label: "Week" },
+                { key: "month", label: "Month" },
+                { key: "year", label: "Year" },
+              ] as const
+            ).map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setView(tab.key)}
                 className={clsx(
-                  "h-8 rounded-full px-4 text-xs font-medium transition",
+                  "h-8 rounded-[5px] px-4 text-xs font-medium transition-colors duration-150",
                   view === tab.key
-                    ? "bg-zinc-800 text-white"
-                    : "text-zinc-500 hover:text-zinc-300"
+                    ? "bg-[var(--color-primary-light)] text-primary"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 )}
               >
                 {tab.label}
@@ -192,29 +196,31 @@ export default function CalendarPage() {
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <div className="mb-5 flex items-center gap-2">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+          <div className="mb-4 flex items-center gap-2">
             <button
               type="button"
               onClick={() => shift(-1)}
-              className="rounded-lg border border-white/10 p-1.5 text-zinc-400 transition hover:border-white/20 hover:text-white"
+              className="rounded-md border border-[#E2E2E7] bg-white p-1.5 text-[var(--color-text-secondary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-[var(--color-text-primary)]"
               aria-label="Previous"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" strokeWidth={1.75} />
             </button>
-            <h2 className="min-w-[160px] text-sm font-medium text-white">{navLabel()}</h2>
+            <h2 className="min-w-[160px] text-sm font-semibold text-[var(--color-text-primary)]">
+              {navLabel()}
+            </h2>
             <button
               type="button"
               onClick={() => shift(1)}
-              className="rounded-lg border border-white/10 p-1.5 text-zinc-400 transition hover:border-white/20 hover:text-white"
+              className="rounded-md border border-[#E2E2E7] bg-white p-1.5 text-[var(--color-text-secondary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-[var(--color-text-primary)]"
               aria-label="Next"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" strokeWidth={1.75} />
             </button>
             <button
               type="button"
               onClick={() => setCursor(new Date())}
-              className="ml-2 text-xs text-zinc-500 hover:text-primary"
+              className="ml-2 text-xs font-medium text-[var(--color-text-secondary)] hover:text-primary"
             >
               Today
             </button>
@@ -223,13 +229,17 @@ export default function CalendarPage() {
           {loading ? (
             <div className="grid grid-cols-7 gap-2">
               {Array.from({ length: 35 }).map((_, i) => (
-                <Skeleton key={i} className="h-[88px]" />
+                <Skeleton key={i} className="h-[88px] rounded-lg" />
               ))}
             </div>
           ) : isError ? (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-zinc-300">
+            <div className="dash-card border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-[var(--color-text-primary)]">
               Couldn’t load calendar.{" "}
-              <button type="button" onClick={() => refetch()} className="text-primary hover:underline">
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="font-medium text-primary hover:underline"
+              >
                 Try again
               </button>
             </div>
@@ -261,10 +271,13 @@ export default function CalendarPage() {
             />
           )}
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-[11px] text-zinc-500">
-            <LegendItem icon={<Sun className="h-3.5 w-3.5 text-amber-400" />} label="Mood" />
-            <LegendItem icon={<BookOpen className="h-3.5 w-3.5 text-sky-400" />} label="Journaled" />
-            <LegendItem icon={<RefreshCw className="h-3.5 w-3.5 text-violet-400" />} label="Routines" />
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-[12px] font-medium text-[var(--color-text-secondary)]">
+            <LegendItem icon={<Sun className="h-3.5 w-3.5 text-amber-600" />} label="Mood" />
+            <LegendItem icon={<BookOpen className="h-3.5 w-3.5 text-sky-600" />} label="Journaled" />
+            <LegendItem
+              icon={<RefreshCw className="h-3.5 w-3.5 text-violet-600" />}
+              label="Routines"
+            />
           </div>
         </div>
       </div>

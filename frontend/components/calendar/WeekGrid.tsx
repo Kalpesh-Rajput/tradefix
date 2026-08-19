@@ -48,26 +48,35 @@ export function WeekGrid({
             type="button"
             onClick={() => onSelectDate?.(iso)}
             className={clsx(
-              "flex min-h-[140px] flex-col rounded-xl border p-3 text-left transition",
+              "flex min-h-[140px] flex-col rounded-lg border p-3 text-left transition-colors duration-150",
               hasTrades
                 ? pnl >= 0
-                  ? "border-primary/25 bg-primary/5"
-                  : "border-destructive/25 bg-destructive/5"
-                : "border-white/[0.06] bg-white/[0.02] hover:border-white/10",
-              isToday && "ring-1 ring-primary/50",
-              isSelected && "ring-1 ring-white/30"
+                  ? "border-primary/25 bg-primary/10"
+                  : "border-[var(--color-danger-light)] bg-[var(--color-danger-bg)]"
+                : "border-[var(--color-border)] bg-white hover:bg-[var(--color-primary-very-light)]",
+              isToday && "ring-1 ring-primary/40",
+              isSelected && "ring-2 ring-primary/50"
             )}
           >
-            <div className="text-[10px] uppercase tracking-wider text-zinc-600">{label}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
+              {label}
+            </div>
             <div className="mt-1 flex items-center justify-between">
-              <span className={clsx("text-lg font-medium", isToday ? "text-primary" : "text-white")}>
+              <span
+                className={clsx(
+                  "text-lg font-semibold",
+                  isToday ? "text-primary" : "text-[var(--color-text-primary)]"
+                )}
+              >
                 {date.getDate()}
               </span>
-              <span className="text-[10px] text-zinc-600">{shortMonth(date)}</span>
+              <span className="text-[10px] font-medium text-[var(--color-text-tertiary)]">
+                {shortMonth(date)}
+              </span>
             </div>
             <div className="mt-2 flex gap-1">
-              {mark?.mood && <Sun className="h-3.5 w-3.5 text-amber-400/80" />}
-              {mark?.journaled && <BookOpen className="h-3.5 w-3.5 text-sky-400/80" />}
+              {mark?.mood && <Sun className="h-3.5 w-3.5 text-amber-600" />}
+              {mark?.journaled && <BookOpen className="h-3.5 w-3.5 text-sky-600" />}
             </div>
             <div className="mt-auto pt-3">
               {hasTrades ? (
@@ -75,17 +84,17 @@ export function WeekGrid({
                   <div
                     className={clsx(
                       "font-mono text-sm font-semibold",
-                      pnl >= 0 ? "text-primary" : "text-destructive"
+                      pnl >= 0 ? "text-positive" : "text-negative"
                     )}
                   >
                     {fmtPnl(pnl)}
                   </div>
-                  <div className="mt-0.5 text-[11px] text-zinc-500">
+                  <div className="mt-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
                     {stats!.trades} trade{stats!.trades === 1 ? "" : "s"} · {stats!.win_rate}% WR
                   </div>
                 </>
               ) : (
-                <div className="text-[11px] text-zinc-600">No trades</div>
+                <div className="text-[11px] text-[var(--color-text-tertiary)]">No trades</div>
               )}
             </div>
           </button>

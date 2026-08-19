@@ -30,12 +30,27 @@ export function YearHeatmap({
     for (let d = 1; d <= daysInMonth; d++) {
       cells.push(`${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
     }
-    const monthDays = days.filter((d) => d.date.startsWith(`${year}-${String(month + 1).padStart(2, "0")}`));
+    const monthDays = days.filter((d) =>
+      d.date.startsWith(`${year}-${String(month + 1).padStart(2, "0")}`)
+    );
     const monthPnl = monthDays.reduce((s, d) => s + d.pnl, 0);
     return { month, cells, monthPnl, trades: monthDays.reduce((s, d) => s + d.trades, 0) };
   });
 
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   const todayIso = localIso(new Date());
 
   return (
@@ -45,14 +60,20 @@ export function YearHeatmap({
           key={month}
           type="button"
           onClick={() => onSelectMonth?.(month)}
-          className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-left transition hover:border-white/12"
+          className="rounded-lg border border-[var(--color-border)] bg-white p-3 text-left transition-colors duration-150 hover:border-primary/30 hover:bg-[var(--color-primary-very-light)]"
         >
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium text-white">{monthNames[month]}</span>
+            <span className="text-xs font-semibold text-[var(--color-text-primary)]">
+              {monthNames[month]}
+            </span>
             <span
               className={clsx(
-                "font-mono text-[11px]",
-                trades === 0 ? "text-zinc-600" : monthPnl >= 0 ? "text-primary" : "text-destructive"
+                "font-mono text-[11px] font-semibold",
+                trades === 0
+                  ? "text-[var(--color-text-tertiary)]"
+                  : monthPnl >= 0
+                    ? "text-positive"
+                    : "text-negative"
               )}
             >
               {trades === 0
@@ -81,13 +102,13 @@ export function YearHeatmap({
                     "h-2.5 w-full rounded-[2px]",
                     !traded
                       ? iso === todayIso
-                        ? "bg-white/20"
-                        : "bg-white/[0.04]"
+                        ? "bg-primary/30"
+                        : "bg-[#E8E8EC]"
                       : pnl >= 0
                         ? "bg-primary"
-                        : "bg-destructive"
+                        : "bg-[var(--color-danger)]"
                   )}
-                  style={traded ? { opacity: 0.3 + level * 0.7 } : undefined}
+                  style={traded ? { opacity: 0.35 + level * 0.65 } : undefined}
                 />
               );
             })}

@@ -10,7 +10,8 @@ _USERNAME_RE = re.compile(r"^[a-zA-Z0-9_.-]*$")
 _LANGUAGE_RE = re.compile(r"^[a-z]{2,3}(-[A-Za-z]{2,8})?$")
 _DATE_FORMATS = {"MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"}
 _THEMES = {"dark", "light", "system"}
-_ACCENT_COLORS = {"teal", "blue", "purple", "orange", "red", "pink", "emerald", "periwinkle"}
+_ACCENT_COLORS = {"blue", "purple", "orange", "red", "pink", "periwinkle"}
+_LEGACY_GREEN_ACCENTS = {"teal", "emerald", "green"}
 _SUPPORTED_LANGUAGES = {
     "en",
     "es",
@@ -122,8 +123,8 @@ class UserResponse(BaseModel):
     monthly_goal: float | None = None
     yearly_goal: float | None = None
     target_trades: int | None = None
-    theme: str = "dark"
-    accent_color: str = "teal"
+    theme: str = "light"
+    accent_color: str = "purple"
     plan: str = "free"
     role: str = "trader"
     custom_emotion_tags: list[str] = Field(default_factory=list)
@@ -416,6 +417,9 @@ class UserUpdateRequest(BaseModel):
         if value is None:
             return None
         cleaned = value.strip().lower()
+        # Migrate removed green accents to purple
+        if cleaned in _LEGACY_GREEN_ACCENTS:
+            return "purple"
         if cleaned not in _ACCENT_COLORS:
             raise ValueError("Invalid accent color")
         return cleaned

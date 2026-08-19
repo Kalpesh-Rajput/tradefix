@@ -1,104 +1,122 @@
 "use client";
 
-import { useMemo } from "react";
+import { LayoutGrid, RefreshCw } from "lucide-react";
+import { useMemo, useState } from "react";
 
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { DailyCheckinCard } from "@/components/dashboard/DailyCheckinCard";
-import { EmptyTrades } from "@/components/dashboard/EmptyTrades";
-import { GoalsProgressCard } from "@/components/dashboard/GoalsProgressCard";
-import { IntelligencePanel } from "@/components/dashboard/IntelligencePanel";
-import { MilestonesStrip } from "@/components/dashboard/MilestonesStrip";
-import { MindsetCheckin } from "@/components/dashboard/MindsetCheckin";
-import { buildPerformanceMetrics, PerformanceGrid } from "@/components/dashboard/PerformanceGrid";
-import { StreakCards } from "@/components/dashboard/StreakCards";
-import { TodaysTrades } from "@/components/dashboard/TodaysTrades";
-import { DistanceToBreach } from "@/components/prop/DistanceToBreach";
+import { MetricCards } from "@/components/dashboard/zella/MetricCards";
+import {
+  CumulativePnlChart,
+  DailyPnlChart,
+  ZellaScoreCard,
+} from "@/components/dashboard/zella/DashboardCharts";
+import { DashboardCalendar } from "@/components/dashboard/zella/DashboardCalendar";
+import { PositionsTradesWidget } from "@/components/dashboard/zella/PositionsTradesWidget";
+import { ZellaDashboardHeader } from "@/components/dashboard/zella/ZellaDashboardHeader";
+import { useDashboardWidgets } from "@/components/dashboard/zella/useDashboardWidgets";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
-import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { buildGoalProgress, yearlyGoalPercent } from "@/lib/goals";
 import { useAnalytics, useCalendar } from "@/lib/hooks/useAnalytics";
-import { useMoodCheckins } from "@/lib/hooks/useMood";
-import { useRecaps } from "@/lib/hooks/useRecaps";
 import { useTrades } from "@/lib/hooks/useTrades";
-import { consecutiveJournalStreak } from "@/lib/journalStreak";
+
+function localIso(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function defaultRange() {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(end.getDate() - 30);
+  return { from: localIso(start), to: localIso(end) };
+}
 
 export default function TodayPage() {
-  const { user } = useAuth();
-  const { dateKey, formatChartDate, timezone } = useLocale();
-  const { displayPnl, activeAccount, loading: accountsLoading } = useAccountPrefs();
+  const { t, formatChartDate } = useLocale();
+  const { displayPnl, formatMoney, activeAccount, loading: accountsLoading } = useAccountPrefs();
+  const { openModal } = useAddTradeModal();
+  const { widgets, editing, setEditing, toggle, labels } = useDashboardWidgets();
   const accountId = activeAccount?.id;
-
   const accountReady = !!accountId;
-  const { data: analytics, isLoading: analyticsLoading, isError: analyticsError } = useAnalytics(
-    accountId,
-    { enabled: accountReady }
-  );
-  const { data: trades = [], isLoading: tradesLoading, isError: tradesError } = useTrades(
-    { account_id: accountId },
-    { enabled: accountReady }
-  );
-  const { data: mood = [] } = useMoodCheckins();
-  const { data: recaps = [] } = useRecaps(accountId);
 
-  const localIso = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  };
+  const initial = useMemo(() => defaultRange(), []);
+  const [dateFrom, setDateFrom] = useState(initial.from);
+  const [dateTo, setDateTo] = useState(initial.to);
 
-  const monthStart = useMemo(() => {
+  const monthBounds = useMemo(() => {
     const d = new Date();
-    return localIso(new Date(d.getFullYear(), d.getMonth(), 1));
+    return {
+      start: localIso(new Date(d.getFullYear(), d.getMonth(), 1)),
+      end: localIso(new Date(d.getFullYear(), d.getMonth() + 1, 0)),
+    };
   }, []);
-  const monthEnd = useMemo(() => localIso(new Date()), []);
+  const [calStart, setCalStart] = useState(monthBounds.start);
+  const [calEnd, setCalEnd] = useState(monthBounds.end);
 
-  const weekRange = useMemo(() => {
-    const today = new Date();
-    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return { start: localIso(start), end: localIso(end) };
-  }, []);
+  const {
+    data: analytics,
+    isLoading: analyticsLoading,
+    isError: analyticsError,
+    refetch: refetchAnalytics,
+  } = useAnalytics(
+    { account_id: accountId, date_from: dateFrom, date_to: dateTo },
+    { enabled: accountReady }
+  );
 
-  const { data: calendar } = useCalendar(monthStart, monthEnd, accountId, { enabled: accountReady });
-  const { data: weekCalendar } = useCalendar(weekRange.start, weekRange.end, accountId, {
+  const {
+    data: trades = [],
+    isLoading: tradesLoading,
+    isError: tradesError,
+    refetch: refetchTrades,
+  } = useTrades(
+    {
+      account_id: accountId,
+      date_from: `${dateFrom}T00:00:00`,
+      date_to: `${dateTo}T23:59:59`,
+      limit: 500,
+    },
+    { enabled: accountReady }
+  );
+
+  const { data: calendar } = useCalendar(calStart, calEnd, accountId, { enabled: accountReady });
+  const { data: rangeCalendar, refetch: refetchRangeCal } = useCalendar(dateFrom, dateTo, accountId, {
     enabled: accountReady,
   });
 
-  const todayKey = useMemo(() => dateKey(new Date()), [dateKey, timezone]);
-  const todaysTrades = useMemo(
-    () => trades.filter((t) => dateKey(t.opened_at) === todayKey || (t.closed_at && dateKey(t.closed_at) === todayKey)),
-    [trades, todayKey, dateKey]
-  );
-  const todaysClosed = todaysTrades.filter((t) => t.status === "closed" && t.pnl != null);
-  const todaysPnl = todaysClosed.reduce((sum, t) => sum + (displayPnl(t.pnl, t.fees) ?? 0), 0);
-  const todaysWins = todaysClosed.filter((t) => (displayPnl(t.pnl, t.fees) ?? 0) > 0);
-  const todaysWinRate = todaysClosed.length ? (todaysWins.length / todaysClosed.length) * 100 : null;
-  const openCount = trades.filter((t) => t.status === "open").length;
-
   const overview = analytics?.overview;
-  const closed = trades.filter((t) => t.status === "closed" && t.pnl != null);
-  const wins = closed.filter((t) => (displayPnl(t.pnl, t.fees) ?? 0) > 0);
-  const losses = closed.filter((t) => (displayPnl(t.pnl, t.fees) ?? 0) < 0);
-  const grossWin = wins.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0);
-  const grossLoss = Math.abs(losses.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0));
-  const profitFactor = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? grossWin : 0;
-  const accountWinRate = closed.length ? (wins.length / closed.length) * 100 : overview?.win_rate ?? 0;
-  const accountNetPnl = closed.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0);
-  const accountAvgWin = wins.length ? grossWin / wins.length : overview?.avg_win ?? 0;
-  const expectancy = closed.length ? accountNetPnl / closed.length : overview?.expectancy;
+  const closed = useMemo(
+    () => trades.filter((t) => t.status === "closed" && t.pnl != null),
+    [trades]
+  );
+  const openTrades = useMemo(() => trades.filter((t) => t.status === "open"), [trades]);
+  const winsList = closed.filter((t) => (displayPnl(t.pnl, t.fees) ?? 0) > 0);
+  const lossesList = closed.filter((t) => (displayPnl(t.pnl, t.fees) ?? 0) < 0);
+  const beList = closed.filter((t) => (displayPnl(t.pnl, t.fees) ?? 0) === 0);
+  const grossWin = winsList.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0);
+  const grossLoss = Math.abs(lossesList.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0));
+  const profitFactor =
+    overview?.profit_factor ||
+    (grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? grossWin : 0);
+  const winRate = closed.length
+    ? (winsList.length / closed.length) * 100
+    : overview?.win_rate ?? 0;
+  const netPnl =
+    overview?.total_pnl ??
+    closed.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0);
+  const avgWin = winsList.length ? grossWin / winsList.length : overview?.avg_win ?? 0;
+  const avgLoss = lossesList.length
+    ? Math.abs(lossesList.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0) / lossesList.length)
+    : Math.abs(overview?.avg_loss ?? 0);
+  const avgWinLoss = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? avgWin : 0;
 
-  const goalItems = useMemo(
-    () => buildGoalProgress(user, trades, displayPnl),
-    [user, trades, displayPnl]
-  );
-  const ytdPct = useMemo(
-    () => yearlyGoalPercent(user, trades, displayPnl) ?? 0,
-    [user, trades, displayPnl]
-  );
+  const tradingDays = rangeCalendar?.days?.filter((d) => d.trades > 0) ?? [];
+  const dayWins = tradingDays.filter((d) => d.pnl > 0).length;
+  const dayLosses = tradingDays.filter((d) => d.pnl < 0).length;
+  const dayBreakeven = tradingDays.filter((d) => d.pnl === 0).length;
+  const dayWinPct = tradingDays.length ? (dayWins / tradingDays.length) * 100 : null;
 
   const equitySeries = useMemo(() => {
     if (analytics?.equity_curve?.length) {
@@ -111,149 +129,217 @@ export default function TodayPage() {
     return [...closed]
       .sort(
         (a, b) =>
-          new Date(a.closed_at || a.opened_at).getTime() - new Date(b.closed_at || b.opened_at).getTime()
+          new Date(a.closed_at || a.opened_at).getTime() -
+          new Date(b.closed_at || b.opened_at).getTime()
       )
       .map((t) => {
         sum += displayPnl(t.pnl, t.fees) ?? 0;
-        const d = new Date(t.closed_at || t.opened_at);
         return {
-          date: formatChartDate(d),
+          date: formatChartDate(new Date(t.closed_at || t.opened_at)),
           value: sum,
         };
       });
   }, [analytics?.equity_curve, closed, formatChartDate, displayPnl]);
 
-  const bestWin = useMemo(() => {
-    if (overview && overview.largest_win > 0) {
-      const match = wins.find((t) => Math.abs((displayPnl(t.pnl, t.fees) ?? 0) - overview.largest_win) < 0.01);
-      if (match) {
-        return {
-          symbol: match.symbol,
-          pnl: displayPnl(match.pnl, match.fees) ?? overview.largest_win,
-          date: match.closed_at || match.opened_at,
-        };
-      }
-      return { symbol: "Best win", pnl: overview.largest_win, date: undefined };
-    }
-    return wins.reduce<{ symbol: string; pnl: number; date?: string } | null>((best, t) => {
-      const pnl = displayPnl(t.pnl, t.fees) ?? 0;
-      if (!best || pnl > best.pnl) {
-        return { symbol: t.symbol, pnl, date: t.closed_at || t.opened_at };
-      }
-      return best;
-    }, null);
-  }, [overview, wins, displayPnl]);
+  const dailySeries = useMemo(() => {
+    const days = rangeCalendar?.days ?? [];
+    return days
+      .filter((d) => d.trades > 0)
+      .map((d) => ({
+        date: formatChartDate(new Date(d.date + "T12:00:00")),
+        value: d.pnl,
+      }));
+  }, [rangeCalendar?.days, formatChartDate]);
 
-  const worstLoss = useMemo(() => {
-    if (overview && overview.largest_loss < 0) {
-      const match = losses.find((t) => Math.abs((displayPnl(t.pnl, t.fees) ?? 0) - overview.largest_loss) < 0.01);
-      if (match) {
-        return {
-          symbol: match.symbol,
-          pnl: displayPnl(match.pnl, match.fees) ?? overview.largest_loss,
-          date: match.closed_at || match.opened_at,
-        };
-      }
-      return { symbol: "Worst loss", pnl: overview.largest_loss, date: undefined };
-    }
-    return losses.reduce<{ symbol: string; pnl: number; date?: string } | null>((worst, t) => {
-      const pnl = displayPnl(t.pnl, t.fees) ?? 0;
-      if (!worst || pnl < worst.pnl) {
-        return { symbol: t.symbol, pnl, date: t.closed_at || t.opened_at };
-      }
-      return worst;
-    }, null);
-  }, [overview, losses, displayPnl]);
-
-  const winStreak = overview?.current_streak_type === "win" ? overview.current_streak : 0;
-  const journalStreak = useMemo(
+  const recentTrades = useMemo(
     () =>
-      consecutiveJournalStreak(
-        [...mood.map((m) => m.date), ...recaps.map((r) => r.date)],
-        todayKey
+      [...closed].sort(
+        (a, b) =>
+          new Date(b.closed_at || b.opened_at).getTime() -
+          new Date(a.closed_at || a.opened_at).getTime()
       ),
-    [mood, recaps, todayKey]
+    [closed]
   );
-  const tradingDays = calendar?.days?.filter((d) => d.trades > 0).length ?? overview?.trading_days ?? 0;
 
-  const metrics = buildPerformanceMetrics({
-    netPnl: accountNetPnl,
-    winRate: accountWinRate,
-    profitFactor,
-    avgWin: accountAvgWin,
-    totalTrades: overview?.total_trades ?? trades.length,
-    wins: wins.length,
-    losses: losses.length,
-    expectancy,
-  });
+  const lastClosed = recentTrades[0];
+  const lastImportLabel = lastClosed
+    ? new Date(lastClosed.closed_at || lastClosed.opened_at).toLocaleString(undefined, {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
 
-  const loading = accountsLoading || analyticsLoading || (tradesLoading && !!accountId);
+  const hour = new Date().getHours();
+  const greetingKey =
+    hour < 12
+      ? "dashboard.greeting.morning"
+      : hour < 17
+        ? "dashboard.greeting.afternoon"
+        : "dashboard.greeting.evening";
+
+  const loading = accountsLoading || analyticsLoading || (tradesLoading && accountReady);
   const hasError = analyticsError || tradesError;
 
+  function refreshAll() {
+    void refetchAnalytics();
+    void refetchTrades();
+    void refetchRangeCal();
+  }
+
   return (
-    <div className="flex h-full min-h-0 flex-1 overflow-hidden">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <DashboardHeader
-          todaysPnl={todaysPnl}
-          ytdPct={ytdPct}
-          winRate={accountWinRate}
-          profitFactor={profitFactor}
-        />
-
-        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
-          {loading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-14" />
-              <Skeleton className="h-14" />
-              <div className="grid grid-cols-3 gap-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16" />
-                ))}
-              </div>
-              <Skeleton className="h-48" />
-            </div>
-          ) : hasError ? (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-zinc-300">
-              Couldn’t load your trade data. Refresh the page or try again in a moment.
-            </div>
-          ) : (
-            <>
-              <PerformanceGrid
-                metrics={metrics}
-                totalTrades={trades.length}
-                equitySeries={equitySeries}
-                largestGain={bestWin}
-                largestLoss={worstLoss}
-                bySetup={analytics?.by_setup ?? []}
-                weekDays={weekCalendar?.days ?? []}
-              />
-
-              <DailyCheckinCard />
-
-              <DistanceToBreach />
-
-              <MilestonesStrip />
-
-              <StreakCards winStreak={winStreak} journalStreak={journalStreak} tradingDays={tradingDays} />
-
-              <GoalsProgressCard items={goalItems} />
-
-              <MindsetCheckin />
-
-              {todaysTrades.length === 0 ? <EmptyTrades /> : <TodaysTrades trades={todaysTrades} />}
-            </>
-          )}
-          <div className="h-4" />
-        </div>
-      </div>
-
-      <IntelligencePanel
-        overview={overview}
-        todaysPnl={todaysPnl}
-        todaysTradeCount={todaysTrades.length}
-        openCount={openCount}
-        todaysWinRate={todaysWinRate}
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-background)]">
+      <ZellaDashboardHeader
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onRangeChange={(from, to) => {
+          setDateFrom(from);
+          setDateTo(to);
+        }}
       />
+
+      <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-4 py-3.5 sm:px-5">
+        <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+          <h2 className="text-[13px] font-medium leading-5 tracking-tight text-[#202127]">
+            {t(greetingKey)}!
+          </h2>
+
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
+            <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-secondary)]">
+              <span>{t("dashboard.lastImport", { when: lastImportLabel })}</span>
+              <button
+                type="button"
+                onClick={refreshAll}
+                className="rounded p-0.5 text-[var(--color-text-muted)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-[var(--color-text-secondary)]"
+                aria-label="Refresh"
+                title="Refresh"
+              >
+                <RefreshCw className="h-3 w-3" strokeWidth={1.75} />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditing((v) => !v)}
+              className="dash-btn-secondary"
+              aria-pressed={editing}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.75} />
+              {editing ? "Done" : t("dashboard.editWidgets")}
+            </button>
+            <button
+              type="button"
+              onClick={() => openModal("csv")}
+              className="dash-btn-primary text-on-accent"
+            >
+              + {t("dashboard.importTrades")}
+            </button>
+          </div>
+        </div>
+
+        {editing && (
+          <div className="dash-card flex flex-wrap gap-2 p-4">
+            {(Object.keys(labels) as Array<keyof typeof labels>).map((id) => (
+              <label
+                key={id}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)]"
+              >
+                <input
+                  type="checkbox"
+                  checked={widgets[id]}
+                  onChange={() => toggle(id)}
+                  className="rounded border-[var(--color-border)] text-primary focus:ring-primary"
+                />
+                {labels[id]}
+              </label>
+            ))}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-[96px] rounded-[10px]" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.15fr_1fr_1fr]">
+              <Skeleton className="h-[240px] rounded-[10px]" />
+              <Skeleton className="h-[240px] rounded-[10px]" />
+              <Skeleton className="h-[240px] rounded-[10px]" />
+            </div>
+          </div>
+        ) : hasError ? (
+          <div className="dash-card border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-foreground">
+            Couldn’t load your dashboard data. Refresh the page or try again in a moment.
+          </div>
+        ) : (
+          <>
+            {widgets.metrics && (
+              <MetricCards
+                netPnl={netPnl}
+                winRate={winRate}
+                profitFactor={profitFactor}
+                dayWinPct={dayWinPct}
+                avgWin={avgWin}
+                avgLoss={avgLoss}
+                wins={winsList.length}
+                losses={lossesList.length}
+                breakeven={beList.length}
+                dayWins={dayWins}
+                dayLosses={dayLosses}
+                dayBreakeven={dayBreakeven}
+                formatMoney={formatMoney}
+              />
+            )}
+
+            {(widgets.score || widgets.cumulative || widgets.daily) && (
+              <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[1.15fr_1fr_1fr]">
+                {widgets.score && (
+                  <ZellaScoreCard
+                    winRate={winRate}
+                    profitFactor={profitFactor}
+                    avgWinLoss={avgWinLoss}
+                  />
+                )}
+                {widgets.cumulative && (
+                  <CumulativePnlChart series={equitySeries} formatMoney={formatMoney} />
+                )}
+                {widgets.daily && (
+                  <DailyPnlChart series={dailySeries} formatMoney={formatMoney} />
+                )}
+              </div>
+            )}
+
+            {(widgets.positions || widgets.calendar) && (
+              <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[1fr_1.45fr]">
+                {widgets.positions && (
+                  <PositionsTradesWidget
+                    openTrades={openTrades}
+                    recentTrades={recentTrades}
+                    formatMoney={formatMoney}
+                  />
+                )}
+                {widgets.calendar && (
+                  <DashboardCalendar
+                    days={calendar?.days ?? []}
+                    onMonthChange={(start, end) => {
+                      setCalStart(start);
+                      setCalEnd(end);
+                    }}
+                    onSelectDate={(date) => {
+                      setDateFrom(date);
+                      setDateTo(date);
+                    }}
+                  />
+                )}
+              </div>
+            )}
+          </>
+        )}
+        <div className="h-2" />
+      </div>
     </div>
   );
 }

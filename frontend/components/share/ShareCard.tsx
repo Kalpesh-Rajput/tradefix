@@ -41,8 +41,8 @@ export function ShareCard({
     ctx.lineWidth = 2;
     ctx.strokeRect(1, 1, width - 2, height - 2);
 
-    ctx.fillStyle = "#00c896";
-    ctx.font = "600 22px DM Sans, system-ui, sans-serif";
+    ctx.fillStyle = "#5B4696";
+    ctx.font = "600 22px Inter, system-ui, sans-serif";
     ctx.fillText("trade", 40, 52);
     ctx.fillStyle = "#fafafa";
     ctx.fillText("fix", 98, 52);

@@ -4,106 +4,131 @@ import clsx from "clsx";
 import {
   BarChart3,
   Bot,
-  BookOpen,
   Brain,
   Briefcase,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   FlaskConical,
-  Gift,
-  House,
+  GraduationCap,
+  LayoutDashboard,
   ListChecks,
   LogOut,
   MessageSquare,
   Newspaper,
   NotebookPen,
-  Smartphone,
+  Plus,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { useSidebar } from "@/components/providers/SidebarProvider";
+import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
+import { BrandLockup } from "@/components/ui/Logo";
 import { firstName } from "@/lib/format";
 import type { MessageKey } from "@/lib/i18n";
 import { mediaUrl } from "@/lib/media";
 
-const NAV: { href: string; labelKey: MessageKey; icon: typeof House; testId: string }[] = [
-  { href: "/today", labelKey: "nav.today", icon: House, testId: "nav-today" },
-  { href: "/trades", labelKey: "nav.tradeLog", icon: ClipboardList, testId: "nav-tradeLog" },
-  { href: "/analytics", labelKey: "nav.analytics", icon: BarChart3, testId: "nav-analytics" },
-  { href: "/diary", labelKey: "nav.journal", icon: NotebookPen, testId: "nav-journal" },
-  { href: "/calendar", labelKey: "nav.calendar", icon: CalendarDays, testId: "nav-calendar" },
-  { href: "/portfolio", labelKey: "nav.portfolio", icon: Briefcase, testId: "nav-portfolio" },
-  { href: "/wiki", labelKey: "nav.wiki", icon: BookOpen, testId: "nav-wiki" },
-  { href: "/agents", labelKey: "nav.agents", icon: Bot, testId: "nav-agents" },
-  { href: "/chat", labelKey: "nav.coach", icon: MessageSquare, testId: "nav-coach" },
-  { href: "/news", labelKey: "nav.news", icon: Newspaper, testId: "nav-news" },
-  { href: "/backtest", labelKey: "nav.backtest", icon: FlaskConical, testId: "nav-backtesting" },
-  { href: "/mindset", labelKey: "nav.mindset", icon: Brain, testId: "nav-mindset" },
-  { href: "/trading-plan", labelKey: "nav.tradingPlan", icon: ListChecks, testId: "nav-tradingPlan" },
-  { href: "/settings/profile", labelKey: "nav.perks", icon: Gift, testId: "nav-perks" },
+const SIDEBAR_EXPANDED = "w-[196px]";
+const SIDEBAR_COLLAPSED = "w-[64px]";
+
+const NAV: {
+  href: string;
+  labelKey: MessageKey;
+  icon: typeof LayoutDashboard;
+  testId: string;
+  /** Accent color for the nav icon on the dark sidebar */
+  iconColor: string;
+}[] = [
+  { href: "/today", labelKey: "nav.today", icon: LayoutDashboard, testId: "nav-today", iconColor: "#A78BFA" },
+  { href: "/diary", labelKey: "nav.journal", icon: NotebookPen, testId: "nav-journal", iconColor: "#60A5FA" },
+  { href: "/trades", labelKey: "nav.tradeLog", icon: ClipboardList, testId: "nav-tradeLog", iconColor: "#F472B6" },
+  { href: "/analytics", labelKey: "nav.analytics", icon: BarChart3, testId: "nav-analytics", iconColor: "#34D399" },
+  { href: "/agents", labelKey: "nav.agents", icon: Bot, testId: "nav-agents", iconColor: "#FBBF24" },
+  { href: "/wiki", labelKey: "nav.wiki", icon: GraduationCap, testId: "nav-wiki", iconColor: "#22D3EE" },
+  { href: "/trading-plan", labelKey: "nav.tradingPlan", icon: ListChecks, testId: "nav-tradingPlan", iconColor: "#FB923C" },
+  { href: "/calendar", labelKey: "nav.calendar", icon: CalendarDays, testId: "nav-calendar", iconColor: "#818CF8" },
+  { href: "/backtest", labelKey: "nav.backtest", icon: FlaskConical, testId: "nav-backtesting", iconColor: "#4ADE80" },
+  { href: "/coach", labelKey: "nav.mentor", icon: Users, testId: "nav-mentor", iconColor: "#E879F9" },
+  { href: "/portfolio", labelKey: "nav.portfolio", icon: Briefcase, testId: "nav-portfolio", iconColor: "#38BDF8" },
+  { href: "/chat", labelKey: "nav.coach", icon: MessageSquare, testId: "nav-coach", iconColor: "#F87171" },
+  { href: "/mindset", labelKey: "nav.mindset", icon: Brain, testId: "nav-mindset", iconColor: "#C084FC" },
+  { href: "/news", labelKey: "nav.news", icon: Newspaper, testId: "nav-news", iconColor: "#94A3B8" },
 ];
 
-function CandlestickMark() {
-  return (
-    <svg width="18" height="20" viewBox="0 0 18 20" fill="none" aria-hidden>
-      <line x1="2" y1="2" x2="2" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <rect x="0" y="5" width="4" height="9" rx="0.5" fill="currentColor" />
-      <line x1="2" y1="14" x2="2" y2="18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="9" y1="5" x2="9" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.65" />
-      <rect x="7" y="8" width="4" height="6" rx="0.5" fill="currentColor" opacity="0.65" />
-      <line x1="9" y1="14" x2="9" y2="18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.65" />
-      <line x1="16" y1="0" x2="16" y2="2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <rect x="14" y="2" width="4" height="12" rx="0.5" fill="currentColor" />
-      <line x1="16" y1="14" x2="16" y2="18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-export function Sidebar({ expanded: forceExpanded = false }: { expanded?: boolean }) {
+export function Sidebar({
+  forceExpanded = false,
+  showEdgeToggle = true,
+}: {
+  /** Mobile drawer should always show labels */
+  forceExpanded?: boolean;
+  showEdgeToggle?: boolean;
+  /** @deprecated kept for MobileNav compat */
+  expanded?: boolean;
+}) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { t } = useLocale();
-  const [hovered, setHovered] = useState(false);
-  const open = forceExpanded || hovered;
+  const { openModal } = useAddTradeModal();
+  const { collapsed, toggle } = useSidebar();
   const name = firstName(user?.name, user?.email);
   const initial = name.slice(0, 1).toUpperCase();
 
+  const isCollapsed = forceExpanded ? false : collapsed;
+  const widthClass = isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
+
   return (
-    <div className={clsx("relative shrink-0", forceExpanded ? "w-[220px]" : "w-12")}>
+    <div className={clsx("relative shrink-0 transition-[width] duration-200 ease-out", widthClass)}>
       <aside
-        onMouseEnter={() => !forceExpanded && setHovered(true)}
-        onMouseLeave={() => !forceExpanded && setHovered(false)}
         className={clsx(
-          "absolute left-0 top-0 z-40 flex h-screen [height:100dvh] flex-col overflow-hidden border-r border-border bg-sidebar py-4 transition-[width,box-shadow] duration-200 ease-out",
-          open ? "w-[220px]" : "w-12",
-          open && !forceExpanded && "shadow-[8px_0_24px_rgba(0,0,0,0.12)]"
+          "sidebar-chrome absolute left-0 top-0 z-40 flex h-screen [height:100dvh] flex-col overflow-hidden border-r border-sidebar-divider bg-sidebar py-4 text-sidebar-foreground transition-[width] duration-200 ease-out",
+          widthClass
         )}
       >
-        <Link href="/today" className="mb-8 flex shrink-0 items-center gap-2.5 px-3">
-          <span className="flex w-6 shrink-0 items-center justify-center text-foreground">
-            <CandlestickMark />
-          </span>
-          <span
-            className={clsx(
-              "whitespace-nowrap text-sm font-semibold tracking-tight text-foreground transition-opacity duration-150",
-              open ? "opacity-100" : "pointer-events-none opacity-0"
-            )}
-          >
-            trade<span className="text-primary">fix</span>
-          </span>
+        <Link
+          href="/today"
+          className={clsx(
+            "mb-5 flex shrink-0 items-center",
+            isCollapsed ? "justify-center px-2" : "px-3"
+          )}
+          title="TradeFix"
+        >
+          <BrandLockup collapsed={isCollapsed} />
         </Link>
 
-        <nav className="flex w-full flex-1 flex-col gap-0.5 overflow-y-auto px-1.5">
+        <div className={clsx("mb-4", isCollapsed ? "px-2" : "px-4")}>
+          <button
+            type="button"
+            onClick={() => openModal("manual")}
+            className={clsx(
+              "inline-flex h-8 items-center justify-center gap-1.5 rounded-md bg-primary text-[12px] font-medium text-primary-foreground text-on-accent transition-colors duration-150 hover:bg-primary-hover",
+              isCollapsed ? "w-full px-0" : "w-full"
+            )}
+            title={t("common.addTrade")}
+            aria-label={t("common.addTrade")}
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.25} />
+            {!isCollapsed && t("common.addTrade")}
+          </button>
+        </div>
+
+        <nav
+          className={clsx(
+            "sidebar-scroll flex w-full flex-1 flex-col gap-0.5 overflow-y-auto",
+            isCollapsed ? "px-1.5" : "px-2.5"
+          )}
+        >
           {NAV.map((item) => {
             const Icon = item.icon;
             const label = t(item.labelKey);
             const active =
               pathname === item.href ||
               (item.href !== "/today" && Boolean(pathname?.startsWith(item.href + "/")));
-            const key = `${item.labelKey}-${item.href}`;
+            const key = `${item.labelKey}-${item.href}-${item.testId}`;
 
             return (
               <Link
@@ -111,48 +136,44 @@ export function Sidebar({ expanded: forceExpanded = false }: { expanded?: boolea
                 href={item.href}
                 title={label}
                 data-testid={item.testId}
+                aria-current={active ? "page" : undefined}
                 className={clsx(
-                  "relative flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors",
+                  "relative flex items-center text-left text-[12px] font-medium transition-colors duration-150",
+                  isCollapsed
+                    ? "justify-center rounded-md px-0 py-2.5"
+                    : "w-full gap-2.5 rounded-r-md py-[7px] pl-2.5 pr-2.5",
                   active
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted hover:bg-foreground/5 hover:text-foreground"
+                    ? "bg-primary/25 font-semibold text-white shadow-[inset_3px_0_0_0_hsl(var(--primary))]"
+                    : "rounded-md text-sidebar-muted hover:bg-sidebar-hover hover:text-white"
                 )}
               >
-                {active && <div className="absolute bottom-1 left-0 top-1 w-0.5 rounded-r bg-primary" />}
-                <div className="relative shrink-0">
-                  <Icon className="h-4 w-4" aria-hidden />
-                </div>
-                <span
-                  className={clsx(
-                    "truncate transition-opacity duration-150",
-                    open ? "opacity-100" : "pointer-events-none opacity-0"
-                  )}
-                >
-                  {label}
-                </span>
+                <Icon
+                  className="h-[17px] w-[17px] shrink-0"
+                  style={{ color: item.iconColor }}
+                  strokeWidth={active ? 2 : 1.75}
+                  aria-hidden
+                />
+                {!isCollapsed && <span className="truncate">{label}</span>}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-2 flex w-full flex-col gap-0.5 border-t border-border px-1.5 pt-3">
-          <button
-            type="button"
-            className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-muted transition-colors hover:bg-foreground/5 hover:text-foreground"
-            title={t("nav.getApp")}
-          >
-            <Smartphone className="h-4 w-4 shrink-0" />
-            <span className={clsx("truncate transition-opacity", open ? "opacity-100" : "opacity-0")}>
-              {t("common.app")}
-            </span>
-          </button>
-
+        <div
+          className={clsx(
+            "mt-2 flex w-full border-t border-sidebar-divider pt-3",
+            isCollapsed ? "flex-col items-center gap-1 px-1.5" : "items-center gap-1 px-2.5"
+          )}
+        >
           <Link
             href="/settings/profile"
-            className="flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-foreground/5"
+            className={clsx(
+              "flex items-center rounded-md transition-colors duration-150 hover:bg-sidebar-hover",
+              isCollapsed ? "justify-center p-1.5" : "min-w-0 flex-1 gap-2.5 px-2 py-2"
+            )}
             title={t("common.settings")}
           >
-            <span className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border">
+            <span className="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
               {user?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -161,30 +182,49 @@ export function Sidebar({ expanded: forceExpanded = false }: { expanded?: boolea
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="flex h-full w-full items-center justify-center bg-surface-2 text-[10px] font-semibold text-foreground">
+                <span className="flex h-full w-full items-center justify-center bg-white/10 text-[11px] font-semibold text-white">
                   {initial}
                 </span>
               )}
             </span>
-            <span className={clsx("truncate text-sm text-foreground/80 transition-opacity", open ? "opacity-100" : "opacity-0")}>
-              {user?.name || name}
-            </span>
+            {!isCollapsed && (
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12.5px] font-medium text-white">
+                  {user?.name || name}
+                </span>
+                <span className="block truncate text-[10.5px] text-sidebar-muted">{user?.email}</span>
+              </span>
+            )}
           </Link>
 
           <button
             type="button"
             onClick={() => logout()}
-            className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-muted transition-colors hover:bg-destructive/10 hover:text-destructive"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-sidebar-muted transition-colors duration-150 hover:bg-destructive/20 hover:text-red-300"
             title={t("common.signOut")}
+            aria-label={t("common.signOut")}
             data-testid="nav-sign-out"
           >
-            <LogOut className="h-4 w-4 shrink-0" />
-            <span className={clsx("truncate transition-opacity", open ? "opacity-100" : "opacity-0")}>
-              {t("common.signOut")}
-            </span>
+            <LogOut className="h-4 w-4" strokeWidth={1.75} />
           </button>
         </div>
       </aside>
+
+      {showEdgeToggle && !forceExpanded && (
+        <button
+          type="button"
+          onClick={toggle}
+          className="absolute -right-3 top-[52px] z-50 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] shadow-sm transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-primary"
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
+          ) : (
+            <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2} />
+          )}
+        </button>
+      )}
     </div>
   );
 }

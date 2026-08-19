@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 
 import { AppearanceProvider } from "@/components/providers/AppearanceProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
@@ -10,11 +10,19 @@ import { APPEARANCE_BOOT_SCRIPT } from "@/lib/appearance";
 
 import "./globals.css";
 
-const sans = DM_Sans({
+const sans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
   weight: ["400", "500", "600", "700"],
+});
+
+/** High-contrast Didone serif — matches TradeZella-style brand lockup */
+const brand = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-brand",
+  display: "swap",
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -25,7 +33,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`dark ${sans.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${sans.variable} ${brand.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOT_SCRIPT }} />
       </head>

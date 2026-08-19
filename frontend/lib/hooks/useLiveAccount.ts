@@ -13,7 +13,7 @@ function wsBaseUrl(): string {
     u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
     return u.origin;
   } catch {
-    return "ws://127.0.0.1:8000";
+    return "ws://127.0.0.1:8001";
   }
 }
 

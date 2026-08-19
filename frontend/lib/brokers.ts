@@ -236,14 +236,14 @@ export function brokerInitials(name: string): string {
 }
 
 const PALETTE = [
-  "bg-emerald-500/15 text-emerald-600",
+  "bg-primary/15 text-primary",
   "bg-sky-500/15 text-sky-600",
   "bg-violet-500/15 text-violet-600",
   "bg-amber-500/15 text-amber-600",
   "bg-rose-500/15 text-rose-600",
-  "bg-cyan-500/15 text-cyan-600",
-  "bg-orange-500/15 text-orange-600",
   "bg-indigo-500/15 text-indigo-600",
+  "bg-orange-500/15 text-orange-600",
+  "bg-pink-500/15 text-pink-600",
 ];
 
 export function brokerAccentClass(name: string): string {

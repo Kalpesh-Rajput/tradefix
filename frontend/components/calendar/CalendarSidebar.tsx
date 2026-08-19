@@ -87,7 +87,7 @@ export function CalendarSidebar({
     }
   }
 
-  const rows: { label: string; value: string; tone?: "pos" | "neg" | "muted" }[] = [
+  const rows: { label: string; value: string; tone?: "pos" | "neg" }[] = [
     {
       label: "Net P&L",
       value: formatMoney(stats.netPnl),
@@ -105,29 +105,29 @@ export function CalendarSidebar({
   ];
 
   return (
-    <aside className="flex w-full shrink-0 flex-col border-t border-white/[0.06] bg-black/40 lg:w-[280px] lg:border-l lg:border-t-0">
-      <div className="flex-1 space-y-8 overflow-y-auto px-5 py-6">
+    <aside className="flex w-full shrink-0 flex-col border-t border-[var(--color-border)] bg-[var(--color-surface)] lg:w-[280px] lg:border-l lg:border-t-0">
+      <div className="flex-1 space-y-7 overflow-y-auto px-5 py-5">
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
               Monthly goal
             </h2>
             {!editing && (
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="rounded-md p-1 text-zinc-500 transition hover:bg-white/5 hover:text-white"
+                className="rounded-md p-1 text-[var(--color-text-tertiary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-primary"
                 title="Edit monthly goal"
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
               </button>
             )}
           </div>
 
           {editing ? (
             <div className="space-y-2">
-              <div className="flex items-center rounded-lg border border-white/10 bg-zinc-950 focus-within:border-primary/40">
-                <span className="pl-3 text-sm text-zinc-500">{currencySymbol}</span>
+              <div className="flex items-center rounded-md border border-[#E2E2E7] bg-white focus-within:border-primary/40">
+                <span className="pl-3 text-sm text-[var(--color-text-secondary)]">{currencySymbol}</span>
                 <input
                   type="number"
                   min={0}
@@ -135,7 +135,7 @@ export function CalendarSidebar({
                   value={goalDraft}
                   onChange={(e) => setGoalDraft(e.target.value)}
                   placeholder="e.g. 5000"
-                  className="w-full bg-transparent px-2 py-2 text-sm text-white outline-none"
+                  className="w-full bg-transparent px-2 py-2 text-sm text-[var(--color-text-primary)] outline-none"
                   autoFocus
                 />
               </div>
@@ -144,15 +144,19 @@ export function CalendarSidebar({
                   type="button"
                   onClick={saveGoal}
                   disabled={saving}
-                  className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-primary text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                  className="dash-btn-primary text-on-accent !h-8 flex-1 !text-xs disabled:opacity-50"
                 >
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                  {saving ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5" />
+                  )}
                   Save
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditing(false)}
-                  className="h-8 rounded-lg border border-white/10 px-3 text-xs text-zinc-400"
+                  className="dash-btn-secondary !h-8 !px-3 !text-xs"
                 >
                   Cancel
                 </button>
@@ -161,39 +165,41 @@ export function CalendarSidebar({
           ) : (
             <div>
               <p
-                className={`font-mono text-3xl font-semibold ${
-                  goalCurrent >= 0 ? "text-primary" : "text-destructive"
+                className={`font-mono text-[28px] font-semibold leading-tight ${
+                  goalCurrent >= 0 ? "text-positive" : "text-negative"
                 }`}
               >
                 {formatMoney(goalCurrent)}
               </p>
               {monthlyGoal != null && monthlyGoal > 0 ? (
-                <p className="mt-1 text-[11px] text-zinc-500">
+                <p className="mt-1.5 text-[12px] text-[var(--color-text-secondary)]">
                   Target {formatMoney(monthlyGoal, { signed: false })} ·{" "}
                   {Math.max(0, Math.min(100, Math.round((goalCurrent / monthlyGoal) * 100)))}%
                 </p>
               ) : (
-                <p className="mt-1 text-[11px] text-zinc-600">Set a monthly P&L target</p>
+                <p className="mt-1.5 text-[12px] text-[var(--color-text-tertiary)]">
+                  Set a monthly P&L target
+                </p>
               )}
             </div>
           )}
         </section>
 
         <section>
-          <h2 className="mb-4 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+          <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
             Your {periodLabel}
           </h2>
-          <dl className="space-y-3">
+          <dl className="space-y-2.5">
             {rows.map((row) => (
               <div key={row.label} className="flex items-baseline justify-between gap-3">
-                <dt className="text-xs text-zinc-500">{row.label}</dt>
+                <dt className="text-[13px] text-[var(--color-text-secondary)]">{row.label}</dt>
                 <dd
-                  className={`font-mono text-sm font-medium ${
+                  className={`font-mono text-[13px] font-semibold tabular-nums ${
                     row.tone === "pos"
-                      ? "text-primary"
+                      ? "text-positive"
                       : row.tone === "neg"
-                        ? "text-destructive"
-                        : "text-white"
+                        ? "text-negative"
+                        : "text-[var(--color-text-primary)]"
                   }`}
                 >
                   {row.value}
@@ -204,13 +210,13 @@ export function CalendarSidebar({
         </section>
       </div>
 
-      <div className="shrink-0 border-t border-white/[0.06] p-4">
+      <div className="shrink-0 border-t border-[var(--color-border)] p-4">
         <button
           type="button"
           onClick={sharePeriod}
-          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/10 text-sm text-zinc-300 transition hover:border-white/20 hover:text-white"
+          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-[#E2E2E7] bg-white text-[13px] font-medium text-[var(--color-text-primary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-primary"
         >
-          <Share2 className="h-4 w-4" />
+          <Share2 className="h-4 w-4" strokeWidth={1.75} />
           Share your {periodLabel}
         </button>
       </div>

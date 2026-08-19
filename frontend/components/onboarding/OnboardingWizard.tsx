@@ -51,13 +51,13 @@ function GoogleG() {
 }
 
 const CAPITAL_ICONS: Record<string, ReactNode> = {
-  personal: <Wallet className="h-5 w-5 text-emerald-400" />,
+  personal: <Wallet className="h-5 w-5 text-primary" />,
   prop: <Building2 className="h-5 w-5 text-sky-400" />,
   not_started: <CircleDashed className="h-5 w-5 text-muted" />,
 };
 
 const MARKET_ICONS: Record<string, ReactNode> = {
-  stocks: <LineChart className="h-4 w-4 text-emerald-400" />,
+  stocks: <LineChart className="h-4 w-4 text-primary" />,
   options: <BookOpen className="h-4 w-4 text-pink-400" />,
   forex: <ChartCandlestick className="h-4 w-4 text-sky-400" />,
   crypto: <Bitcoin className="h-4 w-4 text-orange-400" />,
@@ -81,7 +81,7 @@ const REFERRAL_ICONS: Record<string, ReactNode> = {
   tiktok: <span className="text-sm font-semibold text-foreground">TT</span>,
   youtube: <span className="text-sm font-semibold text-red-500">YT</span>,
   reddit: <span className="text-sm font-semibold text-orange-400">r/</span>,
-  community: <Users className="h-4 w-4 text-emerald-400" />,
+  community: <Users className="h-4 w-4 text-primary" />,
   friend: <UserRound className="h-4 w-4 text-amber-400" />,
   other: <Ellipsis className="h-4 w-4 text-muted" />,
 };

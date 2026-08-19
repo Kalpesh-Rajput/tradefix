@@ -1,8 +1,8 @@
-"""Seed 50 closed dummy trades for the current calendar month.
+"""Seed closed dummy trades across a date range.
 
 Usage (from backend/ with venv active):
-  python -m scripts.seed_month_trades
-  python -m scripts.seed_month_trades --email you@example.com
+  python -m scripts.seed_month_trades --count 100
+  python -m scripts.seed_month_trades --email you@example.com --count 100 --days 180 --replace
 """
 
 from __future__ import annotations
@@ -19,6 +19,8 @@ from app.models.account import Account
 from app.models.trade import AssetType, Trade, TradeSide, TradeStatus
 from app.models.user import User
 
+SEED_BATCH = "dummy_v1"
+
 SYMBOLS = [
     ("EURUSD", AssetType.forex, 1.08, 0.0025),
     ("GBPUSD", AssetType.forex, 1.27, 0.003),
@@ -29,7 +31,11 @@ SYMBOLS = [
     ("AAPL", AssetType.stock, 190.0, 2.5),
     ("TSLA", AssetType.stock, 245.0, 6.0),
     ("NVDA", AssetType.stock, 120.0, 3.5),
+    ("MSFT", AssetType.stock, 420.0, 5.0),
+    ("AMZN", AssetType.stock, 185.0, 4.0),
+    ("META", AssetType.stock, 510.0, 8.0),
     ("BTCUSD", AssetType.crypto, 64000.0, 800.0),
+    ("ETHUSD", AssetType.crypto, 3200.0, 80.0),
 ]
 
 SETUPS = [
@@ -40,6 +46,7 @@ SETUPS = [
     "Support/Resistance",
     "Liquidity Sweep",
     "Momentum",
+    "ORB",
 ]
 
 EMOTIONS = [
@@ -70,24 +77,15 @@ NOTES = [
     "Best setup of the week: sweep then reclaim.",
     "Cut early before target. Process miss.",
     "Textbook pin bar at support.",
+    "Held through pullback — patience paid.",
+    "Overtraded after win streak.",
 ]
 
 
-def _month_bounds(now: datetime) -> tuple[datetime, datetime]:
-    start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
-    if now.month == 12:
-        end = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc) - timedelta(seconds=1)
-    else:
-        end = datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc) - timedelta(seconds=1)
-    # Don't seed into the future past "now"
-    if end > now:
-        end = now
+def _range_bounds(now: datetime, days: int) -> tuple[datetime, datetime]:
+    end = now
+    start = now - timedelta(days=max(1, days - 1))
     return start, end
-
-
-def _rand_dt(start: datetime, end: datetime, rng: random.Random) -> datetime:
-    span = max(1, int((end - start).total_seconds()))
-    return start + timedelta(seconds=rng.randint(0, span))
 
 
 def build_trade(
@@ -121,7 +119,7 @@ def build_trade(
 
     direction = 1 if side == TradeSide.long else -1
     if asset == AssetType.forex and symbol.endswith("JPY"):
-        gross = (exit_p - entry) * direction * qty * 0.01  # rough pip value proxy
+        gross = (exit_p - entry) * direction * qty * 0.01
     elif asset == AssetType.forex:
         gross = (exit_p - entry) * direction * qty
     else:
@@ -129,17 +127,18 @@ def build_trade(
 
     fees = round(rng.uniform(1.5, 12.0), 2)
     pnl = round(gross - fees, 2)
-    risk = round(abs(atr * qty * (0.01 if asset == AssetType.forex and symbol.endswith("JPY") else 1)) * 0.5, 2)
+    risk = round(
+        abs(atr * qty * (0.01 if asset == AssetType.forex and symbol.endswith("JPY") else 1)) * 0.5,
+        2,
+    )
     if risk < 20:
         risk = round(rng.uniform(25, 150), 2)
 
     setup = rng.choice(SETUPS)
     emotion = rng.choice(EMOTIONS)
-    mistakes = []
+    mistakes: list[str] = []
     if not win and rng.random() < 0.55:
         mistakes = rng.sample(MISTAKES, k=rng.randint(1, 2))
-    if emotion == "Revenge Trading" and "Revenge Trading" not in mistakes:
-        pass
 
     compliance = rng.randint(4, 10) if win else rng.randint(2, 8)
 
@@ -173,19 +172,25 @@ def build_trade(
         status=TradeStatus.closed,
         screenshot_urls=[],
         auto_flags=[],
-        extra={"seeded": True, "seed_batch": "month_50"},
+        extra={"seeded": True, "seed_batch": SEED_BATCH},
     )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Seed 50 dummy trades for the current month")
+    parser = argparse.ArgumentParser(description="Seed dummy trades across a date range")
     parser.add_argument("--email", default=None, help="User email (default: first user)")
-    parser.add_argument("--count", type=int, default=50, help="Number of trades (default 50)")
+    parser.add_argument("--count", type=int, default=100, help="Number of trades (default 100)")
+    parser.add_argument(
+        "--days",
+        type=int,
+        default=180,
+        help="Spread trades across the last N days (default 180)",
+    )
     parser.add_argument("--seed", type=int, default=42, help="RNG seed for reproducibility")
     parser.add_argument(
         "--replace",
         action="store_true",
-        help="Delete previously seeded month trades (extra.seed_batch=month_50) first",
+        help=f"Delete previously seeded trades (extra.seed_batch={SEED_BATCH} or month_50) first",
     )
     args = parser.parse_args()
     rng = random.Random(args.seed)
@@ -201,12 +206,14 @@ def main() -> None:
 
         account = db.scalar(
             select(Account).where(Account.user_id == user.id, Account.is_default.is_(True))
-        ) or db.scalar(select(Account).where(Account.user_id == user.id).order_by(Account.created_at.asc()))
+        ) or db.scalar(
+            select(Account).where(Account.user_id == user.id).order_by(Account.created_at.asc())
+        )
         if not account:
             raise SystemExit("No account found for user.")
 
         now = datetime.now(timezone.utc)
-        start, end = _month_bounds(now)
+        start, end = _range_bounds(now, args.days)
 
         if args.replace:
             existing = db.scalars(
@@ -217,21 +224,40 @@ def main() -> None:
             ).all()
             removed = 0
             for t in existing:
-                if isinstance(t.extra, dict) and t.extra.get("seed_batch") == "month_50":
+                batch = t.extra.get("seed_batch") if isinstance(t.extra, dict) else None
+                if batch in (SEED_BATCH, "month_50"):
                     db.delete(t)
                     removed += 1
             db.commit()
             print(f"Removed {removed} previously seeded trades.")
 
-        trades = []
-        for _ in range(args.count):
-            opened = _rand_dt(start, end, rng)
-            # Prefer weekdays
-            while opened.weekday() >= 5 and rng.random() < 0.7:
-                opened = _rand_dt(start, end, rng)
-            opened = opened.replace(hour=rng.randint(6, 20), minute=rng.choice([0, 15, 30, 45]))
+        trades: list[Trade] = []
+        for i in range(args.count):
+            if args.count == 1:
+                opened = start
+            else:
+                frac = i / (args.count - 1)
+                slot = start + timedelta(seconds=int((end - start).total_seconds() * frac))
+                jitter = timedelta(hours=rng.randint(-8, 8), minutes=rng.choice([0, 15, 30, 45]))
+                opened = slot + jitter
+            if opened < start:
+                opened = start + timedelta(hours=rng.randint(1, 6))
             if opened > end:
                 opened = end - timedelta(hours=1)
+
+            attempts = 0
+            while opened.weekday() >= 5 and attempts < 5:
+                opened = opened - timedelta(days=1)
+                attempts += 1
+            if opened < start:
+                opened = start + timedelta(hours=rng.randint(8, 16))
+
+            opened = opened.replace(
+                hour=rng.randint(6, 20),
+                minute=rng.choice([0, 15, 30, 45]),
+                second=0,
+                microsecond=0,
+            )
             trades.append(
                 build_trade(user_id=user.id, account_id=account.id, opened_at=opened, rng=rng)
             )
@@ -239,9 +265,10 @@ def main() -> None:
         db.add_all(trades)
         db.commit()
         pnls = [float(t.pnl or 0) for t in trades]
+        dates = sorted({t.opened_at.date() for t in trades if t.opened_at})
         print(
             f"Seeded {len(trades)} trades for {user.email} / {account.name}\n"
-            f"Month: {start.date()} to {end.date()}\n"
+            f"Range: {start.date()} to {end.date()} ({len(dates)} unique days)\n"
             f"Total P&L: {sum(pnls):+.2f} | Wins: {sum(1 for p in pnls if p > 0)} | "
             f"Losses: {sum(1 for p in pnls if p < 0)}"
         )

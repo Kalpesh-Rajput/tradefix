@@ -46,7 +46,7 @@ export function PortfolioSwitcher({ className }: { className?: string }) {
         aria-controls={listId}
         disabled={loading || accounts.length === 0}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9 min-w-[180px] items-center justify-between gap-2 rounded-md border border-border bg-surface-2 px-3 text-xs font-medium text-foreground hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-9 min-w-[180px] items-center justify-between gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-medium text-foreground transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="flex min-w-0 items-center gap-2">
           <Briefcase className="h-3.5 w-3.5 shrink-0 text-muted" />
@@ -62,7 +62,7 @@ export function PortfolioSwitcher({ className }: { className?: string }) {
           id={listId}
           role="listbox"
           aria-label="Select portfolio"
-          className="absolute right-0 z-50 mt-1.5 w-[240px] overflow-hidden rounded-lg border border-border bg-surface shadow-xl"
+          className="absolute right-0 z-50 mt-1.5 w-[240px] overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] shadow-dropdown"
         >
           <ul className="max-h-64 overflow-y-auto py-1">
             {accounts.map((account) => {
@@ -76,8 +76,10 @@ export function PortfolioSwitcher({ className }: { className?: string }) {
                       setOpen(false);
                     }}
                     className={clsx(
-                      "flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition",
-                      selected ? "bg-primary/10 text-primary" : "text-foreground hover:bg-foreground/5"
+                      "flex h-9 w-full items-center gap-2 px-3 text-left text-[13px] transition-colors duration-150",
+                      selected
+                        ? "bg-[var(--color-primary-light)] text-primary"
+                        : "text-foreground hover:bg-[var(--color-primary-very-light)]"
                     )}
                   >
                     <Briefcase className="h-3.5 w-3.5 shrink-0 opacity-60" />

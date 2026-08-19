@@ -3,29 +3,129 @@
 @tailwind utilities;
 
 :root {
-  --primary: 165 100% 39%;
-  --primary-foreground: 0 0% 0%;
-  --accent: 165 100% 39%;
-  --ring: 165 100% 39%;
-  --accent-hex: #00c896;
-  --background: 0 0% 0%;
-  --foreground: 0 0% 98%;
-  --surface: 240 6% 4%;
-  --surface-2: 240 4% 10%;
-  --sidebar: 0 0% 0%;
-  --border: 0 0% 100% / 0.06;
-  --muted: 240 4% 46%;
-  --card: 240 6% 4%;
-  --destructive: 0 84% 60%;
+  /* Brand / primary purple — TradeZella reference */
+  --color-primary: #5b4696;
+  --color-primary-hover: #4f3c87;
+  --color-primary-active: #49377d;
+  --color-primary-light: #f0ecfa;
+  --color-primary-very-light: #f7f4fc;
+
+  --primary: 255 36% 43%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 255 36% 43%;
+  --ring: 255 36% 43%;
+  --accent-hex: #5b4696;
+
+  /* Surfaces */
+  --color-background: #f2f4f5;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #fefefe;
+  --background: 200 11% 95%;
+  --surface: 0 0% 100%;
+  --surface-2: 220 14% 96%;
+  --card: 0 0% 100%;
+
+  /* Sidebar */
+  --color-sidebar: #231d2c;
+  --color-sidebar-text: #ffffff;
+  --color-sidebar-secondary: #c7c2d0;
+  --color-sidebar-icon: #aaa4b5;
+  --color-sidebar-active: #4b4554;
+  --color-sidebar-hover: #383241;
+  --color-sidebar-divider: #3a3343;
+  --sidebar: 264 21% 14%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-muted: 255 12% 79%;
+  --sidebar-border: 264 14% 24%;
+
+  /* Borders */
+  --color-border: #e8e8ec;
+  --color-border-light: #eeeef1;
+  --color-border-subtle: #ececf0;
+  --color-divider: #ececf0;
+  --border: 240 8% 92%;
+
+  /* Text — higher contrast for light UI readability */
+  --color-text-primary: #14151a;
+  --color-text-secondary: #4a4b52;
+  --color-text-tertiary: #6b6c74;
+  --color-text-muted: #85868e;
+  --color-text-kpi: #111218;
+  --color-text-label: #4f5058;
+  --foreground: 240 10% 9%;
+  --muted: 233 5% 36%;
+
+  /* Financial — positive follows primary purple (no green) */
+  --color-success: #5b4696;
+  --color-success-dark: #4f3c87;
+  --color-success-light: #f0ecfa;
+  --color-success-bg: #f7f4fc;
+  --color-danger: #e35d68;
+  --color-danger-dark: #d94d59;
+  --color-danger-light: #f8dde0;
+  --color-danger-bg: #fdf0f1;
+  --color-warning: #f3c623;
+  --color-warning-bg: #fff5c9;
+  --color-warning-badge: #f4d34f;
+  --color-warning-badge-text: #514a16;
+  --positive: 255 36% 43%;
+  --positive-soft: 255 50% 95%;
+  --negative: 355 71% 63%;
+  --negative-soft: 355 67% 97%;
+  --destructive: 355 71% 63%;
+
+  /* Chart */
+  --color-chart-grid: #ecedef;
+  --color-chart-axis: #85868e;
+  --color-chart-line: #4b438b;
+  --color-gauge-track: #e7e8ec;
+  --color-breakeven: #7b8db8;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(20, 20, 30, 0.04);
+  --shadow-md: 0 2px 8px rgba(20, 20, 30, 0.03);
+  --shadow-dropdown: 0 8px 24px rgba(20, 20, 30, 0.1);
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+
+  /* Typography */
+  --font-family: var(--font-sans), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
+  --font-size-md: 12px;
+  --font-size-lg: 13px;
+  --font-size-xl: 17px;
+  --font-size-kpi: 18px;
+
+  /* Focus */
+  --focus-ring: 0 0 0 2px rgba(91, 70, 150, 0.15);
 }
 
 html,
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  color-scheme: dark;
+  font-family: var(--font-family);
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark,
+html.dark body {
+  color-scheme: dark;
 }
 
 html.light,
@@ -38,7 +138,7 @@ html.light body {
 }
 
 ::selection {
-  background: hsl(var(--primary) / 0.25);
+  background: hsl(var(--primary) / 0.2);
   color: hsl(var(--foreground));
 }
 
@@ -55,12 +155,50 @@ progress {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--foreground) / 0.12);
-  border-radius: 9999px;
+  background-color: #c8c8ce;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-track {
   background-color: transparent;
+}
+
+/* Sidebar nav scrollbar — faded, only a bit more visible on hover */
+.sidebar-chrome nav,
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+.sidebar-chrome nav::-webkit-scrollbar,
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-chrome nav::-webkit-scrollbar-track,
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-chrome nav::-webkit-scrollbar-thumb,
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+
+.sidebar-chrome nav:hover::-webkit-scrollbar-thumb,
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.22);
+}
+
+.sidebar-chrome nav::-webkit-scrollbar-thumb:hover,
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 /* Light-mode overrides for common dark utility patterns used across the app */
@@ -79,21 +217,20 @@ html.light .bg-zinc-800\/80 {
   background-color: hsl(var(--surface-2)) !important;
 }
 
-/* Primary text on light surfaces (skip forced white on accent swatches) */
-html.light .text-white:not(.text-on-accent) {
+html.light .text-white:not(.text-on-accent):not(.sidebar-chrome *) {
   color: hsl(var(--foreground)) !important;
 }
 
-html.light .text-white\/90:not(.text-on-accent),
-html.light .text-white\/80:not(.text-on-accent),
-html.light .text-white\/70:not(.text-on-accent),
-html.light .text-white\/60:not(.text-on-accent),
-html.light .text-white\/50:not(.text-on-accent) {
+html.light .text-white\/90:not(.text-on-accent):not(.sidebar-chrome *),
+html.light .text-white\/80:not(.text-on-accent):not(.sidebar-chrome *),
+html.light .text-white\/70:not(.text-on-accent):not(.sidebar-chrome *),
+html.light .text-white\/60:not(.text-on-accent):not(.sidebar-chrome *),
+html.light .text-white\/50:not(.text-on-accent):not(.sidebar-chrome *) {
   color: hsl(var(--foreground) / 0.75) !important;
 }
 
-html.light .hover\:text-white:hover:not(.text-on-accent),
-html.light .hover\:text-zinc-200:hover {
+html.light .hover\:text-white:hover:not(.text-on-accent):not(.sidebar-chrome *),
+html.light .hover\:text-zinc-200:hover:not(.sidebar-chrome *) {
   color: hsl(var(--foreground)) !important;
 }
 
@@ -106,19 +243,28 @@ html.light .text-zinc-300,
 html.light .text-zinc-400,
 html.light .text-gray-300,
 html.light .text-gray-400 {
-  color: hsl(240 4% 32%) !important;
+  color: #3f4048 !important;
 }
 
 html.light .text-zinc-500,
 html.light .text-zinc-600,
 html.light .text-gray-500 {
-  color: hsl(var(--muted)) !important;
+  color: #4a4b52 !important;
+}
+
+html.light .text-zinc-700 {
+  color: #2e2f36 !important;
 }
 
 html.light .placeholder\:text-gray-500::placeholder,
 html.light .placeholder\:text-zinc-500::placeholder,
 html.light .placeholder\:text-zinc-600::placeholder {
-  color: hsl(var(--muted)) !important;
+  color: #6b6c74 !important;
+}
+
+html.light .bg-black\/40,
+html.light .bg-black\/50 {
+  background-color: #ffffff !important;
 }
 
 html.light .border-white\/\[0\.06\],
@@ -150,6 +296,107 @@ html.light select {
   color-scheme: light;
 }
 
+/* Dark mode: map common light-only hardcodes to theme tokens */
+html.dark .bg-white:not(.text-on-accent):not(.keep-white) {
+  background-color: var(--color-surface) !important;
+}
+
+html.dark .hover\:bg-white:hover:not(.text-on-accent) {
+  background-color: var(--color-surface-secondary) !important;
+}
+
+html.dark .border-\[\#E2E2E7\],
+html.dark .border-\[\#e2e2e7\],
+html.dark .border-\[\#ddd9e8\] {
+  border-color: var(--color-border) !important;
+}
+
+html.dark .bg-\[\#F5F4F8\],
+html.dark .bg-\[\#f5f4f8\] {
+  background-color: var(--color-surface-secondary) !important;
+}
+
+html.dark .text-\[\#70717A\],
+html.dark .text-\[\#70717a\] {
+  color: var(--color-text-tertiary) !important;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color-scheme: dark;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background-color: #4a4554;
+}
+
+@layer components {
+  .dash-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .dash-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    transition: background-color 160ms ease;
+  }
+
+  .dash-btn-primary:hover {
+    background: var(--color-primary-hover);
+  }
+
+  .dash-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--color-border);
+    transition: background-color 160ms ease;
+  }
+
+  .dash-btn-secondary:hover {
+    background: var(--color-primary-very-light);
+  }
+
+  .dash-control {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    font-size: 11px;
+    color: var(--color-text-primary);
+    transition: border-color 160ms ease, background-color 160ms ease;
+  }
+
+  .dash-control:hover {
+    border-color: var(--color-border-light);
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -157,5 +404,21 @@ html.light select {
 
   .font-mono-data {
     font-variant-numeric: tabular-nums;
+  }
+
+  .text-positive {
+    color: hsl(var(--positive));
+  }
+
+  .text-negative {
+    color: var(--color-danger);
+  }
+
+  .bg-positive-soft {
+    background-color: hsl(var(--positive-soft));
+  }
+
+  .bg-negative-soft {
+    background-color: var(--color-danger-bg);
   }
 }

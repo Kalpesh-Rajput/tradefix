@@ -9,6 +9,7 @@ import { AccountProvider } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { QuickLogProvider } from "@/components/providers/QuickLogProvider";
+import { SidebarProvider } from "@/components/providers/SidebarProvider";
 import { AddTradeModal } from "@/components/trade/AddTradeModal";
 import { useLiveAccount } from "@/lib/hooks/useLiveAccount";
 
@@ -53,23 +54,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AccountProvider>
       <QuickLogProvider>
-        <LiveAccountBridge />
-        <div className="flex h-screen [height:100dvh] flex-col overflow-hidden bg-background text-foreground md:flex-row">
-          <MobileNav />
-          <div className="hidden md:block">
-            <Sidebar />
+        <SidebarProvider>
+          <LiveAccountBridge />
+          <div className="flex h-screen [height:100dvh] flex-col overflow-hidden bg-background text-foreground md:flex-row">
+            <MobileNav />
+            <div className="hidden md:block">
+              <Sidebar />
+            </div>
+            <main
+              className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
+                isDashboard || isSettings || isTradesLog || isCalendar || isDiary
+                  ? ""
+                  : "overflow-y-auto p-6 sm:p-8"
+              } ${isSettings ? "overflow-y-auto" : ""}`}
+            >
+              {children}
+            </main>
+            <AddTradeModal />
           </div>
-          <main
-            className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
-              isDashboard || isSettings || isTradesLog || isCalendar || isDiary
-                ? ""
-                : "overflow-y-auto p-6 sm:p-8"
-            } ${isSettings ? "overflow-y-auto" : ""}`}
-          >
-            {children}
-          </main>
-          <AddTradeModal />
-        </div>
+        </SidebarProvider>
       </QuickLogProvider>
     </AccountProvider>
   );

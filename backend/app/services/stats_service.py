@@ -458,6 +458,13 @@ def performance_timeline(trades: list[Trade]) -> list[dict]:
     return rows
 
 
+def _as_utc(dt: datetime) -> datetime:
+    """Normalize naive/aware datetimes so range filters never mix tz kinds."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 def filter_trades(
     trades: list[Trade],
     *,
@@ -470,9 +477,19 @@ def filter_trades(
 ) -> list[Trade]:
     out = trades
     if date_from:
-        out = [t for t in out if t.opened_at >= date_from]
+        start = _as_utc(date_from)
+        out = [t for t in out if t.opened_at and _as_utc(t.opened_at) >= start]
     if date_to:
-        out = [t for t in out if t.opened_at <= date_to]
+        # Inclusive end-of-day when the client sends a date-only bound (00:00:00)
+        end = _as_utc(date_to)
+        if (
+            end.hour == 0
+            and end.minute == 0
+            and end.second == 0
+            and end.microsecond == 0
+        ):
+            end = end + timedelta(days=1) - timedelta(microseconds=1)
+        out = [t for t in out if t.opened_at and _as_utc(t.opened_at) <= end]
     if setup_tag:
         out = [
             t

@@ -52,7 +52,7 @@ class User(Base):
     yearly_goal: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
     target_trades: Mapped[int | None] = mapped_column(Integer, nullable=True)
     theme: Mapped[str] = mapped_column(String(16), nullable=False, default="dark", server_default="dark")
-    accent_color: Mapped[str] = mapped_column(String(32), nullable=False, default="teal", server_default="teal")
+    accent_color: Mapped[str] = mapped_column(String(32), nullable=False, default="purple", server_default="purple")
     plan: Mapped[str] = mapped_column(String(16), nullable=False, default="free", server_default="free")
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     custom_emotion_tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)

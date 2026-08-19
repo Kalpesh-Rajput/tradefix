@@ -34,7 +34,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute -right-10 bottom-16 h-72 w-72 rounded-full bg-emerald-400/10 blur-3xl"
+          className="absolute -right-10 bottom-16 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
           animate={{ x: [0, -14, 0], opacity: [0.25, 0.45, 0.25] }}
           transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
         />
