@@ -13,7 +13,12 @@ from app.services import stats_service
 
 
 def _get_closed_trades(db: Session, user_id: uuid.UUID) -> list[Trade]:
-    stmt = select(Trade).where(Trade.user_id == user_id, Trade.status == TradeStatus.closed, Trade.pnl.is_not(None))
+    stmt = select(Trade).where(
+        Trade.user_id == user_id,
+        Trade.status == TradeStatus.closed,
+        Trade.pnl.is_not(None),
+        Trade.is_deleted.is_(False),
+    )
     return list(db.scalars(stmt.order_by(Trade.opened_at.asc())).all())
 
 

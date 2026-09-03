@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 import { api, clearToken, getToken, setToken } from "@/lib/api";
+import { clearConnectorsBootstrap, stashConnectorsBootstrap } from "@/lib/connectors/bootstrap";
+import { ensureConnectorsAccount, logoutConnectors } from "@/lib/connectors/auth";
+import { isConnectorsConfigured } from "@/lib/connectors/api";
 import { postAuthPath } from "@/lib/onboarding";
 import { OnboardingUpdateInput, User, UserUpdateInput } from "@/lib/types";
 
@@ -63,15 +66,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push(postAuthPath(me));
   }
 
+  async function syncConnectorsAuth(email: string, password: string) {
+    if (!isConnectorsConfigured()) return;
+    stashConnectorsBootstrap(email, password);
+    const result = await ensureConnectorsAccount(email, password);
+    if (result.ok) clearConnectorsBootstrap();
+  }
+
   async function login(email: string, password: string) {
     const res = await api.post<{ access_token: string }>("/api/auth/login", { email, password });
     setToken(res.access_token);
+    await syncConnectorsAuth(email, password);
     await afterAuth();
   }
 
   async function signup(email: string, password: string, name: string) {
     const res = await api.post<{ access_token: string }>("/api/auth/signup", { email, password, name });
     setToken(res.access_token);
+    await syncConnectorsAuth(email, password);
     await afterAuth();
   }
 
@@ -83,6 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   function logout() {
     clearToken();
+    logoutConnectors();
+    clearConnectorsBootstrap();
     setUser(null);
     router.push("/login");
   }

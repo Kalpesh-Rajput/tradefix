@@ -2,7 +2,7 @@
 
 import { Lock, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { Button } from "@/components/ui/Button";
@@ -31,10 +31,10 @@ export default function CoachPage() {
 
   const [question, setQuestion] = useState("");
   const [thread, setThread] = useState<ThreadMessage[]>([]);
+  const autoAsked = useRef(false);
 
-  async function onAsk(e: FormEvent) {
-    e.preventDefault();
-    const q = question.trim();
+  async function submitQuestion(raw: string) {
+    const q = raw.trim();
     if (!q) return;
 
     const userMsg: ThreadMessage = { id: `u-${Date.now()}`, role: "user", text: q };
@@ -70,6 +70,20 @@ export default function CoachPage() {
         },
       ]);
     }
+  }
+
+  useEffect(() => {
+    if (autoAsked.current) return;
+    const q = new URLSearchParams(window.location.search).get("q")?.trim();
+    if (!q) return;
+    autoAsked.current = true;
+    void submitQuestion(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ask once from landing query
+  }, [accountId]);
+
+  async function onAsk(e: FormEvent) {
+    e.preventDefault();
+    await submitQuestion(question);
   }
 
   const locked = status && !status.eligible;

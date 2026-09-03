@@ -196,6 +196,32 @@ progress {
   background-color: rgba(255, 255, 255, 0.3);
 }
 
+.nav-column {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(20, 20, 30, 0.18) transparent;
+}
+
+.nav-column::-webkit-scrollbar {
+  width: 4px;
+}
+
+.nav-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav-column::-webkit-scrollbar-thumb {
+  background-color: rgba(20, 20, 30, 0.14);
+  border-radius: 9999px;
+}
+
+html.dark .nav-column {
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+html.dark .nav-column::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
 *:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);

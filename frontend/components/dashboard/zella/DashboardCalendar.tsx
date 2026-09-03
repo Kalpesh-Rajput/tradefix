@@ -80,7 +80,7 @@ export function DashboardCalendar({
   }
 
   return (
-    <div className="dash-card flex flex-col p-3.5">
+    <div className="dash-card flex flex-col rounded-md p-2.5">
       <div className="mb-2.5 flex shrink-0 items-center justify-between gap-2">
         <div className="flex items-center gap-0.5">
           <button
@@ -110,7 +110,7 @@ export function DashboardCalendar({
         <h3 className="text-[12px] font-medium text-[var(--color-text-primary)]">{label}</h3>
       </div>
 
-      <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[9px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
+      <div className="mb-1 grid grid-cols-7 gap-0.5 text-center text-[9px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d} className="py-0.5">
             {d}
@@ -118,9 +118,9 @@ export function DashboardCalendar({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5">
         {cells.map((cell) => {
-          if (!cell.inMonth) return <div key={cell.key} className="h-[48px]" />;
+          if (!cell.inMonth) return <div key={cell.key} className="h-8" />;
           const pnl = cell.data?.pnl ?? 0;
           const trades = cell.data?.trades ?? 0;
           const hasTrades = trades > 0;
@@ -138,7 +138,7 @@ export function DashboardCalendar({
                 onSelectDate?.(cell.key);
               }}
               className={clsx(
-                "flex h-[48px] flex-col rounded-md border p-1 text-left transition-colors duration-150",
+                "flex h-8 flex-col rounded-sm border px-0.5 py-px text-left transition-colors duration-150",
                 hasTrades && win && "border-primary/20 bg-primary/10",
                 hasTrades && loss && "border-[#F8DDE0] bg-[var(--color-danger-bg)]",
                 hasTrades && !win && !loss && "border-[var(--color-border-light)] bg-[var(--color-surface-secondary)]",
@@ -147,23 +147,18 @@ export function DashboardCalendar({
                 isSelected && "ring-2 ring-primary/40"
               )}
             >
-              <span className="text-[9px] font-medium text-[var(--color-text-secondary)]">
+              <span className="text-[9px] leading-none font-medium text-[var(--color-text-secondary)]">
                 {cell.day}
               </span>
               {hasTrades && (
-                <>
-                  <span
-                    className={clsx(
-                      "mt-auto text-[11px] font-semibold tabular-nums leading-tight",
-                      win ? "text-positive" : loss ? "text-negative" : "text-[var(--color-text-secondary)]"
-                    )}
-                  >
-                    {compactMoney(pnl)}
-                  </span>
-                  <span className="text-[9px] font-normal text-[var(--color-text-tertiary)]">
-                    {trades} trade{trades === 1 ? "" : "s"}
-                  </span>
-                </>
+                <span
+                  className={clsx(
+                    "mt-auto text-[10px] font-semibold tabular-nums leading-none",
+                    win ? "text-positive" : loss ? "text-negative" : "text-[var(--color-text-secondary)]"
+                  )}
+                >
+                  {compactMoney(pnl)}
+                </span>
               )}
             </button>
           );

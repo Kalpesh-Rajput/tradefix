@@ -16,7 +16,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
       return;
     }
     if (user.onboarding_completed_at) {
-      router.replace("/today");
+      router.replace("/home");
     }
   }, [loading, user, router]);
 

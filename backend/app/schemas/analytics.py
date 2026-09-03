@@ -1,7 +1,7 @@
 from datetime import datetime
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class OverviewStats(BaseModel):
@@ -113,6 +113,13 @@ class CalendarDay(BaseModel):
     trades: int
     pnl: float
     win_rate: float
+    gross_pnl: float = 0.0
+    volume: float = 0.0
+    winners: int = 0
+    losers: int = 0
+    profit_factor: float = 0.0
+    commissions: float = 0.0
+    curve: list[float] = Field(default_factory=list)
 
 
 class CalendarResponse(BaseModel):

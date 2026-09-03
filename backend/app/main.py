@@ -17,6 +17,8 @@ from app.api.routers import (
     insights,
     mentor,
     mood,
+    masters,
+    precheck_lists,
     prop,
     recaps,
     trades,
@@ -57,6 +59,8 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(accounts.router)
 app.include_router(trades.router)
+app.include_router(masters.router)
+app.include_router(precheck_lists.router)
 app.include_router(imports.router)
 app.include_router(analytics.router)
 app.include_router(calendar.router)

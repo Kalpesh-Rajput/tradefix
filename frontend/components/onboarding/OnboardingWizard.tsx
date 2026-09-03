@@ -211,7 +211,7 @@ export function OnboardingWizard() {
         referral_detail: referralDetail,
       });
       await completeOnboarding();
-      router.push("/today");
+      router.push("/home");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Something went wrong");
     } finally {

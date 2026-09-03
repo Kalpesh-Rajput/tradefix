@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from app.models.account import Account
 from app.models.trade import AssetType, Trade, TradeSide, TradeStatus
 from app.models.user import User
+from app.services.trade_calc import calculate_trade
+from app.services.trade_service import apply_calc, replace_executions
 
 # Generic column aliases so a variety of broker CSV exports "just work".
 COLUMN_ALIASES = {
@@ -106,10 +108,17 @@ def import_trades_from_csv(
             existing_fingerprints.add(fp)
 
             status = TradeStatus.closed if exit_price is not None else TradeStatus.open
-            direction = 1 if side == TradeSide.long else -1
-            pnl = None
-            if exit_price is not None:
-                pnl = round((exit_price - entry_price) * quantity * direction - fees, 2)
+            calc = calculate_trade(
+                asset_type=AssetType.stock,
+                symbol=symbol,
+                side=side,
+                opened_at=opened_at,
+                quantity=quantity,
+                entry_price=entry_price,
+                exit_price=exit_price,
+                closed_at=closed_at,
+                brokerage=fees,
+            )
 
             trade = Trade(
                 user_id=user.id,
@@ -117,17 +126,18 @@ def import_trades_from_csv(
                 symbol=symbol,
                 asset_type=AssetType.stock,
                 side=side,
-                quantity=quantity,
-                entry_price=entry_price,
-                exit_price=exit_price,
+                quantity=calc.quantity,
+                entry_price=calc.entry_price,
+                exit_price=calc.exit_price,
                 opened_at=opened_at,
                 closed_at=closed_at,
-                fees=fees,
+                fees=calc.fees,
                 setup_tag=setup_tag,
                 notes=notes,
-                status=status,
-                pnl=pnl,
+                status=calc.status if exit_price is not None else status,
             )
+            apply_calc(trade, calc)
+            replace_executions(trade, calc.fills, opened_at)
             db.add(trade)
             imported += 1
         except Exception as exc:  # noqa: BLE001

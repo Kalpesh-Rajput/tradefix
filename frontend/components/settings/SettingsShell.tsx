@@ -4,9 +4,11 @@ import clsx from "clsx";
 import {
   ArrowLeft,
   Bell,
+  Cable,
   CreditCard,
   Goal,
   HelpCircle,
+  List,
   Monitor,
   Palette,
   Settings2,
@@ -28,7 +30,9 @@ const NAV: { href: string; labelKey: MessageKey; icon: typeof Monitor }[] = [
   { href: "/settings/profile", labelKey: "settings.nav.profile", icon: UserRound },
   { href: "/settings/subscription", labelKey: "settings.nav.subscription", icon: CreditCard },
   { href: "/settings/accounts", labelKey: "settings.nav.accounts", icon: Wallet },
+  { href: "/settings/broker", labelKey: "settings.nav.broker", icon: Cable },
   { href: "/settings/trading-defaults", labelKey: "settings.nav.tradingDefaults", icon: Settings2 },
+  { href: "/settings/masters", labelKey: "settings.nav.masters", icon: List },
   { href: "/settings/goals", labelKey: "settings.nav.goals", icon: Goal },
   { href: "/settings/prop-firm", labelKey: "settings.nav.propFirm", icon: Shield },
   { href: "/settings/appearance", labelKey: "settings.nav.appearance", icon: Palette },
@@ -46,7 +50,7 @@ export function SettingsShell({ children }: { children: ReactNode }) {
       <aside className="flex w-full shrink-0 flex-col border-b border-border bg-background md:w-[220px] md:border-b-0 md:border-r">
         <div className="space-y-4 px-4 py-5">
           <Link
-            href="/today"
+            href="/home"
             className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted transition hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />

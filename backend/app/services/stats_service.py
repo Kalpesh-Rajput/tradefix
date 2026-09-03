@@ -24,6 +24,7 @@ def _closed_trades(
         Trade.user_id == user_id,
         Trade.status == TradeStatus.closed,
         Trade.pnl.is_not(None),
+        Trade.is_deleted.is_(False),
     )
     if account_id is not None:
         stmt = stmt.where(Trade.account_id == account_id)
@@ -38,7 +39,11 @@ def _open_trades(
     user_id: uuid.UUID,
     account_id: uuid.UUID | None = None,
 ) -> list[Trade]:
-    stmt = select(Trade).where(Trade.user_id == user_id, Trade.status == TradeStatus.open)
+    stmt = select(Trade).where(
+        Trade.user_id == user_id,
+        Trade.status == TradeStatus.open,
+        Trade.is_deleted.is_(False),
+    )
     if account_id is not None:
         stmt = stmt.where(Trade.account_id == account_id)
     return list(db.scalars(stmt).all())
@@ -550,6 +555,31 @@ def full_analytics(
     }
 
 
+def _day_bucket_stats(group: list[Trade]) -> dict:
+    ordered = sorted(group, key=lambda t: t.closed_at or t.opened_at)
+    pnls = [float(t.pnl or 0) for t in ordered]
+    fees = [float(t.fees or 0) for t in ordered]
+    net = round(sum(pnls), 2)
+    commissions = round(sum(fees), 2)
+    running = 0.0
+    curve = [0.0]
+    for p in pnls:
+        running = round(running + p, 2)
+        curve.append(running)
+    return {
+        "trades": len(group),
+        "pnl": net,
+        "win_rate": win_rate(group),
+        "gross_pnl": round(net + commissions, 2),
+        "volume": round(sum(float(t.quantity or 0) for t in group), 4),
+        "winners": sum(1 for p in pnls if p > 0),
+        "losers": sum(1 for p in pnls if p < 0),
+        "profit_factor": profit_factor(group),
+        "commissions": commissions,
+        "curve": curve,
+    }
+
+
 def calendar_days(
     db: Session,
     user_id: uuid.UUID,
@@ -567,13 +597,7 @@ def calendar_days(
 
     days = []
     for d in sorted(buckets):
-        group = buckets[d]
-        days.append({
-            "date": d.isoformat(),
-            "trades": len(group),
-            "pnl": round(sum(float(t.pnl or 0) for t in group), 2),
-            "win_rate": win_rate(group),
-        })
+        days.append({"date": d.isoformat(), **_day_bucket_stats(buckets[d])})
 
     return {
         "days": days,

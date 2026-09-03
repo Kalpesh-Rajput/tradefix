@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { JournalEmptyState } from "@/components/journal/JournalEmptyState";
 import { JournalSidebar, type JournalListItem } from "@/components/journal/JournalSidebar";
@@ -52,6 +52,13 @@ export function JournalPage() {
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
+
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("date");
+    if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return;
+    setSelectedDate(raw);
+    setComposing(true);
+  }, []);
 
   const recapByDate = useMemo(() => {
     const map = new Map<string, DailyRecap>();

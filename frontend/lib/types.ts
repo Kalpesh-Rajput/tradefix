@@ -71,6 +71,60 @@ export interface Trade {
   r_multiple: number | null;
   status: TradeStatus;
   created_at: string;
+  account_name?: string | null;
+  session?: string | null;
+  trade_type?: string | null;
+  option_type?: string | null;
+  analysis_timeframe?: string | null;
+  entry_timeframe?: string | null;
+  stop_loss?: number | null;
+  invested_amount?: number | null;
+  entry_condition?: string | null;
+  exit_condition?: string | null;
+  sell_quantity?: number | null;
+  total_sell_amount?: number | null;
+  leverage?: number | null;
+  contract_size?: number | null;
+  is_favourite?: boolean;
+  is_deleted?: boolean;
+  is_sync?: boolean;
+  is_close?: boolean;
+  is_equity?: boolean;
+  is_profit?: boolean | null;
+  year?: number | null;
+  month?: number | null;
+  strategy_name?: string | null;
+  strategy_id?: string | null;
+  precheck_list_id?: string | null;
+  extra?: Record<string, unknown>;
+  remaining_quantity?: number | null;
+  executions?: TradeExecution[];
+}
+
+export type ExecutionLegType = "entry" | "exit";
+
+export interface TradeExecution {
+  id: string;
+  leg_type: ExecutionLegType;
+  quantity: number;
+  price: number;
+  executed_at: string;
+  fees: number;
+  condition?: string | null;
+  notes?: string | null;
+  sort_order: number;
+}
+
+export interface TradeExecutionInput {
+  id?: string;
+  leg_type: ExecutionLegType;
+  quantity: number;
+  price: number;
+  executed_at: string;
+  fees?: number;
+  condition?: string | null;
+  notes?: string | null;
+  sort_order?: number;
 }
 
 export interface TradeInput {
@@ -80,6 +134,7 @@ export interface TradeInput {
   quantity: number;
   entry_price: number;
   exit_price?: number | null;
+  sell_quantity?: number | null;
   opened_at: string;
   closed_at?: string | null;
   fees?: number;
@@ -100,6 +155,54 @@ export interface TradeInput {
   voice_transcript?: string | null;
   status: TradeStatus;
   account_id?: string;
+  session?: string | null;
+  trade_type?: string | null;
+  option_type?: string | null;
+  analysis_timeframe?: string | null;
+  entry_timeframe?: string | null;
+  stop_loss?: number | null;
+  entry_condition?: string | null;
+  exit_condition?: string | null;
+  leverage?: number | null;
+  contract_size?: number | null;
+  is_favourite?: boolean;
+  strategy_name?: string | null;
+  strategy_id?: string | null;
+  precheck_list_id?: string | null;
+  extra?: Record<string, unknown>;
+  executions?: TradeExecutionInput[];
+}
+
+export type MasterCategory =
+  | "symbol"
+  | "entry_condition"
+  | "exit_condition"
+  | "timeframe"
+  | "session"
+  | "trade_type"
+  | "mood"
+  | "strategy";
+
+export interface TradeMaster {
+  id: string;
+  category: MasterCategory;
+  name: string;
+  sort_order: number;
+  is_builtin: boolean;
+  created_at: string;
+}
+
+export interface PrecheckItem {
+  id: string;
+  label: string;
+}
+
+export interface PrecheckList {
+  id: string;
+  name: string;
+  items: PrecheckItem[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface OverviewStats {
@@ -211,6 +314,13 @@ export interface CalendarDay {
   trades: number;
   pnl: number;
   win_rate: number;
+  gross_pnl?: number;
+  volume?: number;
+  winners?: number;
+  losers?: number;
+  profit_factor?: number;
+  commissions?: number;
+  curve?: number[];
 }
 
 export interface CalendarResponse {

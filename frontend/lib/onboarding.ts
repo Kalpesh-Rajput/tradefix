@@ -112,5 +112,5 @@ export function isReferralStepValid(source: string | null | undefined, detail: s
 
 export function postAuthPath(user: { onboarding_completed_at?: string | null } | null): string {
   if (!user) return "/login";
-  return user.onboarding_completed_at ? "/today" : "/onboarding";
+  return user.onboarding_completed_at ? "/home" : "/onboarding";
 }

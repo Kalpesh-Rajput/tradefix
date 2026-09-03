@@ -16,12 +16,15 @@ type SidebarContextValue = {
   collapsed: boolean;
   toggle: () => void;
   setCollapsed: (value: boolean) => void;
+  mobileOpen: boolean;
+  setMobileOpen: (value: boolean) => void;
 };
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsedState] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -56,8 +59,14 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ collapsed: hydrated ? collapsed : false, toggle, setCollapsed }),
-    [collapsed, hydrated, toggle, setCollapsed]
+    () => ({
+      collapsed: hydrated ? collapsed : false,
+      toggle,
+      setCollapsed,
+      mobileOpen,
+      setMobileOpen,
+    }),
+    [collapsed, hydrated, toggle, setCollapsed, mobileOpen]
   );
 
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;

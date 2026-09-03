@@ -3,6 +3,7 @@
 Usage (from backend/ with venv active):
   python -m scripts.seed_month_trades --count 100
   python -m scripts.seed_month_trades --email you@example.com --count 100 --days 180 --replace
+  python -m scripts.seed_month_trades --email you@example.com --days 30 --min-per-day 10 --max-per-day 15 --replace
 """
 
 from __future__ import annotations
@@ -88,6 +89,36 @@ def _range_bounds(now: datetime, days: int) -> tuple[datetime, datetime]:
     return start, end
 
 
+def _weekdays(start: datetime, end: datetime) -> list[datetime]:
+    days: list[datetime] = []
+    cursor = start.replace(hour=0, minute=0, second=0, microsecond=0)
+    last = end.replace(hour=0, minute=0, second=0, microsecond=0)
+    while cursor <= last:
+        if cursor.weekday() < 5:
+            days.append(cursor)
+        cursor += timedelta(days=1)
+    return days
+
+
+def _session_times(day: datetime, count: int, rng: random.Random) -> list[datetime]:
+    """Spread `count` entries across a trading session without colliding on the minute."""
+    used: set[tuple[int, int]] = set()
+    times: list[datetime] = []
+    for _ in range(count):
+        for _attempt in range(40):
+            hour = rng.randint(7, 16)
+            minute = rng.choice([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55])
+            if (hour, minute) not in used:
+                used.add((hour, minute))
+                break
+        else:
+            hour, minute = 9, len(used) % 60
+            used.add((hour, minute))
+        times.append(day.replace(hour=hour, minute=minute, second=0, microsecond=0, tzinfo=day.tzinfo))
+    times.sort()
+    return times
+
+
 def build_trade(
     *,
     user_id: uuid.UUID,
@@ -105,6 +136,8 @@ def build_trade(
         AssetType.stock: rng.choice([10, 25, 50, 100]),
         AssetType.crypto: rng.choice([0.01, 0.05, 0.1, 0.25]),
     }.get(asset, 1)
+    if symbol == "XAUUSD":
+        qty = rng.choice([0.1, 0.25, 0.5, 1.0])
 
     entry = round(base + rng.uniform(-atr, atr), 5 if asset == AssetType.forex else 2)
     move = atr * rng.uniform(0.3, 1.8)
@@ -114,7 +147,9 @@ def build_trade(
         exit_p = entry - move if win else entry + move * rng.uniform(0.4, 1.0)
     exit_p = round(exit_p, 5 if asset == AssetType.forex else 2)
 
-    hold_mins = rng.randint(15, 360)
+    hold_mins = rng.randint(15, 180)
+    minutes_left = (23 * 60 + 50) - (opened_at.hour * 60 + opened_at.minute)
+    hold_mins = min(hold_mins, max(15, minutes_left))
     closed_at = opened_at + timedelta(minutes=hold_mins)
 
     direction = 1 if side == TradeSide.long else -1
@@ -188,11 +223,27 @@ def main() -> None:
     )
     parser.add_argument("--seed", type=int, default=42, help="RNG seed for reproducibility")
     parser.add_argument(
+        "--min-per-day",
+        type=int,
+        default=None,
+        help="If set with --max-per-day, seed this many trades on each weekday",
+    )
+    parser.add_argument(
+        "--max-per-day",
+        type=int,
+        default=None,
+        help="Upper bound of trades per weekday (requires --min-per-day)",
+    )
+    parser.add_argument(
         "--replace",
         action="store_true",
         help=f"Delete previously seeded trades (extra.seed_batch={SEED_BATCH} or month_50) first",
     )
     args = parser.parse_args()
+    if (args.min_per_day is None) != (args.max_per_day is None):
+        raise SystemExit("Provide both --min-per-day and --max-per-day, or neither.")
+    if args.min_per_day is not None and (args.min_per_day < 1 or args.max_per_day < args.min_per_day):
+        raise SystemExit("--min-per-day must be >= 1 and <= --max-per-day.")
     rng = random.Random(args.seed)
 
     db = SessionLocal()
@@ -232,35 +283,43 @@ def main() -> None:
             print(f"Removed {removed} previously seeded trades.")
 
         trades: list[Trade] = []
-        for i in range(args.count):
-            if args.count == 1:
-                opened = start
-            else:
-                frac = i / (args.count - 1)
-                slot = start + timedelta(seconds=int((end - start).total_seconds() * frac))
-                jitter = timedelta(hours=rng.randint(-8, 8), minutes=rng.choice([0, 15, 30, 45]))
-                opened = slot + jitter
-            if opened < start:
-                opened = start + timedelta(hours=rng.randint(1, 6))
-            if opened > end:
-                opened = end - timedelta(hours=1)
+        if args.min_per_day is not None:
+            for day in _weekdays(start, end):
+                n = rng.randint(args.min_per_day, args.max_per_day)
+                for opened in _session_times(day, n, rng):
+                    trades.append(
+                        build_trade(user_id=user.id, account_id=account.id, opened_at=opened, rng=rng)
+                    )
+        else:
+            for i in range(args.count):
+                if args.count == 1:
+                    opened = start
+                else:
+                    frac = i / (args.count - 1)
+                    slot = start + timedelta(seconds=int((end - start).total_seconds() * frac))
+                    jitter = timedelta(hours=rng.randint(-8, 8), minutes=rng.choice([0, 15, 30, 45]))
+                    opened = slot + jitter
+                if opened < start:
+                    opened = start + timedelta(hours=rng.randint(1, 6))
+                if opened > end:
+                    opened = end - timedelta(hours=1)
 
-            attempts = 0
-            while opened.weekday() >= 5 and attempts < 5:
-                opened = opened - timedelta(days=1)
-                attempts += 1
-            if opened < start:
-                opened = start + timedelta(hours=rng.randint(8, 16))
+                attempts = 0
+                while opened.weekday() >= 5 and attempts < 5:
+                    opened = opened - timedelta(days=1)
+                    attempts += 1
+                if opened < start:
+                    opened = start + timedelta(hours=rng.randint(8, 16))
 
-            opened = opened.replace(
-                hour=rng.randint(6, 20),
-                minute=rng.choice([0, 15, 30, 45]),
-                second=0,
-                microsecond=0,
-            )
-            trades.append(
-                build_trade(user_id=user.id, account_id=account.id, opened_at=opened, rng=rng)
-            )
+                opened = opened.replace(
+                    hour=rng.randint(6, 20),
+                    minute=rng.choice([0, 15, 30, 45]),
+                    second=0,
+                    microsecond=0,
+                )
+                trades.append(
+                    build_trade(user_id=user.id, account_id=account.id, opened_at=opened, rng=rng)
+                )
 
         db.add_all(trades)
         db.commit()
