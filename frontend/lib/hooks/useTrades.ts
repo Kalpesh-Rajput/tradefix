@@ -13,6 +13,7 @@ export interface TradeFilters {
   account_id?: string;
   date_from?: string;
   date_to?: string;
+  has_journal?: boolean;
   limit?: number;
 }
 
@@ -25,6 +26,7 @@ function buildQuery(filters: TradeFilters): string {
   if (filters.account_id) params.set("account_id", filters.account_id);
   if (filters.date_from) params.set("date_from", filters.date_from);
   if (filters.date_to) params.set("date_to", filters.date_to);
+  if (filters.has_journal) params.set("has_journal", "true");
   if (filters.limit) params.set("limit", String(filters.limit));
   const qs = params.toString();
   return qs ? `?${qs}` : "";

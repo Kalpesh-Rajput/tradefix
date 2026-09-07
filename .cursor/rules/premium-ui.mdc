@@ -1,0 +1,32 @@
+---
+description: Premium UI — alignment, layout, and visual quality with zero tolerance for sloppy details
+alwaysApply: true
+---
+
+# TradeFix: Premium UI
+
+TradeFix is a **premium SaaS for paying traders**. UI work is judged at a high-end product bar, not an MVP sketch.
+
+## Before any UI change
+
+- Study the existing layout, spacing scale, typography, and neighboring cards first.
+- Match current dashboard language: `dash-card`, shared header height, consistent padding, thin borders, no heavy shadows.
+- If the user provides a sketch or reference, treat it as the layout contract (column widths, row structure). Do not invent a different grid.
+
+## Hard visual rules
+
+- Cards in the same row **must share top edge, bottom edge, and header height**. Use stretch/`h-full`, not `items-start` with uneven content.
+- Titles, tabs, and toolbars in a row use the **same header height** (e.g. `h-11`). Never leave one card untitled so the chart drops.
+- Gutters, padding, and radius stay consistent across a row. No leftover footer on one card that makes it taller.
+- Charts: profit **green**, loss **red**. Brand purple is for chrome (nav, buttons, score), not P&L.
+- Responsive: desktop grid first; on small screens stack cleanly; never crush a calendar/table — scroll inside the card if needed.
+
+## Do not ship
+
+- Misaligned cards, uneven heights, clipped dropdowns, cramped cells, leftover purple P&L bars, or “close enough” spacing.
+- Extra chrome the user did not ask for (sidebars, filters, extra buttons) when they asked for one component.
+
+## After UI work
+
+- Re-check every surface that shares the layout (dashboard, day view, calendar).
+- If you cannot verify in a browser, say so. Do not call the UI done from a single screenshot in your head.

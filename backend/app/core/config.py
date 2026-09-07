@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     # https://tradefix.vercel.app,https://tradefix-xxx-kalpesh-rajput.vercel.app
     frontend_origin: str = "http://localhost:3000"
     # Allow Vercel production + preview URLs without listing every deploy hash.
-    frontend_origin_regex: str = r"https://.*\.vercel\.app"
+    frontend_origin_regex: str = r"https://.*\.(vercel\.app|ngrok-free\.app|ngrok\.app|ngrok\.io)"
 
     google_client_id: str = ""
     google_client_secret: str = ""

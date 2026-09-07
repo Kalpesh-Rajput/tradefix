@@ -1,4 +1,14 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001";
+function resolveApiUrl(): string {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host.includes("ngrok") || host.endsWith(".ngrok-free.app") || host.endsWith(".ngrok.app")) {
+      return window.location.origin;
+    }
+  }
+  return process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001";
+}
+
+export const API_URL = resolveApiUrl();
 
 const TOKEN_KEY = "tradefix_token";
 

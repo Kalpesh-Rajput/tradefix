@@ -23,6 +23,8 @@ JOURNAL_KEYS = (
     "analysis_timeframe",
     "entry_timeframe",
     "stop_loss",
+    "profit_target",
+    "rating",
     "entry_condition",
     "exit_condition",
     "leverage",

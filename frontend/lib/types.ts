@@ -78,6 +78,8 @@ export interface Trade {
   analysis_timeframe?: string | null;
   entry_timeframe?: string | null;
   stop_loss?: number | null;
+  profit_target?: number | null;
+  rating?: number | null;
   invested_amount?: number | null;
   entry_condition?: string | null;
   exit_condition?: string | null;
@@ -161,6 +163,8 @@ export interface TradeInput {
   analysis_timeframe?: string | null;
   entry_timeframe?: string | null;
   stop_loss?: number | null;
+  profit_target?: number | null;
+  rating?: number | null;
   entry_condition?: string | null;
   exit_condition?: string | null;
   leverage?: number | null;
@@ -648,4 +652,24 @@ export interface TradeComment {
   author_name?: string | null;
   body: string;
   created_at: string;
+}
+
+export interface DayNote {
+  id: string;
+  account_id: string;
+  date: string;
+  template_id: string;
+  content: string;
+  screenshot_urls: string[];
+  is_favorite: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DayNoteInput {
+  account_id: string;
+  date: string;
+  content: string;
+  template_id: string;
+  is_favorite?: boolean;
 }

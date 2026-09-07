@@ -47,6 +47,15 @@ BUILTIN_MASTERS: dict[MasterCategory, list[str]] = {
         "Liquidity Grab",
         "Session Open",
         "News Catalyst",
+        "Accurate Entry",
+        "Early Entry",
+        "Early Without Confirmation",
+        "FOMO",
+        "Late Entry",
+        "Revenge",
+        "Deadline Breakout Entry",
+        "Trailer Pullback Entry",
+        "Breakout of Support and Resistance",
     ],
     MasterCategory.exit_condition: [
         "Target Hit",
@@ -96,23 +105,28 @@ BUILTIN_MASTERS: dict[MasterCategory, list[str]] = {
 
 
 def _seed_user_masters(db: Session, user_id: uuid.UUID) -> None:
-    existing = db.scalar(select(func.count()).select_from(TradeMaster).where(TradeMaster.user_id == user_id))
-    if existing:
-        return
+    existing_rows = list(db.scalars(select(TradeMaster).where(TradeMaster.user_id == user_id)).all())
+    existing_keys = {(row.category, row.name.strip().lower()) for row in existing_rows}
     rows: list[TradeMaster] = []
     for category, names in BUILTIN_MASTERS.items():
+        existing_count = sum(1 for row in existing_rows if row.category == category)
+        next_order = existing_count
         for idx, name in enumerate(names):
+            if (category, name.strip().lower()) in existing_keys:
+                continue
             rows.append(
                 TradeMaster(
                     user_id=user_id,
                     category=category,
                     name=name,
-                    sort_order=idx,
+                    sort_order=idx if existing_count == 0 else next_order,
                     is_builtin=True,
                 )
             )
-    db.add_all(rows)
-    db.flush()
+            next_order += 1
+    if rows:
+        db.add_all(rows)
+        db.flush()
 
 
 def list_masters(db: Session, user_id: uuid.UUID, category: MasterCategory | None = None) -> list[TradeMaster]:

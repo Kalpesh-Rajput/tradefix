@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from sqlalchemy import select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_current_user
@@ -106,6 +106,8 @@ def _to_response(trade: Trade) -> TradeResponse:
         analysis_timeframe=trade.analysis_timeframe,
         entry_timeframe=trade.entry_timeframe,
         stop_loss=_num(trade.stop_loss),
+        profit_target=_num(trade.profit_target),
+        rating=trade.rating,
         invested_amount=_num(trade.invested_amount),
         entry_condition=trade.entry_condition,
         exit_condition=trade.exit_condition,
@@ -157,6 +159,7 @@ def list_trades(
     account_id: uuid.UUID | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
+    has_journal: bool | None = None,
     limit: int = Query(default=200, le=1000),
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -182,6 +185,13 @@ def list_trades(
         stmt = stmt.where(Trade.opened_at >= date_from)
     if date_to:
         stmt = stmt.where(Trade.opened_at <= date_to)
+    if has_journal:
+        stmt = stmt.where(
+            or_(
+                and_(Trade.notes.is_not(None), func.length(func.btrim(Trade.notes)) > 0),
+                func.jsonb_array_length(Trade.screenshot_urls) > 0,
+            )
+        )
     stmt = stmt.order_by(Trade.opened_at.desc()).limit(limit).offset(offset)
 
     trades = list(db.scalars(stmt).all())
@@ -263,6 +273,8 @@ def create_trade(
         analysis_timeframe=payload.analysis_timeframe,
         entry_timeframe=payload.entry_timeframe,
         stop_loss=payload.stop_loss,
+        profit_target=payload.profit_target,
+        rating=payload.rating,
         entry_condition=payload.entry_condition,
         exit_condition=payload.exit_condition,
         leverage=payload.leverage if payload.leverage is not None else default_lev,
@@ -314,7 +326,7 @@ def update_trade(
     executions = update_data.pop("executions", None)
     journal = {k: update_data.pop(k) for k in list(update_data.keys()) if k in (
         "session", "trade_type", "option_type", "analysis_timeframe", "entry_timeframe",
-        "stop_loss", "entry_condition", "exit_condition", "leverage", "contract_size",
+        "stop_loss", "profit_target", "rating", "entry_condition", "exit_condition", "leverage", "contract_size",
         "is_favourite", "mood", "strategy_name", "strategy_id", "precheck_list_id", "extra",
         "sell_quantity",
     )}

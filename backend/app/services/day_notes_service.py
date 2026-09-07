@@ -1,0 +1,103 @@
+import logging
+import uuid
+from datetime import date as date_type
+
+from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.models.account import Account
+from app.models.day_note import DayNote
+from app.models.user import User
+from app.schemas.day_note import DayNoteResponse, DayNoteUpdate, DayNoteUpsert
+from app.services.storage import delete_local_upload
+
+logger = logging.getLogger(__name__)
+
+
+def _owned_account(db: Session, user: User, account_id: uuid.UUID) -> Account:
+    account = db.get(Account, account_id)
+    if not account or account.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+    return account
+
+
+def _to_response(note: DayNote) -> DayNoteResponse:
+    payload = DayNoteResponse.model_validate(note)
+    return payload.model_copy(update={"screenshot_urls": list(note.screenshot_urls or [])})
+
+
+def get_note(db: Session, user: User, note_id: uuid.UUID) -> DayNote:
+    note = db.get(DayNote, note_id)
+    if not note or note.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+    return note
+
+
+def get_by_day(db: Session, user: User, account_id: uuid.UUID, day: date_type) -> DayNote | None:
+    _owned_account(db, user, account_id)
+    return db.scalar(
+        select(DayNote).where(
+            DayNote.user_id == user.id,
+            DayNote.account_id == account_id,
+            DayNote.date == day,
+        )
+    )
+
+
+def list_notes(db: Session, user: User, account_id: uuid.UUID) -> list[DayNote]:
+    _owned_account(db, user, account_id)
+    return list(
+        db.scalars(
+            select(DayNote)
+            .where(DayNote.user_id == user.id, DayNote.account_id == account_id)
+            .order_by(DayNote.date.desc())
+        ).all()
+    )
+
+
+def upsert_note(db: Session, user: User, payload: DayNoteUpsert) -> DayNote:
+    _owned_account(db, user, payload.account_id)
+    existing = get_by_day(db, user, payload.account_id, payload.date)
+    if existing:
+        existing.content = payload.content
+        existing.template_id = payload.template_id
+        if payload.is_favorite is not None:
+            existing.is_favorite = payload.is_favorite
+        db.commit()
+        db.refresh(existing)
+        logger.info("Updated day note %s for %s", existing.id, payload.date)
+        return existing
+
+    note = DayNote(
+        user_id=user.id,
+        account_id=payload.account_id,
+        date=payload.date,
+        content=payload.content,
+        template_id=payload.template_id,
+        is_favorite=bool(payload.is_favorite),
+    )
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+    logger.info("Created day note %s for %s", note.id, payload.date)
+    return note
+
+
+def update_note(db: Session, user: User, note_id: uuid.UUID, payload: DayNoteUpdate) -> DayNote:
+    note = get_note(db, user, note_id)
+    data = payload.model_dump(exclude_unset=True)
+    for key, value in data.items():
+        setattr(note, key, value)
+    db.commit()
+    db.refresh(note)
+    return note
+
+
+def delete_note(db: Session, user: User, note_id: uuid.UUID) -> None:
+    note = get_note(db, user, note_id)
+    for url in list(note.screenshot_urls or []):
+        delete_local_upload(url)
+    db.delete(note)
+    db.commit()
+    logger.info("Deleted day note %s", note_id)

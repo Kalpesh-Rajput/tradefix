@@ -11,29 +11,41 @@ export function PositionsTradesWidget({
   openTrades,
   recentTrades,
   formatMoney,
+  compact = false,
 }: {
   openTrades: Trade[];
   recentTrades: Trade[];
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
+  compact?: boolean;
 }) {
   const { t, formatDate } = useLocale();
   const [tab, setTab] = useState<"open" | "recent">("recent");
   const rows = tab === "open" ? openTrades : recentTrades;
 
   return (
-    <div className="dash-card flex min-h-0 flex-col overflow-hidden">
-      <div className="flex shrink-0 border-b border-[var(--color-divider)] px-1.5">
-        <TabButton active={tab === "open"} onClick={() => setTab("open")}>
+    <div className="dash-card flex h-full min-h-0 flex-col overflow-hidden">
+      <div
+        className={clsx(
+          "flex shrink-0 items-center border-b border-[var(--color-divider)] px-2",
+          compact ? "h-9" : "h-11"
+        )}
+      >
+        <TabButton compact={compact} active={tab === "open"} onClick={() => setTab("open")}>
           {t("dashboard.openPositions")}
         </TabButton>
-        <TabButton active={tab === "recent"} onClick={() => setTab("recent")}>
+        <TabButton compact={compact} active={tab === "recent"} onClick={() => setTab("recent")}>
           {t("dashboard.recentTrades")}
         </TabButton>
       </div>
 
-      <div className="min-h-[240px] max-h-[320px] flex-1 overflow-auto">
+      <div className={clsx("min-h-0 flex-1 overflow-auto", compact ? "min-h-0" : "min-h-[240px] lg:min-h-0")}>
         {rows.length === 0 ? (
-          <div className="flex h-[240px] flex-col items-center justify-center gap-2 px-4 text-center">
+          <div
+            className={clsx(
+              "flex h-full flex-col items-center justify-center gap-2 px-4 text-center",
+              compact ? "min-h-0" : "min-h-[120px]"
+            )}
+          >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-surface-secondary)] text-lg text-[var(--color-text-muted)]">
               ∅
             </div>
@@ -59,7 +71,12 @@ export function PositionsTradesWidget({
                     key={trade.id}
                     className="border-b border-[var(--color-border-light)] last:border-0 transition-colors duration-150 hover:bg-[var(--color-primary-very-light)]"
                   >
-                    <td className="h-9 px-3 text-[12px] text-[var(--color-text-secondary)]">
+                    <td
+                      className={clsx(
+                        compact ? "h-8" : "h-9",
+                        "px-3 text-[12px] text-[var(--color-text-secondary)]"
+                      )}
+                    >
                       <Link
                         href={`/trades/${trade.id}`}
                         className="hover:text-[var(--color-text-primary)]"
@@ -67,12 +84,18 @@ export function PositionsTradesWidget({
                         {formatDate(new Date(when))}
                       </Link>
                     </td>
-                    <td className="h-9 px-3 text-[12px] font-medium text-[#25262B]">
+                    <td
+                      className={clsx(
+                        compact ? "h-8" : "h-9",
+                        "px-3 text-[12px] font-medium text-[#25262B]"
+                      )}
+                    >
                       <Link href={`/trades/${trade.id}`}>{trade.symbol}</Link>
                     </td>
                     <td
                       className={clsx(
-                        "h-9 px-3 text-right text-[12px] font-medium tabular-nums",
+                        compact ? "h-8" : "h-9",
+                        "px-3 text-right text-[12px] font-medium tabular-nums",
                         pnl >= 0 ? "text-positive" : "text-negative"
                       )}
                     >
@@ -93,17 +116,20 @@ function TabButton({
   active,
   onClick,
   children,
+  compact,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  compact?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={clsx(
-        "px-3 py-2.5 text-[10px] font-medium uppercase tracking-wider transition-colors duration-150",
+        "px-3 text-[10px] font-medium uppercase tracking-wider transition-colors duration-150",
+        compact ? "h-9" : "h-11",
         active
           ? "border-b-2 border-primary text-primary"
           : "border-b-2 border-transparent text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"

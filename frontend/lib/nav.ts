@@ -10,6 +10,7 @@ export const JOURNAL_PREFIXES = [
   "/news",
   "/portfolio",
   "/journal",
+  "/notebook",
 ] as const;
 
 export function isJournalPath(pathname: string | null | undefined): boolean {

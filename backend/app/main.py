@@ -21,6 +21,7 @@ from app.api.routers import (
     precheck_lists,
     prop,
     recaps,
+    day_notes,
     trades,
     watchlist,
 )
@@ -69,6 +70,7 @@ app.include_router(agents.router)
 app.include_router(watchlist.router)
 app.include_router(mood.router)
 app.include_router(recaps.router)
+app.include_router(day_notes.router)
 app.include_router(checkins.router)
 app.include_router(prop.router)
 app.include_router(coach.router)

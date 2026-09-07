@@ -87,6 +87,8 @@ class Trade(Base):
     analysis_timeframe: Mapped[str | None] = mapped_column(String(32), nullable=True)
     entry_timeframe: Mapped[str | None] = mapped_column(String(32), nullable=True)
     stop_loss: Mapped[float | None] = mapped_column(Numeric(18, 6), nullable=True)
+    profit_target: Mapped[float | None] = mapped_column(Numeric(18, 6), nullable=True)
+    rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     invested_amount: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
     entry_condition: Mapped[str | None] = mapped_column(String(120), nullable=True)
     exit_condition: Mapped[str | None] = mapped_column(String(120), nullable=True)

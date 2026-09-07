@@ -33,6 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isTradesLog = pathname === "/trades";
   const isCalendar = pathname === "/calendar";
   const isDiary = pathname === "/diary";
+  const isNotebook = pathname === "/notebook";
   const isSettings = pathname?.startsWith("/settings");
   const showJournalNav = isJournalPath(pathname);
 
@@ -79,7 +80,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   )}
                   <main
                     className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
-                      isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary
+                      isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isNotebook
                         ? ""
                         : "overflow-y-auto p-6 sm:p-8"
                     } ${isSettings || isHome ? "overflow-y-auto" : ""}`}

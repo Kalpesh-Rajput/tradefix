@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import {
   BarChart3,
+  BookOpen,
   Brain,
   Briefcase,
   CalendarDays,
@@ -34,6 +35,7 @@ const NAV: {
   { href: "/today", labelKey: "nav.today", icon: LayoutDashboard, testId: "nav-today", iconColor: "#7C5CBF" },
   { href: "/day", labelKey: "nav.dayView", icon: Sun, testId: "nav-dayView", iconColor: "#F59E0B" },
   { href: "/diary", labelKey: "nav.journal", icon: NotebookPen, testId: "nav-journal", iconColor: "#3B82F6" },
+  { href: "/notebook", labelKey: "nav.notebook", icon: BookOpen, testId: "nav-notebook", iconColor: "#8B5CF6" },
   { href: "/trades", labelKey: "nav.tradeLog", icon: ClipboardList, testId: "nav-tradeLog", iconColor: "#EC4899" },
   { href: "/analytics", labelKey: "nav.analytics", icon: BarChart3, testId: "nav-analytics", iconColor: "#10B981" },
   { href: "/calendar", labelKey: "nav.calendar", icon: CalendarDays, testId: "nav-calendar", iconColor: "#6366F1" },

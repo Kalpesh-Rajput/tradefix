@@ -176,7 +176,7 @@ export function DateRangePicker({
           id={listId}
           role="dialog"
           aria-label="Select date range"
-          className="absolute right-0 z-50 mt-1.5 w-[320px] overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] shadow-dropdown"
+          className="absolute right-0 z-[80] mt-1.5 w-[320px] overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] shadow-dropdown"
         >
           <div className="border-b border-[var(--color-border-light)] px-3 py-2">
             <p className="text-[11px] font-medium text-[var(--color-text-secondary)]">Quick ranges</p>

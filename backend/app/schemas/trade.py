@@ -64,6 +64,8 @@ class TradeJournalFields(BaseModel):
     analysis_timeframe: str | None = None
     entry_timeframe: str | None = None
     stop_loss: float | None = None
+    profit_target: float | None = None
+    rating: int | None = Field(default=None, ge=1, le=5)
     entry_condition: str | None = None
     exit_condition: str | None = None
     leverage: float | None = None
@@ -230,6 +232,8 @@ class TradeResponse(BaseModel):
     analysis_timeframe: str | None = None
     entry_timeframe: str | None = None
     stop_loss: float | None = None
+    profit_target: float | None = None
+    rating: int | None = None
     invested_amount: float | None = None
     entry_condition: str | None = None
     exit_condition: str | None = None

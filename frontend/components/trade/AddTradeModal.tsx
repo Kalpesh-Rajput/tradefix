@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, CheckCircle2, FileSpreadsheet, Star, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, Resolver, useForm } from "react-hook-form";
 import { useDropzone } from "react-dropzone";
 
@@ -54,6 +54,7 @@ export function AddTradeModal() {
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const skipDraftSaveRef = useRef(false);
 
   const accountFee = Math.abs(Number(activeAccount?.default_fee_per_trade ?? 0));
   const userFee =
@@ -99,45 +100,28 @@ export function AddTradeModal() {
   const isForex = values.asset_type === "forex";
   const isOption = values.asset_type === "option";
 
+  const blankForm = useCallback(() => {
+    const defaults = defaultAddTradeValues(tradeDefaults);
+    const template = user?.journal_template?.trim() || "";
+    return { ...defaults, notes: template, account_id: activeAccount?.id || null };
+  }, [tradeDefaults, user?.journal_template, activeAccount?.id]);
+
   useEffect(() => {
     if (!open) return;
-    const template = user?.journal_template?.trim() || "";
-    const defaults = defaultAddTradeValues(tradeDefaults);
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<AddTradeFormValues>;
-        reset({
-          ...defaults,
-          ...parsed,
-          notes: parsed.notes || template || "",
-          fees: parsed.fees ?? defaults.fees,
-          symbol: parsed.symbol || defaults.symbol,
-          quantity: parsed.quantity ?? defaults.quantity,
-          leverage: parsed.leverage ?? defaults.leverage,
-          strategies: parsed.strategies?.length ? parsed.strategies : defaults.strategies,
-          emotions: parsed.emotions ?? [],
-          mistakes: parsed.mistakes ?? [],
-          wentWell: parsed.wentWell ?? [],
-          risk_amount: parsed.risk_amount ?? null,
-          plan_compliance: parsed.plan_compliance ?? null,
-          exits: parsed.exits ?? [],
-          account_id: parsed.account_id || activeAccount?.id || null,
-        });
-      } else {
-        reset({ ...defaults, notes: template, account_id: activeAccount?.id || null });
-      }
-    } catch {
-      reset({ ...defaults, notes: template, account_id: activeAccount?.id || null });
-    }
+    skipDraftSaveRef.current = false;
+    localStorage.removeItem(DRAFT_KEY);
+    reset(blankForm());
     setShots([]);
     setSuccess(false);
     setSaveError(null);
-  }, [open, reset, user?.journal_template, tradeDefaults, activeAccount?.id]);
+    // Start each open on a blank form so the last saved trade cannot refill the fields.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
-    if (!open || tab !== "manual") return;
+    if (!open || tab !== "manual" || skipDraftSaveRef.current) return;
     const id = window.setTimeout(() => {
+      if (skipDraftSaveRef.current) return;
       localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
     }, 800);
     return () => window.clearTimeout(id);
@@ -244,7 +228,10 @@ export function AddTradeModal() {
           setSaveError((prev) => prev ?? "Trade saved, but some screenshots failed to upload");
         }
       }
+      skipDraftSaveRef.current = true;
       localStorage.removeItem(DRAFT_KEY);
+      reset(blankForm());
+      setShots([]);
       setSuccess(true);
       window.setTimeout(() => {
         closeModal();

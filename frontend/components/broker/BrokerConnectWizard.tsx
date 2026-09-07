@@ -251,6 +251,15 @@ export function BrokerConnectWizard({ compact = false, className }: BrokerConnec
         {!compact && (
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
             <Cable className="h-3.5 w-3.5 text-primary" />
+            <a
+              href={CONNECTORS_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="truncate font-mono text-primary hover:underline"
+              title="Open live ngrok URL"
+            >
+              {CONNECTORS_URL}
+            </a>
             {healthLoading ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : health?.status === "ok" ? (
@@ -479,7 +488,15 @@ export function BrokerConnectWizard({ compact = false, className }: BrokerConnec
       {!compact && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
           <Cable className="h-3.5 w-3.5 text-primary" />
-          <span className="truncate font-mono">{CONNECTORS_URL}</span>
+          <a
+            href={CONNECTORS_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="truncate font-mono text-primary hover:underline"
+            title="Open live ngrok URL"
+          >
+            {CONNECTORS_URL}
+          </a>
           {healthLoading ? (
             <Loader2 className="h-3 w-3 animate-spin" />
           ) : health?.status === "ok" ? (

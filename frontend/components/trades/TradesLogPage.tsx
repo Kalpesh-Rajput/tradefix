@@ -21,6 +21,8 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useQuickLog } from "@/components/providers/QuickLogProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { ASSET_OPTIONS } from "@/components/trade/schema";
+import { TradeViewKpis } from "@/components/trades/TradeViewKpis";
+import { TradePreviewDrawer } from "@/components/trades/preview/TradePreviewDrawer";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useDeleteTrade, useDeleteTrades, useTrades } from "@/lib/hooks/useTrades";
@@ -100,6 +102,7 @@ export function TradesLogPage() {
   const [hydrated, setHydrated] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [previewTradeId, setPreviewTradeId] = useState<string | null>(null);
   const filtersRef = useRef<HTMLDivElement>(null);
 
   const deleteTrade = useDeleteTrade();
@@ -234,6 +237,7 @@ export function TradesLogPage() {
     if (!confirm(`Delete ${trade.symbol} trade?`)) return;
     try {
       await deleteTrade.mutateAsync(trade.id);
+      if (previewTradeId === trade.id) setPreviewTradeId(null);
       setSelected((prev) => {
         const next = new Set(prev);
         next.delete(trade.id);
@@ -251,6 +255,7 @@ export function TradesLogPage() {
     if (!confirm(`Delete ${ids.length} selected trade${ids.length === 1 ? "" : "s"}?`)) return;
     try {
       await deleteTrades.mutateAsync(ids);
+      if (previewTradeId && ids.includes(previewTradeId)) setPreviewTradeId(null);
       setSelected(new Set());
       toast.success(`${ids.length} trade${ids.length === 1 ? "" : "s"} deleted`);
     } catch (err) {
@@ -266,7 +271,7 @@ export function TradesLogPage() {
       <header className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 pb-4 pt-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-[20px] font-semibold tracking-tight text-[var(--color-text-primary)]">
-            Trades
+            Trade View
           </h1>
           <div className="flex items-center gap-2">
             <PortfolioSwitcher className="[&_button]:h-9 [&_button]:rounded-md [&_button]:border-[#E2E2E7] [&_button]:bg-white [&_button]:shadow-none [&_button]:text-[12px]" />
@@ -447,6 +452,15 @@ export function TradesLogPage() {
         )}
       </header>
 
+      <div className="shrink-0 px-5 pt-4 sm:px-6">
+        <TradeViewKpis
+          trades={filtered}
+          loading={loading}
+          formatMoney={formatMoney}
+          displayPnl={displayPnl}
+        />
+      </div>
+
       <div className="min-h-0 flex-1 overflow-auto px-5 py-4 sm:px-6">
         {loading ? (
           <div className="space-y-2">
@@ -513,9 +527,13 @@ export function TradesLogPage() {
                   return (
                     <tr
                       key={trade.id}
-                      className="border-b border-[var(--color-border-light)] transition-colors duration-150 last:border-0 hover:bg-[var(--color-primary-very-light)]"
+                      onClick={() => setPreviewTradeId(trade.id)}
+                      className={clsx(
+                        "cursor-pointer border-b border-[var(--color-border-light)] transition-colors duration-150 last:border-0 hover:bg-[var(--color-primary-very-light)]",
+                        previewTradeId === trade.id && "bg-[var(--color-primary-very-light)]"
+                      )}
                     >
-                      <td className="py-3 pl-4 pr-2">
+                      <td className="py-3 pl-4 pr-2" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={checked}
@@ -527,7 +545,7 @@ export function TradesLogPage() {
                       <td className="whitespace-nowrap px-2 py-3 font-mono text-xs text-[var(--color-text-secondary)]">
                         {tradeDateKey(trade)}
                       </td>
-                      <td className="px-2 py-3">
+                      <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
                         <Link
                           href={`/trades/${trade.id}`}
                           className="inline-flex rounded-md bg-[var(--color-primary-light)] px-2 py-0.5 font-mono text-xs font-semibold text-[var(--color-text-primary)] hover:bg-primary/15 hover:text-primary"
@@ -570,7 +588,7 @@ export function TradesLogPage() {
                       <td className="max-w-[160px] truncate px-2 py-3 text-xs text-[var(--color-text-secondary)]">
                         {trade.notes?.trim() || "—"}
                       </td>
-                      <td className="px-2 py-3 pr-4">
+                      <td className="px-2 py-3 pr-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-0.5">
                           <Link
                             href={`/trades/${trade.id}`}
@@ -598,6 +616,16 @@ export function TradesLogPage() {
           </div>
         )}
       </div>
+
+      {previewTradeId ? (
+        <TradePreviewDrawer
+          tradeId={previewTradeId}
+          trades={filtered}
+          formatMoney={formatMoney}
+          onClose={() => setPreviewTradeId(null)}
+          onSelectTrade={setPreviewTradeId}
+        />
+      ) : null}
     </div>
   );
 }

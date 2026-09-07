@@ -1,16 +1,16 @@
 "use client";
 
 import clsx from "clsx";
-import { ImagePlus, Loader2, Trash2, Trophy } from "lucide-react";
+import { Loader2, Trash2, Trophy } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
+import { ScreenshotGrid } from "@/components/media/ScreenshotGrid";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { mediaUrl } from "@/lib/media";
 import { resolveMistakeCatalog } from "@/lib/tradingDefaults";
 import type { DailyRecap, DayMood, DayPnlSummary } from "@/lib/types";
 
@@ -430,57 +430,18 @@ export function RecapForm({
       {/* Screenshots */}
       <section {...getRootProps()}>
         <input {...getInputProps()} />
-        <h3 className="mb-3 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-          Screenshots {totalShots}/{MAX_SHOTS}
-        </h3>
-        <button
-          type="button"
-          disabled={uploading || totalShots >= MAX_SHOTS}
-          onClick={() => open()}
-          className="flex items-center gap-2 rounded-lg border border-dashed border-white/20 px-4 py-3 text-sm text-zinc-400 transition hover:border-white/40 hover:text-white disabled:opacity-40"
-        >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-          Add screenshot
-        </button>
-
-        {(savedUrls.length > 0 || pendingShots.length > 0) && (
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {savedUrls.map((url) => {
-              const src = mediaUrl(url);
-              return (
-                <div key={url} className="group relative overflow-hidden rounded-lg border border-white/10">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src || url} alt="Screenshot" className="h-28 w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => void removeSaved(url)}
-                    className="absolute right-1.5 top-1.5 rounded bg-black/70 p-1.5 text-white opacity-0 transition group-hover:opacity-100"
-                    aria-label="Remove screenshot"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              );
-            })}
-            {pendingShots.map((shot) => (
-              <div key={shot.id} className="group relative overflow-hidden rounded-lg border border-white/10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={shot.preview} alt={shot.file.name} className="h-28 w-full object-cover" />
-                <span className="absolute left-1.5 top-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-zinc-300">
-                  Pending
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removePending(shot.id)}
-                  className="absolute right-1.5 top-1.5 rounded bg-black/70 p-1.5 text-white opacity-0 transition group-hover:opacity-100"
-                  aria-label="Remove screenshot"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        <ScreenshotGrid
+          urls={savedUrls}
+          pending={pendingShots.map((shot) => ({ id: shot.id, src: shot.preview, label: shot.file.name }))}
+          tone="dark"
+          max={MAX_SHOTS}
+          uploading={uploading}
+          canAdd={!uploading && totalShots < MAX_SHOTS}
+          onAdd={() => open()}
+          onDelete={onDeleteScreenshot ? (url) => void removeSaved(url) : undefined}
+          onDeletePending={removePending}
+          addLabel="Add screenshot"
+        />
       </section>
 
       {/* Footer actions */}

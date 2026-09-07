@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { ArrowLeft, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -13,6 +13,7 @@ import { ChipGroup } from "@/components/trade/ui";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ScreenshotGrid } from "@/components/media/ScreenshotGrid";
 import { useToast } from "@/components/ui/Toast";
 import { resolveEmotionCatalog } from "@/lib/emotions";
 import {
@@ -22,7 +23,6 @@ import {
   useUpdateTrade,
   useUploadTradeScreenshot,
 } from "@/lib/hooks/useTrades";
-import { mediaUrl } from "@/lib/media";
 import { resolveMistakeCatalog, resolveStrategyCatalog } from "@/lib/tradingDefaults";
 
 const MAX_SHOTS = 5;
@@ -267,67 +267,16 @@ export default function TradeDetailPage() {
 
       {/* Screenshots FIRST */}
       <section className="rounded-xl border border-white/[0.06] bg-zinc-950/80 p-5" {...getRootProps()}>
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold text-white">Screenshots</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">
-              {shots.length}/{MAX_SHOTS} · PNG, JPG, WEBP
-            </p>
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            disabled={!canUpload || uploadShot.isPending}
-            onClick={open}
-          >
-            {uploadShot.isPending ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                {uploadPct != null ? `${uploadPct}%` : "Uploading…"}
-              </>
-            ) : (
-              <>
-                <ImagePlus className="h-3.5 w-3.5" />
-                Add
-              </>
-            )}
-          </Button>
-          <input {...getInputProps()} />
-        </div>
-
-        {shots.length === 0 ? (
-          <button
-            type="button"
-            onClick={open}
-            disabled={!canUpload}
-            className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-10 text-zinc-500 transition hover:border-white/30 hover:text-zinc-300"
-          >
-            <ImagePlus className="h-6 w-6" />
-            <span className="text-xs">Drop charts here or click to browse</span>
-          </button>
-        ) : (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {shots.map((url) => {
-              const src = mediaUrl(url);
-              return (
-                <div key={url} className="group relative overflow-hidden rounded-lg border border-white/10">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src || undefined} alt="Trade screenshot" className="h-32 w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteShot(url)}
-                    disabled={deleteShot.isPending}
-                    className="absolute right-1.5 top-1.5 rounded bg-black/70 p-1.5 text-white opacity-0 transition group-hover:opacity-100"
-                    aria-label="Delete screenshot"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <input {...getInputProps()} />
+        <ScreenshotGrid
+          urls={shots}
+          tone="dark"
+          max={MAX_SHOTS}
+          uploading={uploadShot.isPending}
+          canAdd={canUpload && !uploadShot.isPending}
+          onAdd={open}
+          onDelete={(url) => void handleDeleteShot(url)}
+        />
       </section>
 
       {/* Notes */}

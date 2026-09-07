@@ -34,7 +34,7 @@ export const en = {
 
   "nav.today": "Dashboard",
   "nav.dayView": "Day View",
-  "nav.tradeLog": "Trade Log",
+  "nav.tradeLog": "Trade View",
   "nav.analytics": "Reports",
   "nav.journal": "Daily Journal",
   "nav.calendar": "Calendar",
@@ -109,6 +109,13 @@ export const en = {
   "dayView.weekOf": "Week of {date}",
   "dayView.tradesOnDay": "Trades",
   "dayView.loadError": "Couldn’t load Day View.",
+  "dayView.showTrades": "Show trades",
+  "dayView.hideTrades": "Hide trades",
+  "dayView.col.time": "Time",
+  "dayView.col.side": "Side",
+  "dayView.col.qtyEntry": "Qty / Entry",
+  "dayView.col.pnl": "P&L",
+  "dayView.col.replay": "Replay",
 
   "dashboard.title": "Dashboard",
   "dashboard.netPnl": "Net P&L",
@@ -127,6 +134,11 @@ export const en = {
   "dashboard.closeDate": "Close Date",
   "dashboard.wins": "Wins",
   "dashboard.losses": "Losses",
+  "dashboard.accountBalance": "Account balance",
+  "dashboard.drawdown": "Drawdown",
+  "dashboard.tradeTime": "Trade time performance",
+  "dashboard.tradeDuration": "Trade duration performance",
+  "dashboard.progressTracker": "Progress tracker",
 
   "settings.title": "Settings",
   "settings.nav.system": "System",
@@ -154,7 +166,7 @@ export const en = {
   "settings.system.searchLanguages": "Search languages…",
   "settings.system.filtersCard": "Filters",
   "settings.system.saveFilters": "Save Filters",
-  "settings.system.saveFiltersDesc": "Remember Trade Log filters between sessions",
+  "settings.system.saveFiltersDesc": "Remember Trade View filters between sessions",
   "settings.system.templatesCard": "Default Templates",
   "settings.system.journalTemplate": "Default Journal Template",
   "settings.system.journalTemplateHint":
@@ -174,7 +186,7 @@ export const en = {
   "dashboard.greeting.afternoon": "Good afternoon",
   "dashboard.greeting.evening": "Good evening",
 
-  "journal.title": "Trade Log",
+  "journal.title": "Trade View",
   "journal.subtitle": "Every trade you've logged, searchable and filterable.",
   "journal.setupTag": "Setup tag",
   "journal.allStatuses": "All statuses",

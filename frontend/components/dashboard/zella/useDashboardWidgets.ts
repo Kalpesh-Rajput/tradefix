@@ -10,7 +10,12 @@ export type DashboardWidgetId =
   | "cumulative"
   | "daily"
   | "positions"
-  | "calendar";
+  | "calendar"
+  | "accountBalance"
+  | "drawdown"
+  | "tradeTime"
+  | "tradeDuration"
+  | "progress";
 
 export type DashboardWidgetConfig = Record<DashboardWidgetId, boolean>;
 
@@ -21,6 +26,11 @@ export const DEFAULT_WIDGETS: DashboardWidgetConfig = {
   daily: true,
   positions: true,
   calendar: true,
+  accountBalance: true,
+  drawdown: true,
+  tradeTime: true,
+  tradeDuration: true,
+  progress: true,
 };
 
 const LABELS: Record<DashboardWidgetId, string> = {
@@ -30,6 +40,11 @@ const LABELS: Record<DashboardWidgetId, string> = {
   daily: "Net Daily P&L",
   positions: "Positions / Recent trades",
   calendar: "Calendar",
+  accountBalance: "Account balance",
+  drawdown: "Drawdown",
+  tradeTime: "Trade time performance",
+  tradeDuration: "Trade duration performance",
+  progress: "Progress tracker",
 };
 
 export function useDashboardWidgets() {

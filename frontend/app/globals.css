@@ -421,6 +421,52 @@ html.dark ::-webkit-scrollbar-thumb {
   .dash-control:hover {
     border-color: var(--color-border-light);
   }
+
+  .tf-note-editor {
+    font-family: Arial, var(--font-family);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--color-text-primary);
+  }
+
+  .tf-note-editor h2 {
+    margin: 4px 0 8px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .tf-note-editor h3 {
+    margin: 4px 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .tf-note-editor p {
+    margin: 3px 0;
+  }
+
+  .tf-note-editor .tf-note-hint {
+    color: var(--color-text-tertiary);
+    font-size: 13px;
+  }
+
+  .tf-note-editor .tf-note-log {
+    min-height: 88px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--color-primary-very-light);
+  }
+
+  .tf-note-editor hr {
+    margin: 16px 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tf-note-editor section + hr,
+  .tf-note-editor hr + section {
+    margin-top: 0;
+  }
 }
 
 @layer utilities {

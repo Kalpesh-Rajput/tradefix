@@ -1,0 +1,37 @@
+---
+description: TradeFix exists to help traders track, analyze, and improve performance
+alwaysApply: true
+---
+
+# TradeFix: Journal Objective
+
+The main objective of TradeFix is to help traders **track, analyze, and improve** their trading performance by keeping a structured record of their **trades**, **strategies**, and **psychological state**.
+
+Every feature, screen, and API must serve at least one of those three jobs. If it does not, do not build it.
+
+## The three jobs
+
+1. **Track** — capture a complete, structured record (entries, exits, size, account, strategy, mistakes, mood, notes, screenshots).
+2. **Analyze** — turn that record into patterns the trader can see (P&L, win rate, time-of-day, strategy, emotion, streaks).
+3. **Improve** — close the loop with insights, recaps, plans, and coaching that change the next trade.
+
+## The three records
+
+- **Trades** — the source of truth. Logging, import, edit, and review must stay accurate and complete.
+- **Strategies** — playbook tags and plans must stay linked to trades so performance is attributable.
+- **Psychological state** — mood, mindset, diary, and day recap are first-class data, not decoration.
+
+## Decision test
+
+Before adding or changing a feature, ask:
+
+1. Does this help the trader record a trade, a strategy, or their state — or understand / act on that record?
+2. Will the data persist, survive refresh, and show up on other surfaces that already read it (today, calendar, analytics, trade detail)?
+
+If either answer is no, stop. Do not add social feeds, news-for-news-sake, gamification, or chrome that does not feed track → analyze → improve.
+
+## Do not
+
+- Treat psychology as optional copy. Persist it and use it in analysis.
+- Show analytics that cannot be traced back to logged trades.
+- Split strategy or emotion catalogs from the trades that use them.

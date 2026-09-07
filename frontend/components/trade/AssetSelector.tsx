@@ -16,7 +16,7 @@ export function AssetSelector({
 }) {
   return (
     <div>
-      <FieldLabel error={error}>Asset Class</FieldLabel>
+      <FieldLabel error={error}>Select Segment</FieldLabel>
       <Controller
         control={control}
         name="asset_type"

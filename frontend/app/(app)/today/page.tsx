@@ -3,20 +3,33 @@
 import { LayoutGrid, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { MetricCards } from "@/components/dashboard/zella/MetricCards";
+import { AccountBalanceChart } from "@/components/dashboard/zella/AccountBalanceChart";
+import { DASH_CALENDAR_H } from "@/components/dashboard/zella/ChartCard";
 import {
   CumulativePnlChart,
   DailyPnlChart,
   ZellaScoreCard,
 } from "@/components/dashboard/zella/DashboardCharts";
-import { DashboardCalendar } from "@/components/dashboard/zella/DashboardCalendar";
+import { DrawdownChart } from "@/components/dashboard/zella/DrawdownChart";
+import { MetricCards } from "@/components/dashboard/zella/MetricCards";
+import { PnlCalendarHeatmap } from "@/components/dashboard/zella/PnlCalendarHeatmap";
 import { PositionsTradesWidget } from "@/components/dashboard/zella/PositionsTradesWidget";
+import { ProgressTracker } from "@/components/dashboard/zella/ProgressTracker";
+import { TradeScatterChart } from "@/components/dashboard/zella/TradeScatterChart";
 import { ZellaDashboardHeader } from "@/components/dashboard/zella/ZellaDashboardHeader";
 import { useDashboardWidgets } from "@/components/dashboard/zella/useDashboardWidgets";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import {
+  accountBalanceSeries,
+  drawdownSeries,
+  equityFromClosedTrades,
+  progressGrid,
+  tradeDurationPoints,
+  tradeTimePoints,
+} from "@/lib/dashboardSeries";
 import { useAnalytics, useCalendar } from "@/lib/hooks/useAnalytics";
 import { useTrades } from "@/lib/hooks/useTrades";
 
@@ -81,9 +94,19 @@ export default function TodayPage() {
     { enabled: accountReady }
   );
 
+  const progressRange = useMemo(() => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - 20 * 7);
+    return { from: localIso(from), to: localIso(to) };
+  }, []);
+
   const { data: calendar } = useCalendar(calStart, calEnd, accountId, { enabled: accountReady });
   const { data: rangeCalendar, refetch: refetchRangeCal } = useCalendar(dateFrom, dateTo, accountId, {
     enabled: accountReady,
+  });
+  const { data: progressCalendar } = useCalendar(progressRange.from, progressRange.to, accountId, {
+    enabled: accountReady && widgets.progress,
   });
 
   const overview = analytics?.overview;
@@ -140,6 +163,30 @@ export default function TodayPage() {
         };
       });
   }, [analytics?.equity_curve, closed, formatChartDate, displayPnl]);
+
+  const equityPoints = useMemo(() => {
+    if (analytics?.equity_curve?.length) return analytics.equity_curve;
+    return equityFromClosedTrades(closed, (t) => displayPnl(t.pnl, t.fees) ?? 0);
+  }, [analytics?.equity_curve, closed, displayPnl]);
+  const initialBalance = Number(activeAccount?.initial_balance ?? 0);
+
+  const balanceSeries = useMemo(
+    () => accountBalanceSeries(equityPoints, initialBalance, formatChartDate),
+    [equityPoints, initialBalance, formatChartDate]
+  );
+  const ddSeries = useMemo(() => drawdownSeries(equityPoints, formatChartDate), [equityPoints, formatChartDate]);
+  const timePoints = useMemo(
+    () => tradeTimePoints(closed, (t) => displayPnl(t.pnl, t.fees) ?? 0),
+    [closed, displayPnl]
+  );
+  const durationPoints = useMemo(
+    () => tradeDurationPoints(closed, (t) => displayPnl(t.pnl, t.fees) ?? 0),
+    [closed, displayPnl]
+  );
+  const progress = useMemo(
+    () => progressGrid(progressCalendar?.days ?? rangeCalendar?.days ?? []),
+    [progressCalendar?.days, rangeCalendar?.days]
+  );
 
   const dailySeries = useMemo(() => {
     const days = rangeCalendar?.days ?? [];
@@ -264,10 +311,10 @@ export default function TodayPage() {
                 <Skeleton key={i} className="h-[96px] rounded-[10px]" />
               ))}
             </div>
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.15fr_1fr_1fr]">
-              <Skeleton className="h-[240px] rounded-[10px]" />
-              <Skeleton className="h-[240px] rounded-[10px]" />
-              <Skeleton className="h-[240px] rounded-[10px]" />
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+              <Skeleton className="h-[260px] rounded-[10px]" />
+              <Skeleton className="h-[260px] rounded-[10px]" />
+              <Skeleton className="h-[260px] rounded-[10px]" />
             </div>
           </div>
         ) : hasError ? (
@@ -294,48 +341,117 @@ export default function TodayPage() {
               />
             )}
 
+            <div className="space-y-3">
             {(widgets.score || widgets.cumulative || widgets.daily) && (
-              <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[1.15fr_1fr_1fr]">
+              <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3">
                 {widgets.score && (
-                  <ZellaScoreCard
-                    winRate={winRate}
-                    profitFactor={profitFactor}
-                    avgWinLoss={avgWinLoss}
-                  />
+                  <div className="min-w-0">
+                    <ZellaScoreCard
+                      winRate={winRate}
+                      profitFactor={profitFactor}
+                      avgWinLoss={avgWinLoss}
+                    />
+                  </div>
                 )}
                 {widgets.cumulative && (
-                  <CumulativePnlChart series={equitySeries} formatMoney={formatMoney} />
+                  <div className="min-w-0">
+                    <CumulativePnlChart series={equitySeries} formatMoney={formatMoney} />
+                  </div>
                 )}
                 {widgets.daily && (
-                  <DailyPnlChart series={dailySeries} formatMoney={formatMoney} />
+                  <div className="min-w-0">
+                    <DailyPnlChart series={dailySeries} formatMoney={formatMoney} />
+                  </div>
                 )}
               </div>
             )}
 
-            {(widgets.positions || widgets.calendar) && (
-              <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[1fr_1.45fr]">
-                {widgets.positions && (
-                  <PositionsTradesWidget
-                    openTrades={openTrades}
-                    recentTrades={recentTrades}
-                    formatMoney={formatMoney}
-                  />
+            {(widgets.positions || widgets.accountBalance || widgets.calendar) && (
+              <div
+                className="grid grid-cols-1 items-stretch gap-3 lg:h-[var(--dash-cal-h)] lg:grid-cols-3"
+                style={{ ["--dash-cal-h" as string]: `${DASH_CALENDAR_H}px` }}
+              >
+                {(widgets.positions || widgets.accountBalance) && (
+                  <div
+                    className={
+                      widgets.positions && widgets.accountBalance
+                        ? "grid h-[420px] min-h-0 grid-rows-2 gap-3 overflow-hidden lg:h-full"
+                        : "flex h-[420px] min-h-0 flex-col overflow-hidden lg:h-full"
+                    }
+                  >
+                    {widgets.positions && (
+                      <PositionsTradesWidget
+                        compact
+                        openTrades={openTrades}
+                        recentTrades={recentTrades}
+                        formatMoney={formatMoney}
+                      />
+                    )}
+                    {widgets.accountBalance && (
+                      <AccountBalanceChart series={balanceSeries} formatMoney={formatMoney} />
+                    )}
+                  </div>
                 )}
                 {widgets.calendar && (
-                  <DashboardCalendar
-                    days={calendar?.days ?? []}
-                    onMonthChange={(start, end) => {
-                      setCalStart(start);
-                      setCalEnd(end);
-                    }}
-                    onSelectDate={(date) => {
-                      setDateFrom(date);
-                      setDateTo(date);
-                    }}
-                  />
+                  <div className="h-[360px] min-w-0 lg:col-span-2 lg:h-full">
+                    <PnlCalendarHeatmap
+                      className="h-full min-h-0 min-w-0"
+                      days={calendar?.days ?? []}
+                      month={calStart}
+                      onMonthChange={(start, end) => {
+                        setCalStart(start);
+                        setCalEnd(end);
+                      }}
+                      onSelectDate={(date) => {
+                        setDateFrom(date);
+                        setDateTo(date);
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             )}
+
+            {(widgets.drawdown || widgets.tradeTime || widgets.tradeDuration) && (
+              <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3">
+                {widgets.drawdown && (
+                  <div className="min-w-0">
+                    <DrawdownChart series={ddSeries} formatMoney={formatMoney} />
+                  </div>
+                )}
+                {widgets.tradeTime && (
+                  <div className="min-w-0">
+                    <TradeScatterChart
+                      title="Trade time performance"
+                      hint="Each point is a closed trade plotted by entry time of day versus P&L."
+                      series={timePoints}
+                      formatMoney={formatMoney}
+                      xMode="clock"
+                    />
+                  </div>
+                )}
+                {widgets.tradeDuration && (
+                  <div className="min-w-0">
+                    <TradeScatterChart
+                      title="Trade duration performance"
+                      hint="Each point is a closed trade plotted by hold time versus P&L."
+                      series={durationPoints}
+                      formatMoney={formatMoney}
+                      xMode="duration"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {widgets.progress && (
+              <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3">
+                <div className="min-w-0">
+                  <ProgressTracker weeks={progress.weeks} monthLabels={progress.monthLabels} />
+                </div>
+              </div>
+            )}
+            </div>
           </>
         )}
         <div className="h-2" />

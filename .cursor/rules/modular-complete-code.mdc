@@ -1,0 +1,39 @@
+---
+description: Modular folder structure and complete working code before any implementation
+alwaysApply: true
+---
+
+# TradeFix: Structure Before Code
+
+Do not jump into edits. Plan the structure, then ship **complete, working, production-quality** code.
+
+## Before implementing or changing code
+
+1. Find the existing module — reuse it. Do not duplicate a calendar, chart, or form in a new random file.
+2. Name the owner: schema/types → service/API → hook → component. Follow that order for new features.
+3. Keep files single-purpose and small. Extract a component or hook instead of growing a page past ~300–400 lines of UI logic.
+4. Prefer completing one vertical slice over half-wiring many files.
+
+## Folder contract
+
+**Frontend**
+
+- `components/<domain>/` — UI only (dashboard, trade, calendar, settings)
+- `lib/hooks/` — data fetching and mutations
+- `lib/` — types, formatters, shared helpers (no JSX)
+- `app/` — routes that compose components; no fat business logic
+
+**Backend**
+
+- `models/` → `schemas/` → `services/` → `api/routers/`
+- No business logic in routers. No SQL in the frontend.
+
+## Code quality
+
+- Typed, named, readable. No leftover comments, unused props, or dead imports.
+- Handle loading, empty, error, and success. Wire real APIs — no dummy handlers unless the user asks for a stub.
+- If a change touches shared state, update every consumer in the same pass.
+
+## Stop and fix
+
+If the change would be a one-off hack, a copy-paste of an existing widget, or a page-level dump of markup — stop, extract a module, then implement.

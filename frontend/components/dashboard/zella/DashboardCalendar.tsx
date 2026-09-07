@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { CalendarDay } from "@/lib/types";
 
@@ -21,15 +21,35 @@ function compactMoney(n: number) {
 
 export function DashboardCalendar({
   days,
+  month: monthIso,
+  className,
   onMonthChange,
   onSelectDate,
 }: {
   days: CalendarDay[];
+  month?: string | null;
+  className?: string;
   onMonthChange?: (start: string, end: string) => void;
   onSelectDate?: (date: string) => void;
 }) {
-  const [cursor, setCursor] = useState(() => new Date());
+  const [cursor, setCursor] = useState(() => {
+    if (monthIso) {
+      const [y, m] = monthIso.split("-").map(Number);
+      if (y && m) return new Date(y, m - 1, 1);
+    }
+    return new Date();
+  });
   const [selected, setSelected] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!monthIso) return;
+    const [y, m] = monthIso.split("-").map(Number);
+    if (!y || !m) return;
+    setCursor((prev) =>
+      prev.getFullYear() === y && prev.getMonth() === m - 1 ? prev : new Date(y, m - 1, 1)
+    );
+  }, [monthIso]);
+
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
 
@@ -52,7 +72,7 @@ export function DashboardCalendar({
       const key = localIso(new Date(year, month, d));
       out.push({ key, day: d, inMonth: true, data: dayMap.get(key) });
     }
-    while (out.length % 7 !== 0) {
+    while (out.length < 42) {
       out.push({ key: `trail-${out.length}`, day: 0, inMonth: false });
     }
     return out;
@@ -80,8 +100,8 @@ export function DashboardCalendar({
   }
 
   return (
-    <div className="dash-card flex flex-col rounded-md p-2.5">
-      <div className="mb-2.5 flex shrink-0 items-center justify-between gap-2">
+    <div className={clsx("dash-card flex min-h-0 flex-col overflow-hidden", className)}>
+      <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-[var(--color-divider)] px-3">
         <div className="flex items-center gap-0.5">
           <button
             type="button"
@@ -110,7 +130,8 @@ export function DashboardCalendar({
         <h3 className="text-[12px] font-medium text-[var(--color-text-primary)]">{label}</h3>
       </div>
 
-      <div className="mb-1 grid grid-cols-7 gap-0.5 text-center text-[9px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
+      <div className="flex min-h-0 flex-1 flex-col p-3">
+      <div className="mb-1 grid shrink-0 grid-cols-7 gap-1 text-center text-[9px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d} className="py-0.5">
             {d}
@@ -118,9 +139,9 @@ export function DashboardCalendar({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5">
+      <div className="grid min-h-[228px] flex-1 grid-cols-7 grid-rows-6 gap-1">
         {cells.map((cell) => {
-          if (!cell.inMonth) return <div key={cell.key} className="h-8" />;
+          if (!cell.inMonth) return <div key={cell.key} className="min-h-0" />;
           const pnl = cell.data?.pnl ?? 0;
           const trades = cell.data?.trades ?? 0;
           const hasTrades = trades > 0;
@@ -138,7 +159,7 @@ export function DashboardCalendar({
                 onSelectDate?.(cell.key);
               }}
               className={clsx(
-                "flex h-8 flex-col rounded-sm border px-0.5 py-px text-left transition-colors duration-150",
+                "flex min-h-0 w-full flex-col rounded-sm border px-1 py-0.5 text-left transition-colors duration-150",
                 hasTrades && win && "border-primary/20 bg-primary/10",
                 hasTrades && loss && "border-[#F8DDE0] bg-[var(--color-danger-bg)]",
                 hasTrades && !win && !loss && "border-[var(--color-border-light)] bg-[var(--color-surface-secondary)]",
@@ -163,6 +184,7 @@ export function DashboardCalendar({
             </button>
           );
         })}
+      </div>
       </div>
     </div>
   );

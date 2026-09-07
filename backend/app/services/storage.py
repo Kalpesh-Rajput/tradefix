@@ -144,6 +144,54 @@ def trade_screenshot_dir(user_id: uuid.UUID, trade_id: uuid.UUID) -> Path:
     return path
 
 
+def day_note_screenshot_dir(user_id: uuid.UUID, note_id: uuid.UUID) -> Path:
+    path = _uploads_root() / "notes" / str(user_id) / str(note_id)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def save_day_note_screenshot(
+    user_id: uuid.UUID,
+    note_id: uuid.UUID,
+    data: bytes,
+    declared_content_type: str | None,
+) -> str:
+    if len(data) > settings.max_screenshot_bytes:
+        max_mb = settings.max_screenshot_bytes / (1024 * 1024)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Image must be {max_mb:.0f}MB or smaller",
+        )
+
+    mime = detect_image_mime(data)
+    if mime is None or mime not in ALLOWED_AVATAR_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid image. Use PNG, JPG, or WEBP",
+        )
+
+    if declared_content_type and declared_content_type.lower() not in (
+        mime,
+        "image/jpg",
+        "application/octet-stream",
+    ):
+        declared = declared_content_type.lower().replace("image/jpg", "image/jpeg")
+        if declared.startswith("image/") and declared != mime:
+            logger.warning(
+                "Screenshot content-type mismatch user=%s declared=%s detected=%s",
+                user_id,
+                declared_content_type,
+                mime,
+            )
+
+    ext = ALLOWED_AVATAR_TYPES[mime]
+    filename = f"{uuid.uuid4().hex}{ext}"
+    dest = day_note_screenshot_dir(user_id, note_id) / filename
+    dest.write_bytes(data)
+    logger.info("Saved day-note screenshot user=%s note=%s path=%s bytes=%s", user_id, note_id, dest, len(data))
+    return public_upload_url(f"notes/{user_id}/{note_id}/{filename}")
+
+
 def save_trade_screenshot(
     user_id: uuid.UUID,
     trade_id: uuid.UUID,
