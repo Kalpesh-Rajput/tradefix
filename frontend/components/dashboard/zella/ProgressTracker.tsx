@@ -58,7 +58,7 @@ export function ProgressTracker({
         </Link>
       }
     >
-      <div className="min-w-0 overflow-x-auto">
+      <div className="min-h-0 min-w-0 flex-1 overflow-x-auto">
         <div className="min-w-[520px]">
           <div
             className="mb-1 grid gap-1 pl-7 text-[9px] text-[#8B8D96]"
@@ -109,7 +109,7 @@ export function ProgressTracker({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEEFF2] pt-3">
+      <div className="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[#EEEFF2] pt-3">
         <div className="min-w-[160px] flex-1">
           <p className="text-[11px] text-[#6B6E78]">
             Today&apos;s score{" "}

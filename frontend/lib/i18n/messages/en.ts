@@ -139,6 +139,9 @@ export const en = {
   "dashboard.tradeTime": "Trade time performance",
   "dashboard.tradeDuration": "Trade duration performance",
   "dashboard.progressTracker": "Progress tracker",
+  "dashboard.expectancy": "Expectancy",
+  "dashboard.expectancyHint": "Average P&L per closed trade in this range. Positive means the next similar trade is expected to make money.",
+  "dashboard.expectancyAvgR": "Avg R",
 
   "settings.title": "Settings",
   "settings.nav.system": "System",

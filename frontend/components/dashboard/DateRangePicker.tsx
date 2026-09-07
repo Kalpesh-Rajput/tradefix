@@ -89,11 +89,13 @@ export function DateRangePicker({
   dateTo,
   onChange,
   className,
+  triggerClassName,
 }: {
   dateFrom: string;
   dateTo: string;
   onChange: (from: string, to: string) => void;
   className?: string;
+  triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [draftFrom, setDraftFrom] = useState(dateFrom);
@@ -158,7 +160,10 @@ export function DateRangePicker({
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-8 min-w-[210px] max-w-[280px] items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[11px] font-medium text-[var(--color-text-primary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)]"
+        className={clsx(
+          "inline-flex min-w-[210px] max-w-[280px] items-center gap-1.5 border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[11px] font-medium text-[var(--color-text-primary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)]",
+          triggerClassName ?? "h-8 rounded-md"
+        )}
       >
         <CalendarDays className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={1.75} />
         <span className="min-w-0 flex-1 truncate text-left">{formatRangeLabel(dateFrom, dateTo)}</span>

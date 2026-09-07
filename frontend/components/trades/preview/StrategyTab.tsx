@@ -90,7 +90,7 @@ export function StrategyTab({ trade }: { trade: Trade }) {
             if (!v) void clear();
             else void assign(v);
           }}
-          className="h-10 w-full appearance-none rounded-md border border-[#E2E2E7] bg-[#F7F7F9] pl-9 pr-28 text-[13px] text-[var(--color-text-primary)] outline-none focus:border-primary/40"
+          className="h-10 w-full appearance-none rounded-xl border border-[#E2E2E7] bg-[#F7F7F9] pl-9 pr-28 text-[13px] text-[var(--color-text-primary)] outline-none focus:border-primary/40"
         >
           <option value="">Pick from your Strategy library…</option>
           {catalog.map((name) => (
@@ -105,7 +105,7 @@ export function StrategyTab({ trade }: { trade: Trade }) {
       </div>
 
       {current ? (
-        <div className="mt-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-primary-very-light)] px-3 py-3">
+        <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-primary-very-light)] px-3 py-3">
           <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
             Assigned strategy
           </p>

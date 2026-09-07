@@ -56,7 +56,7 @@ export function ExecutionsTab({
           No executions on this trade.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-[#EFEFF2]">
+        <div className="overflow-x-auto rounded-xl border border-[#EFEFF2]">
           <table className="w-full min-w-[360px] text-left text-[12px]">
             <thead>
               <tr className="bg-[#F6F4FA] text-[10px] font-medium uppercase tracking-wide text-[#70717A]">

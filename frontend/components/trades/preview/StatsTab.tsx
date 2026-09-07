@@ -153,7 +153,7 @@ export function StatsTab({
             }}
             placeholder="Enter Profit Target"
             inputMode="decimal"
-            className="h-9 min-w-0 flex-1 rounded-md border border-[#E2E2E7] px-2.5 text-[13px] outline-none focus:border-primary/40"
+            className="h-9 min-w-0 flex-1 rounded-xl border border-[#E2E2E7] px-2.5 text-[13px] outline-none focus:border-primary/40"
           />
           <QtyBadge qty={qty} />
         </div>
@@ -175,7 +175,7 @@ export function StatsTab({
             }}
             placeholder="Enter Stop Loss"
             inputMode="decimal"
-            className="h-9 min-w-0 flex-1 rounded-md border border-[#E2E2E7] px-2.5 text-[13px] outline-none focus:border-primary/40"
+            className="h-9 min-w-0 flex-1 rounded-xl border border-[#E2E2E7] px-2.5 text-[13px] outline-none focus:border-primary/40"
           />
           <QtyBadge qty={qty} />
         </div>
@@ -226,7 +226,7 @@ function Row({
 
 function QtyBadge({ qty }: { qty: string }) {
   return (
-    <div className="flex h-9 shrink-0 items-center rounded-md border border-[#E2E2E7] px-2 text-[12px] text-[var(--color-text-secondary)]">
+    <div className="flex h-9 shrink-0 items-center rounded-xl border border-[#E2E2E7] px-2 text-[12px] text-[var(--color-text-secondary)]">
       Qty <span className="ml-1.5 font-semibold text-[var(--color-text-primary)]">{qty}</span>
     </div>
   );

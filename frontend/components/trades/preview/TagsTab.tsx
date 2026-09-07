@@ -113,7 +113,7 @@ function Category({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="mb-3 rounded-lg border border-[#EFEFF2] px-3 py-2.5">
+    <div className="mb-3 rounded-xl border border-[#EFEFF2] px-3 py-2.5">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Tag className="h-3.5 w-3.5" style={{ color: accent }} strokeWidth={1.75} />
@@ -131,7 +131,7 @@ function Category({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-full rounded-md border border-[#E2E2E7] bg-white px-2.5 text-[13px] outline-none focus:border-primary/40 disabled:opacity-50"
+        className="h-9 w-full rounded-xl border border-[#E2E2E7] bg-white px-2.5 text-[13px] outline-none focus:border-primary/40 disabled:opacity-50"
       >
         <option value="">Select tag</option>
         {options.map((opt) => (

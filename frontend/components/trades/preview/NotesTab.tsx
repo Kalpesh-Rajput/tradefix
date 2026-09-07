@@ -23,7 +23,7 @@ export function NotesTab({ trade }: { trade: Trade }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="inline-flex rounded-md border border-[#E2E2E7] bg-[#F7F7F9] p-0.5">
+        <div className="inline-flex rounded-xl border border-[#E2E2E7] bg-[#F7F7F9] p-0.5">
           <SubBtn active={sub === "trade"} onClick={() => setSub("trade")} icon="trade">
             Trade note
           </SubBtn>
@@ -54,7 +54,7 @@ function SubBtn({
       type="button"
       onClick={onClick}
       className={clsx(
-        "inline-flex h-8 items-center gap-1.5 rounded-[5px] px-2.5 text-[12px] font-medium",
+        "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium",
         active
           ? "bg-white text-[var(--color-text-primary)] shadow-[inset_0_0_0_1px_#E8E8EC]"
           : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
@@ -122,7 +122,7 @@ function TradeNoteEditor({ trade }: { trade: Trade }) {
       <div className="mb-2 flex justify-end">
         <NoteTemplateSelector currentId={templateId} onSelect={applyTemplate} />
       </div>
-      <div className="flex min-h-[240px] flex-1 flex-col overflow-hidden rounded-md border border-[#E2E2E7]">
+      <div className="flex min-h-[240px] flex-1 flex-col overflow-hidden rounded-xl border border-[#E2E2E7]">
         <RichNoteEditor
           html={html}
           revision={revision}
@@ -236,7 +236,7 @@ function DailyJournalPane({ accountId, date }: { accountId: string; date: string
         </Link>
         <NoteTemplateSelector currentId={templateId} onSelect={applyTemplate} />
       </div>
-      <div className="flex min-h-[240px] flex-1 flex-col overflow-hidden rounded-md border border-[#E2E2E7]">
+      <div className="flex min-h-[240px] flex-1 flex-col overflow-hidden rounded-xl border border-[#E2E2E7]">
         <RichNoteEditor
           html={html}
           revision={revision}

@@ -4,7 +4,6 @@ import clsx from "clsx";
 import {
   ArrowDownRight,
   ArrowUpRight,
-  CalendarDays,
   Filter,
   Pencil,
   Plus,
@@ -15,6 +14,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { PortfolioSwitcher } from "@/components/dashboard/PortfolioSwitcher";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -43,7 +43,7 @@ type LocalFilters = {
 const FILTERS_STORAGE_KEY = "tradefix_trades_log_filters";
 
 const fieldClass =
-  "h-9 rounded-md border border-[#E2E2E7] bg-white text-[13px] text-[var(--color-text-primary)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-primary/40";
+  "h-9 rounded-xl border border-[#E2E2E7] bg-white text-[13px] text-[var(--color-text-primary)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-primary/40";
 
 function assetLabel(type: AssetType): string {
   return ASSET_OPTIONS.find((a) => a.value === type)?.label.toLowerCase() ?? type;
@@ -274,7 +274,7 @@ export function TradesLogPage() {
             Trade View
           </h1>
           <div className="flex items-center gap-2">
-            <PortfolioSwitcher className="[&_button]:h-9 [&_button]:rounded-md [&_button]:border-[#E2E2E7] [&_button]:bg-white [&_button]:shadow-none [&_button]:text-[12px]" />
+            <PortfolioSwitcher className="[&_button]:h-9 [&_button]:rounded-xl [&_button]:border-[#E2E2E7] [&_button]:bg-white [&_button]:shadow-none [&_button]:text-[12px]" />
             <button
               type="button"
               onClick={() => openQuickLog(lastClosedTradeId)}
@@ -306,26 +306,19 @@ export function TradesLogPage() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <DateField
-              value={filters.dateFrom}
-              onChange={(v) => setFilters((f) => ({ ...f, dateFrom: v }))}
-              ariaLabel="From date"
-            />
-            <span className="text-[var(--color-text-muted)]">–</span>
-            <DateField
-              value={filters.dateTo}
-              onChange={(v) => setFilters((f) => ({ ...f, dateTo: v }))}
-              ariaLabel="To date"
-            />
-          </div>
+          <DateRangePicker
+            dateFrom={filters.dateFrom}
+            dateTo={filters.dateTo}
+            onChange={(from, to) => setFilters((f) => ({ ...f, dateFrom: from, dateTo: to }))}
+            triggerClassName="h-9 rounded-xl border-[#E2E2E7] text-[13px]"
+          />
 
           <div className="relative" ref={filtersRef}>
             <button
               type="button"
               onClick={() => setFiltersOpen((v) => !v)}
               className={clsx(
-                "inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-[13px] font-medium transition-colors duration-150",
+                "inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-[13px] font-medium transition-colors duration-150",
                 activeExtraFilters || filtersOpen
                   ? "border-primary/40 bg-[var(--color-primary-light)] text-primary"
                   : "border-[#E2E2E7] bg-white text-[var(--color-text-primary)] hover:bg-[var(--color-primary-very-light)]"
@@ -341,7 +334,7 @@ export function TradesLogPage() {
             </button>
 
             {filtersOpen && (
-              <div className="absolute right-0 z-30 mt-1.5 w-72 rounded-md border border-[var(--color-border)] bg-white p-3 shadow-dropdown">
+              <div className="absolute right-0 z-30 mt-1.5 w-72 rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-dropdown">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-xs font-medium text-[var(--color-text-secondary)]">
                     Filter trades
@@ -400,7 +393,7 @@ export function TradesLogPage() {
             )}
           </div>
 
-          <div className="ml-auto flex items-center rounded-md border border-[#E2E2E7] bg-white p-0.5">
+          <div className="ml-auto flex items-center rounded-xl border border-[#E2E2E7] bg-white p-0.5">
             {(
               [
                 { key: "all", label: "All", count: counts.all },
@@ -413,7 +406,7 @@ export function TradesLogPage() {
                 type="button"
                 onClick={() => setFilters((f) => ({ ...f, status: tab.key }))}
                 className={clsx(
-                  "h-8 rounded-[5px] px-3 text-xs font-medium transition-colors duration-150",
+                  "h-8 rounded-lg px-3 text-xs font-medium transition-colors duration-150",
                   filters.status === tab.key
                     ? "bg-[var(--color-primary-light)] text-primary"
                     : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
@@ -427,7 +420,7 @@ export function TradesLogPage() {
         </div>
 
         {someSelected && (
-          <div className="mt-3 flex items-center gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-primary-very-light)] px-3 py-2">
+          <div className="mt-3 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-primary-very-light)] px-3 py-2">
             <span className="text-xs font-medium text-[var(--color-text-primary)]">
               {selected.size} selected
             </span>
@@ -461,7 +454,7 @@ export function TradesLogPage() {
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto px-5 py-4 sm:px-6">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-4 pt-4 sm:px-6">
         {loading ? (
           <div className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -494,30 +487,31 @@ export function TradesLogPage() {
             )}
           </div>
         ) : (
-          <div className="dash-card overflow-x-auto">
-            <table className="w-full min-w-[1100px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-[var(--color-border-light)] bg-[#F5F4F8] text-[11px] font-medium uppercase tracking-wider text-[#70717A]">
-                  <th className="w-10 py-2.5 pl-4 pr-2">
+          <div className="dash-card flex min-h-0 flex-1 flex-col overflow-hidden p-3">
+            <div className="min-h-0 flex-1 overflow-auto rounded-xl">
+            <table className="w-full min-w-[1100px] border-separate border-spacing-0 text-left text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="text-[11px] font-medium uppercase tracking-wider text-[#70717A]">
+                  <th className="sticky top-0 z-10 w-10 rounded-tl-xl border-b border-[var(--color-border-light)] bg-[#F5F4F8] py-2.5 pl-4 pr-2">
                     <input
                       type="checkbox"
                       checked={allVisibleSelected}
                       onChange={toggleAll}
-                      className="h-3.5 w-3.5 rounded border-[#D1D5DB] text-primary focus:ring-primary"
+                      className="h-3.5 w-3.5 rounded-md border-[#D1D5DB] text-primary focus:ring-primary"
                       aria-label="Select all"
                     />
                   </th>
-                  <th className="px-2 py-2.5 font-medium">Date</th>
-                  <th className="px-2 py-2.5 font-medium">Ticker</th>
-                  <th className="px-2 py-2.5 font-medium">Class</th>
-                  <th className="px-2 py-2.5 font-medium">Side</th>
-                  <th className="px-2 py-2.5 font-medium">Qty</th>
-                  <th className="px-2 py-2.5 font-medium">Entry</th>
-                  <th className="px-2 py-2.5 font-medium">Exit</th>
-                  <th className="px-2 py-2.5 font-medium">Strategy</th>
-                  <th className="px-2 py-2.5 font-medium">P&amp;L</th>
-                  <th className="px-2 py-2.5 font-medium">Notes</th>
-                  <th className="w-20 px-2 py-2.5 pr-4" />
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Date</th>
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Ticker</th>
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Class</th>
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Side</th>
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Qty</th>
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Entry</th>
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Exit</th>
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Strategy</th>
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">P&amp;L</th>
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Notes</th>
+                  <th className="sticky top-0 z-10 w-20 rounded-tr-xl border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 pr-4" />
                 </tr>
               </thead>
               <tbody>
@@ -533,7 +527,7 @@ export function TradesLogPage() {
                         previewTradeId === trade.id && "bg-[var(--color-primary-very-light)]"
                       )}
                     >
-                      <td className="py-3 pl-4 pr-2" onClick={(e) => e.stopPropagation()}>
+                      <td className="border-b border-[var(--color-border-light)] py-3 pl-4 pr-2" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={checked}
@@ -542,38 +536,38 @@ export function TradesLogPage() {
                           aria-label={`Select ${trade.symbol}`}
                         />
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3 font-mono text-xs text-[var(--color-text-secondary)]">
+                      <td className="whitespace-nowrap border-b border-[var(--color-border-light)] px-2 py-3 font-mono text-xs text-[var(--color-text-secondary)]">
                         {tradeDateKey(trade)}
                       </td>
-                      <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="border-b border-[var(--color-border-light)] px-2 py-3" onClick={(e) => e.stopPropagation()}>
                         <Link
                           href={`/trades/${trade.id}`}
-                          className="inline-flex rounded-md bg-[var(--color-primary-light)] px-2 py-0.5 font-mono text-xs font-semibold text-[var(--color-text-primary)] hover:bg-primary/15 hover:text-primary"
+                          className="inline-flex rounded-lg bg-[var(--color-primary-light)] px-2 py-0.5 font-mono text-xs font-semibold text-[var(--color-text-primary)] hover:bg-primary/15 hover:text-primary"
                         >
                           {trade.symbol}
                         </Link>
                       </td>
-                      <td className="px-2 py-3">
+                      <td className="border-b border-[var(--color-border-light)] px-2 py-3">
                         <ClassPill type={trade.asset_type} />
                       </td>
-                      <td className="px-2 py-3">
+                      <td className="border-b border-[var(--color-border-light)] px-2 py-3">
                         <SidePill side={trade.side} />
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3 text-xs text-[var(--color-text-secondary)]">
+                      <td className="whitespace-nowrap border-b border-[var(--color-border-light)] px-2 py-3 text-xs text-[var(--color-text-secondary)]">
                         {qtyLabel(trade)}
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3 font-mono text-xs text-[var(--color-text-primary)]">
+                      <td className="whitespace-nowrap border-b border-[var(--color-border-light)] px-2 py-3 font-mono text-xs text-[var(--color-text-primary)]">
                         {moneyPrice(trade.entry_price)}
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3 font-mono text-xs text-[var(--color-text-primary)]">
+                      <td className="whitespace-nowrap border-b border-[var(--color-border-light)] px-2 py-3 font-mono text-xs text-[var(--color-text-primary)]">
                         {moneyPrice(trade.exit_price)}
                       </td>
-                      <td className="max-w-[140px] truncate px-2 py-3 text-xs text-[var(--color-text-secondary)]">
+                      <td className="max-w-[140px] truncate border-b border-[var(--color-border-light)] px-2 py-3 text-xs text-[var(--color-text-secondary)]">
                         {trade.setup_tag || "—"}
                       </td>
                       <td
                         className={clsx(
-                          "whitespace-nowrap px-2 py-3 font-mono text-xs font-semibold",
+                          "whitespace-nowrap border-b border-[var(--color-border-light)] px-2 py-3 font-mono text-xs font-semibold",
                           pnl == null
                             ? "text-[var(--color-text-muted)]"
                             : pnl >= 0
@@ -585,14 +579,14 @@ export function TradesLogPage() {
                           ? "—"
                           : formatMoney(pnl, { digits: Math.abs(pnl) < 10 ? 2 : 0 })}
                       </td>
-                      <td className="max-w-[160px] truncate px-2 py-3 text-xs text-[var(--color-text-secondary)]">
+                      <td className="max-w-[160px] truncate border-b border-[var(--color-border-light)] px-2 py-3 text-xs text-[var(--color-text-secondary)]">
                         {trade.notes?.trim() || "—"}
                       </td>
-                      <td className="px-2 py-3 pr-4" onClick={(e) => e.stopPropagation()}>
+                      <td className="border-b border-[var(--color-border-light)] px-2 py-3 pr-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-0.5">
                           <Link
                             href={`/trades/${trade.id}`}
-                            className="rounded-md p-1.5 text-[var(--color-text-tertiary)] transition-colors duration-150 hover:bg-[var(--color-primary-light)] hover:text-primary"
+                            className="rounded-lg p-1.5 text-[var(--color-text-tertiary)] transition-colors duration-150 hover:bg-[var(--color-primary-light)] hover:text-primary"
                             title="Edit"
                           >
                             <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -601,7 +595,7 @@ export function TradesLogPage() {
                             type="button"
                             onClick={() => handleDeleteOne(trade)}
                             disabled={deleteTrade.isPending}
-                            className="rounded-md p-1.5 text-[var(--color-text-tertiary)] transition-colors duration-150 hover:bg-[var(--color-danger-bg)] hover:text-negative disabled:opacity-50"
+                            className="rounded-lg p-1.5 text-[var(--color-text-tertiary)] transition-colors duration-150 hover:bg-[var(--color-danger-bg)] hover:text-negative disabled:opacity-50"
                             title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -613,6 +607,7 @@ export function TradesLogPage() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>
@@ -630,32 +625,9 @@ export function TradesLogPage() {
   );
 }
 
-function DateField({
-  value,
-  onChange,
-  ariaLabel,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  ariaLabel: string;
-}) {
-  return (
-    <div className="relative">
-      <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
-      <input
-        type="date"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-label={ariaLabel}
-        className="h-9 w-[148px] rounded-md border border-[#E2E2E7] bg-white pl-8 pr-2 text-xs text-[var(--color-text-primary)] outline-none [color-scheme:light] focus:border-primary/40"
-      />
-    </div>
-  );
-}
-
 function ClassPill({ type }: { type: AssetType }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-primary-light)] px-2 py-0.5 text-[11px] font-medium capitalize text-primary">
+    <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-primary-light)] px-2 py-0.5 text-[11px] font-medium capitalize text-primary">
       <span className="opacity-70">⌁</span>
       {assetLabel(type)}
     </span>
@@ -667,7 +639,7 @@ function SidePill({ side }: { side: TradeSide }) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+        "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
         isLong ? "bg-primary/15 text-primary" : "bg-amber-500/15 text-amber-700"
       )}
     >

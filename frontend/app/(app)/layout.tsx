@@ -72,7 +72,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <ProductRail />
                 </div>
                 <MobileNav />
-                <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-[var(--color-background)]">
+                <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-tl-2xl bg-[var(--color-background)]">
                   {showJournalNav && (
                     <div className="hidden h-full md:flex">
                       <Sidebar />

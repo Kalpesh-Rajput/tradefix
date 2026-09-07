@@ -208,6 +208,27 @@ export default function TodayPage() {
     [closed]
   );
 
+  const expectancy = useMemo(() => {
+    if (closed.length) {
+      const total = closed.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0);
+      return total / closed.length;
+    }
+    return overview?.expectancy ?? null;
+  }, [closed, displayPnl, overview?.expectancy]);
+
+  const expectancySeries = useMemo(() => {
+    const sorted = [...closed].sort(
+      (a, b) =>
+        new Date(a.closed_at || a.opened_at).getTime() -
+        new Date(b.closed_at || b.opened_at).getTime()
+    );
+    let sum = 0;
+    return sorted.map((t, i) => {
+      sum += displayPnl(t.pnl, t.fees) ?? 0;
+      return sum / (i + 1);
+    });
+  }, [closed, displayPnl]);
+
   const lastClosed = recentTrades[0];
   const lastImportLabel = lastClosed
     ? new Date(lastClosed.closed_at || lastClosed.opened_at).toLocaleString(undefined, {
@@ -306,8 +327,8 @@ export default function TodayPage() {
 
         {loading ? (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
-              {Array.from({ length: 5 }).map((_, i) => (
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+              {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-[96px] rounded-[10px]" />
               ))}
             </div>
@@ -323,6 +344,7 @@ export default function TodayPage() {
           </div>
         ) : (
           <>
+            <div className="space-y-3">
             {widgets.metrics && (
               <MetricCards
                 netPnl={netPnl}
@@ -337,11 +359,13 @@ export default function TodayPage() {
                 dayWins={dayWins}
                 dayLosses={dayLosses}
                 dayBreakeven={dayBreakeven}
+                expectancy={expectancy}
+                avgR={overview?.avg_r_multiple ?? null}
+                expectancySeries={expectancySeries}
                 formatMoney={formatMoney}
               />
             )}
 
-            <div className="space-y-3">
             {(widgets.score || widgets.cumulative || widgets.daily) && (
               <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3">
                 {widgets.score && (
@@ -445,11 +469,7 @@ export default function TodayPage() {
             )}
 
             {widgets.progress && (
-              <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3">
-                <div className="min-w-0">
-                  <ProgressTracker weeks={progress.weeks} monthLabels={progress.monthLabels} />
-                </div>
-              </div>
+              <ProgressTracker weeks={progress.weeks} monthLabels={progress.monthLabels} />
             )}
             </div>
           </>

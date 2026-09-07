@@ -96,7 +96,7 @@ export function TradePreviewDrawer({
         aria-label="Close trade preview"
         onClick={onClose}
       />
-      <aside className="relative flex h-full w-full flex-col bg-white shadow-[-8px_0_24px_rgba(20,20,30,0.12)] sm:w-[min(80vw,480px)] md:w-[460px]">
+      <aside className="relative flex h-full w-full flex-col overflow-hidden rounded-l-2xl bg-white shadow-[-8px_0_24px_rgba(20,20,30,0.12)] sm:w-[min(80vw,480px)] md:w-[460px]">
         <header className="shrink-0 border-b border-[#EFEFF2] px-4 pb-3 pt-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 id="trade-preview-title" className="text-[16px] font-semibold text-[var(--color-text-primary)]">
@@ -105,7 +105,7 @@ export function TradePreviewDrawer({
             <button
               type="button"
               onClick={() => router.push("/backtest")}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#E2E2E7] px-2.5 text-[12px] font-medium text-[var(--color-text-primary)] hover:bg-[#F7F7F9]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[#E2E2E7] px-2.5 text-[12px] font-medium text-[var(--color-text-primary)] hover:bg-[#F7F7F9]"
             >
               <Play className="h-3 w-3" fill="currentColor" />
               Replay
@@ -119,7 +119,7 @@ export function TradePreviewDrawer({
                   type="button"
                   disabled={!hasPrev}
                   onClick={() => hasPrev && onSelectTrade(trades[index - 1].id)}
-                  className="rounded-md p-1 text-[var(--color-text-secondary)] hover:bg-[#F5F5F7] disabled:opacity-30"
+                  className="rounded-lg p-1 text-[var(--color-text-secondary)] hover:bg-[#F5F5F7] disabled:opacity-30"
                   aria-label="Previous trade"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -131,7 +131,7 @@ export function TradePreviewDrawer({
                   type="button"
                   disabled={!hasNext}
                   onClick={() => hasNext && onSelectTrade(trades[index + 1].id)}
-                  className="rounded-md p-1 text-[var(--color-text-secondary)] hover:bg-[#F5F5F7] disabled:opacity-30"
+                  className="rounded-lg p-1 text-[var(--color-text-secondary)] hover:bg-[#F5F5F7] disabled:opacity-30"
                   aria-label="Next trade"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -173,7 +173,7 @@ export function TradePreviewDrawer({
           ) : trade ? (
             <>
               <div
-                className="mb-3 overflow-hidden rounded-lg border border-[#E8E8EC]"
+                className="mb-3 overflow-hidden rounded-xl border border-[#E8E8EC]"
                 style={
                   positive == null
                     ? undefined
@@ -194,7 +194,7 @@ export function TradePreviewDrawer({
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     <span
-                      className="rounded-md px-1.5 py-0.5 text-[11px] font-medium"
+                      className="rounded-lg px-1.5 py-0.5 text-[11px] font-medium"
                       style={
                         roi == null
                           ? { background: "#F4F4F6", color: "#85868e" }
@@ -205,14 +205,14 @@ export function TradePreviewDrawer({
                     >
                       ROI {roi == null ? "—" : `${roi >= 0 ? "+" : ""}${roi.toFixed(2)}%`}
                     </span>
-                    <span className="rounded-md bg-[#F4F4F6] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
+                    <span className="rounded-lg bg-[#F4F4F6] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
                       Gross {gross == null ? "—" : formatMoney(gross, { signed: true, digits: 2 })}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="sticky top-0 z-10 mb-3 overflow-x-auto rounded-md bg-[#F4F4F6] p-0.5">
+              <div className="sticky top-0 z-10 mb-3 overflow-x-auto rounded-xl bg-[#F4F4F6] p-0.5">
                 <div className="flex min-w-max">
                   {TABS.map((item) => (
                     <button
@@ -220,7 +220,7 @@ export function TradePreviewDrawer({
                       type="button"
                       onClick={() => setTab(item.id)}
                       className={clsx(
-                        "h-8 rounded-[5px] px-2.5 text-[12px] font-medium",
+                        "h-8 rounded-lg px-2.5 text-[12px] font-medium",
                         tab === item.id
                           ? "bg-white text-[var(--color-text-primary)] shadow-[0_0_0_1px_#E8E8EC]"
                           : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
@@ -254,7 +254,7 @@ export function TradePreviewDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-8 items-center rounded-md border border-[#E2E2E7] px-3 text-[13px] font-medium text-[var(--color-text-primary)] hover:bg-[#F7F7F9]"
+            className="inline-flex h-8 items-center rounded-xl border border-[#E2E2E7] px-3 text-[13px] font-medium text-[var(--color-text-primary)] hover:bg-[#F7F7F9]"
           >
             Close
           </button>

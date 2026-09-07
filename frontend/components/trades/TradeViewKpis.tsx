@@ -37,7 +37,7 @@ export function TradeViewKpis({
     return (
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-[132px] rounded-[var(--radius-xl)]" />
+          <Skeleton key={i} className="h-[104px] rounded-[14px]" />
         ))}
       </div>
     );
@@ -48,46 +48,46 @@ export function TradeViewKpis({
 
   return (
     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-      <article className="dash-card flex h-[132px] flex-col px-4 pb-2 pt-3.5">
+      <article className="dash-card flex h-[104px] flex-col overflow-hidden rounded-[14px] px-3.5 pb-1.5 pt-2.5">
         <KpiLabel label="Net cumulative P&L" />
         <p
-          className="mt-1 text-[22px] font-semibold leading-7 tracking-tight tabular-nums"
+          className="mt-0.5 text-[18px] font-semibold leading-6 tracking-tight tabular-nums"
           style={{ color: stats.netPnl >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX }}
         >
           {formatMoney(stats.netPnl, { signed: false, digits: 2 })}
         </p>
-        <div className="mt-auto h-[46px] w-full">
+        <div className="mt-auto h-[32px] w-full">
           <PnlSparkline data={stats.series} positive={stats.netPnl >= 0} />
         </div>
       </article>
 
-      <article className="dash-card flex h-[132px] items-center justify-between gap-3 px-4 py-3.5">
+      <article className="dash-card flex h-[104px] items-center justify-between gap-3 overflow-hidden rounded-[14px] px-3.5 py-2.5">
         <div className="min-w-0">
           <KpiLabel label="Profit factor" hint="Gross profit divided by gross loss" />
-          <p className="mt-1 text-[22px] font-semibold leading-7 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
+          <p className="mt-0.5 text-[18px] font-semibold leading-6 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
             {stats.profitFactor != null ? stats.profitFactor.toFixed(2) : "—"}
           </p>
         </div>
         <SplitDonut wins={stats.grossWins} losses={stats.grossLosses} />
       </article>
 
-      <article className="dash-card flex h-[132px] items-center justify-between gap-3 px-4 py-3.5">
+      <article className="dash-card flex h-[104px] items-center justify-between gap-3 overflow-hidden rounded-[14px] px-3.5 py-2.5">
         <div className="min-w-0">
           <KpiLabel label="Trade win %" hint="Winning closed trades in the current filters" />
-          <p className="mt-1 text-[22px] font-semibold leading-7 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
+          <p className="mt-0.5 text-[18px] font-semibold leading-6 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
             {stats.winRate != null ? `${stats.winRate.toFixed(2)}%` : "—"}
           </p>
         </div>
         <WinGauge wins={stats.wins} breakeven={stats.breakeven} losses={stats.losses} />
       </article>
 
-      <article className="dash-card flex h-[132px] flex-col px-4 pb-3 pt-3.5">
+      <article className="dash-card flex h-[104px] flex-col overflow-hidden rounded-[14px] px-3.5 pb-2.5 pt-2.5">
         <KpiLabel label="Avg win/loss trade" hint="Average winning trade divided by average losing trade" />
-        <p className="mt-1 text-[22px] font-semibold leading-7 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
+        <p className="mt-0.5 text-[18px] font-semibold leading-6 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
           {stats.avgWinLossRatio != null ? stats.avgWinLossRatio.toFixed(2) : "—"}
         </p>
         <div className="mt-auto">
-          <div className="mb-1.5 flex h-2 overflow-hidden rounded-full bg-[#EEEFF3]">
+          <div className="mb-1 flex h-1.5 overflow-hidden rounded-full bg-[#EEEFF3]">
             <div className="h-full" style={{ width: `${winBar}%`, backgroundColor: PNL_PROFIT_HEX }} />
             <div className="h-full flex-1" style={{ backgroundColor: PNL_LOSS_HEX }} />
           </div>
@@ -103,7 +103,7 @@ export function TradeViewKpis({
 
 function KpiLabel({ label, hint }: { label: string; hint?: string }) {
   return (
-    <div className="flex h-5 items-center gap-1 text-[12px] font-medium leading-5 text-[var(--color-text-label)]">
+    <div className="flex h-4 items-center gap-1 text-[11px] font-medium leading-4 text-[var(--color-text-label)]">
       <span className="truncate">{label}</span>
       <span className="inline-flex" title={hint || label}>
         <Info className="h-3 w-3 shrink-0 text-[#9A9BA3]" strokeWidth={1.75} />
@@ -150,7 +150,7 @@ function SplitDonut({ wins, losses }: { wins: number; losses: number }) {
   const lossLen = total > 0 ? c - winLen : 0;
 
   return (
-    <svg width="64" height="64" viewBox="0 0 64 64" className="shrink-0" aria-hidden>
+    <svg width="48" height="48" viewBox="0 0 64 64" className="shrink-0" aria-hidden>
       <circle cx="32" cy="32" r={r} fill="none" stroke={TRACK} strokeWidth="8" />
       {total > 0 ? (
         <>
@@ -202,8 +202,8 @@ function WinGauge({
   const gap = 2;
 
   return (
-    <div className="flex w-[88px] shrink-0 flex-col items-center">
-      <svg width="88" height="52" viewBox="0 0 88 52" aria-hidden>
+    <div className="flex w-[72px] shrink-0 flex-col items-center">
+      <svg width="72" height="42" viewBox="0 0 88 52" aria-hidden>
         <g transform="translate(44,48)">
           <circle
             r={r}
