@@ -25,6 +25,7 @@ import { TradeViewKpis } from "@/components/trades/TradeViewKpis";
 import { TradePreviewDrawer } from "@/components/trades/preview/TradePreviewDrawer";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
+import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 import { useDeleteTrade, useDeleteTrades, useTrades } from "@/lib/hooks/useTrades";
 import type { AssetType, Trade, TradeSide } from "@/lib/types";
 
@@ -61,6 +62,24 @@ function qtyLabel(trade: Trade): string {
 function tradeDateKey(trade: Trade): string {
   const raw = trade.closed_at || trade.opened_at;
   return raw.slice(0, 10);
+}
+
+function netRoiPct(trade: Trade, pnl: number | null): number | null {
+  if (pnl == null) return null;
+  const invested = Number(trade.invested_amount);
+  if (invested > 0) return (pnl / invested) * 100;
+  const qty = Number(trade.quantity);
+  const entry = Number(trade.entry_price);
+  const cost = qty > 0 && entry > 0 ? qty * entry : 0;
+  if (cost <= 0) return null;
+  return (pnl / cost) * 100;
+}
+
+function signedPct(value: number): string {
+  const abs = Math.abs(value).toFixed(2);
+  if (value > 0) return `+${abs}%`;
+  if (value < 0) return `−${abs}%`;
+  return `${abs}%`;
 }
 
 function moneyPrice(n: number | null | undefined): string {
@@ -489,7 +508,7 @@ export function TradesLogPage() {
         ) : (
           <div className="dash-card flex min-h-0 flex-1 flex-col overflow-hidden p-3">
             <div className="min-h-0 flex-1 overflow-auto rounded-xl">
-            <table className="w-full min-w-[1100px] border-separate border-spacing-0 text-left text-sm">
+            <table className="w-full min-w-[1180px] border-separate border-spacing-0 text-left text-sm">
               <thead className="sticky top-0 z-10">
                 <tr className="text-[11px] font-medium uppercase tracking-wider text-[#70717A]">
                   <th className="sticky top-0 z-10 w-10 rounded-tl-xl border-b border-[var(--color-border-light)] bg-[#F5F4F8] py-2.5 pl-4 pr-2">
@@ -510,6 +529,7 @@ export function TradesLogPage() {
                   <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Exit</th>
                   <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Strategy</th>
                   <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">P&amp;L</th>
+                  <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Net ROI</th>
                   <th className="sticky top-0 z-10 border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 font-medium">Notes</th>
                   <th className="sticky top-0 z-10 w-20 rounded-tr-xl border-b border-[var(--color-border-light)] bg-[#F5F4F8] px-2 py-2.5 pr-4" />
                 </tr>
@@ -517,6 +537,7 @@ export function TradesLogPage() {
               <tbody>
                 {filtered.map((trade) => {
                   const pnl = displayPnl(trade.pnl, trade.fees);
+                  const roi = netRoiPct(trade, pnl);
                   const checked = selected.has(trade.id);
                   return (
                     <tr
@@ -568,16 +589,30 @@ export function TradesLogPage() {
                       <td
                         className={clsx(
                           "whitespace-nowrap border-b border-[var(--color-border-light)] px-2 py-3 font-mono text-xs font-semibold",
-                          pnl == null
-                            ? "text-[var(--color-text-muted)]"
-                            : pnl >= 0
-                              ? "text-positive"
-                              : "text-negative"
+                          pnl == null && "text-[var(--color-text-muted)]"
                         )}
+                        style={
+                          pnl == null
+                            ? undefined
+                            : { color: pnl >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX }
+                        }
                       >
                         {pnl == null
                           ? "—"
                           : formatMoney(pnl, { digits: Math.abs(pnl) < 10 ? 2 : 0 })}
+                      </td>
+                      <td
+                        className={clsx(
+                          "whitespace-nowrap border-b border-[var(--color-border-light)] px-2 py-3 font-mono text-xs font-semibold",
+                          roi == null && "text-[var(--color-text-muted)]"
+                        )}
+                        style={
+                          roi == null
+                            ? undefined
+                            : { color: roi >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX }
+                        }
+                      >
+                        {roi == null ? "—" : signedPct(roi)}
                       </td>
                       <td className="max-w-[160px] truncate border-b border-[var(--color-border-light)] px-2 py-3 text-xs text-[var(--color-text-secondary)]">
                         {trade.notes?.trim() || "—"}

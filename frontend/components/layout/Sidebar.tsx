@@ -18,12 +18,13 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { NavCollapseButton } from "@/components/layout/NavCollapseButton";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { useSidebar } from "@/components/providers/SidebarProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import type { MessageKey } from "@/lib/i18n";
 
-const NAV_WIDTH = "w-[220px]";
+const NAV_WIDTH = "w-[188px]";
 
 const NAV: {
   href: string;
@@ -65,10 +66,19 @@ export function Sidebar({
   return (
     <aside
       className={clsx(
-        "nav-column flex h-full shrink-0 flex-col overflow-hidden border-r border-black/[0.06] bg-[#f4f5f7] py-3 text-[var(--color-text-primary)] dark:border-white/[0.06] dark:bg-[var(--color-surface-secondary)]",
+        "sidebar-chrome nav-column flex h-full shrink-0 flex-col overflow-hidden border-r border-white/[0.06] bg-sidebar py-3 text-white",
         NAV_WIDTH
       )}
     >
+      <div className="mb-2 flex items-center justify-between gap-2 px-2.5">
+        <span className="truncate text-[18px] font-bold leading-none tracking-tight text-white">
+          Trade
+          <span className="bg-gradient-to-r from-[#A78BFA] to-[#7C5CBF] bg-clip-text text-transparent">
+            Fix
+          </span>
+        </span>
+        <NavCollapseButton />
+      </div>
       <div className="mb-2 px-2.5">
         <button
           type="button"
@@ -104,8 +114,8 @@ export function Sidebar({
               className={clsx(
                 "relative flex w-full items-center gap-2 rounded-md px-2 py-[6px] text-left text-[13px] font-medium transition-colors duration-150",
                 active
-                  ? "bg-primary/10 font-semibold text-primary"
-                  : "text-[var(--color-text-secondary)] hover:bg-black/[0.04] hover:text-[var(--color-text-primary)] dark:hover:bg-white/[0.06]"
+                  ? "bg-white/10 font-semibold text-white"
+                  : "text-[#b8b4d4] hover:bg-white/[0.06] hover:text-white"
               )}
             >
               <Icon

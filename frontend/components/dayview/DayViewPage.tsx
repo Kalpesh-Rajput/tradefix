@@ -162,9 +162,11 @@ export function DayViewPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-background)]">
       <h1 className="sr-only">{t("dayView.title")}</h1>
+      <div className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5">
+        <DayViewHeader mode={mode} onModeChange={setMode} />
+      </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-3 p-4">
-          <DayViewHeader mode={mode} onModeChange={setMode} />
           <div className="flex flex-col-reverse gap-4 xl:flex-row xl:items-start">
             <div className="min-w-0 flex-1 space-y-3">
             {loading ? (

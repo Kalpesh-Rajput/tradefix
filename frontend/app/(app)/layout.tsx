@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { AppHeader } from "@/components/layout/AppHeader";
+import { HeaderActionsProvider } from "@/components/layout/HeaderActions";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { ProductRail } from "@/components/layout/ProductRail";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -12,7 +13,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { ConnectorsProvider } from "@/components/providers/ConnectorsProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { QuickLogProvider } from "@/components/providers/QuickLogProvider";
-import { SidebarProvider } from "@/components/providers/SidebarProvider";
+import { SidebarProvider, useSidebar } from "@/components/providers/SidebarProvider";
 import { AddTradeModal } from "@/components/trade/AddTradeModal";
 import { useLiveAccount } from "@/lib/hooks/useLiveAccount";
 import { isJournalPath } from "@/lib/nav";
@@ -65,35 +66,83 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <QuickLogProvider>
           <SidebarProvider>
             <LiveAccountBridge />
-            <div className="flex h-screen [height:100dvh] flex-col overflow-hidden bg-sidebar text-foreground">
-              <AppHeader />
-              <div className="flex min-h-0 flex-1">
-                <div className="relative z-20 hidden h-full md:flex">
-                  <ProductRail />
-                </div>
-                <MobileNav />
-                <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-tl-2xl bg-[var(--color-background)]">
-                  {showJournalNav && (
-                    <div className="hidden h-full md:flex">
-                      <Sidebar />
-                    </div>
-                  )}
-                  <main
-                    className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
-                      isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isNotebook
-                        ? ""
-                        : "overflow-y-auto p-6 sm:p-8"
-                    } ${isSettings || isHome ? "overflow-y-auto" : ""}`}
-                  >
-                    {children}
-                  </main>
-                </div>
-              </div>
-              <AddTradeModal />
-            </div>
+            <AppShell
+              showJournalNav={showJournalNav}
+              isDashboard={isDashboard}
+              isDayView={isDayView}
+              isHome={isHome}
+              isTradesLog={isTradesLog}
+              isCalendar={isCalendar}
+              isDiary={isDiary}
+              isNotebook={isNotebook}
+              isSettings={isSettings}
+            >
+              {children}
+            </AppShell>
+            <AddTradeModal />
           </SidebarProvider>
         </QuickLogProvider>
       </AccountProvider>
     </ConnectorsProvider>
+  );
+}
+
+function AppShell({
+  children,
+  showJournalNav,
+  isDashboard,
+  isDayView,
+  isHome,
+  isTradesLog,
+  isCalendar,
+  isDiary,
+  isNotebook,
+  isSettings,
+}: {
+  children: React.ReactNode;
+  showJournalNav: boolean;
+  isDashboard: boolean;
+  isDayView: boolean;
+  isHome: boolean;
+  isTradesLog: boolean;
+  isCalendar: boolean;
+  isDiary: boolean;
+  isNotebook: boolean;
+  isSettings: boolean;
+}) {
+  const { collapsed, setCollapsed } = useSidebar();
+
+  useEffect(() => {
+    if (!showJournalNav) setCollapsed(true);
+  }, [showJournalNav, setCollapsed]);
+
+  return (
+    <div className="flex h-screen [height:100dvh] overflow-hidden bg-sidebar text-foreground">
+      <div className="relative z-50 hidden h-full md:flex">
+        <ProductRail />
+      </div>
+      <MobileNav />
+      <div className="relative z-0 flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        {!collapsed && showJournalNav && (
+          <div className="hidden h-full md:flex">
+            <Sidebar />
+          </div>
+        )}
+        <HeaderActionsProvider>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
+            <AppHeader />
+            <main
+              className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
+                isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isNotebook
+                  ? ""
+                  : "overflow-y-auto p-6 sm:p-8"
+              } ${isSettings || isHome ? "overflow-y-auto" : ""}`}
+            >
+              {children}
+            </main>
+          </div>
+        </HeaderActionsProvider>
+      </div>
+    </div>
   );
 }

@@ -23,7 +23,7 @@ type SidebarContextValue = {
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsedState] = useState(false);
+  const [collapsed, setCollapsedState] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -60,7 +60,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      collapsed: hydrated ? collapsed : false,
+      collapsed: hydrated ? collapsed : true,
       toggle,
       setCollapsed,
       mobileOpen,

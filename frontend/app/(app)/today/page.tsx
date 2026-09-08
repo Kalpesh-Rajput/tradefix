@@ -1,6 +1,5 @@
 "use client";
 
-import { LayoutGrid, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { AccountBalanceChart } from "@/components/dashboard/zella/AccountBalanceChart";
@@ -19,9 +18,11 @@ import { TradeScatterChart } from "@/components/dashboard/zella/TradeScatterChar
 import { ZellaDashboardHeader } from "@/components/dashboard/zella/ZellaDashboardHeader";
 import { useDashboardWidgets } from "@/components/dashboard/zella/useDashboardWidgets";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { firstName } from "@/lib/format";
 import {
   accountBalanceSeries,
   drawdownSeries,
@@ -49,8 +50,10 @@ function defaultRange() {
 
 export default function TodayPage() {
   const { t, formatChartDate } = useLocale();
+  const { user } = useAuth();
   const { displayPnl, formatMoney, activeAccount, loading: accountsLoading } = useAccountPrefs();
   const { openModal } = useAddTradeModal();
+  const name = firstName(user?.name, user?.email);
   const { widgets, editing, setEditing, toggle, labels } = useDashboardWidgets();
   const accountId = activeAccount?.id;
   const accountReady = !!accountId;
@@ -73,7 +76,6 @@ export default function TodayPage() {
     data: analytics,
     isLoading: analyticsLoading,
     isError: analyticsError,
-    refetch: refetchAnalytics,
   } = useAnalytics(
     { account_id: accountId, date_from: dateFrom, date_to: dateTo },
     { enabled: accountReady }
@@ -83,7 +85,6 @@ export default function TodayPage() {
     data: trades = [],
     isLoading: tradesLoading,
     isError: tradesError,
-    refetch: refetchTrades,
   } = useTrades(
     {
       account_id: accountId,
@@ -102,7 +103,7 @@ export default function TodayPage() {
   }, []);
 
   const { data: calendar } = useCalendar(calStart, calEnd, accountId, { enabled: accountReady });
-  const { data: rangeCalendar, refetch: refetchRangeCal } = useCalendar(dateFrom, dateTo, accountId, {
+  const { data: rangeCalendar } = useCalendar(dateFrom, dateTo, accountId, {
     enabled: accountReady,
   });
   const { data: progressCalendar } = useCalendar(progressRange.from, progressRange.to, accountId, {
@@ -229,17 +230,6 @@ export default function TodayPage() {
     });
   }, [closed, displayPnl]);
 
-  const lastClosed = recentTrades[0];
-  const lastImportLabel = lastClosed
-    ? new Date(lastClosed.closed_at || lastClosed.opened_at).toLocaleString(undefined, {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "—";
-
   const hour = new Date().getHours();
   const greetingKey =
     hour < 12
@@ -251,12 +241,6 @@ export default function TodayPage() {
   const loading = accountsLoading || analyticsLoading || (tradesLoading && accountReady);
   const hasError = analyticsError || tradesError;
 
-  function refreshAll() {
-    void refetchAnalytics();
-    void refetchTrades();
-    void refetchRangeCal();
-  }
-
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-background)]">
       <ZellaDashboardHeader
@@ -266,46 +250,13 @@ export default function TodayPage() {
           setDateFrom(from);
           setDateTo(to);
         }}
+        greeting={`${t(greetingKey)}, ${name} 👋`}
+        editing={editing}
+        onToggleEdit={() => setEditing((v) => !v)}
+        onImport={() => openModal("csv")}
       />
 
-      <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-4 py-3.5 sm:px-5">
-        <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-          <h2 className="text-[13px] font-medium leading-5 tracking-tight text-[#202127]">
-            {t(greetingKey)}!
-          </h2>
-
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
-            <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-secondary)]">
-              <span>{t("dashboard.lastImport", { when: lastImportLabel })}</span>
-              <button
-                type="button"
-                onClick={refreshAll}
-                className="rounded p-0.5 text-[var(--color-text-muted)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-[var(--color-text-secondary)]"
-                aria-label="Refresh"
-                title="Refresh"
-              >
-                <RefreshCw className="h-3 w-3" strokeWidth={1.75} />
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => setEditing((v) => !v)}
-              className="dash-btn-secondary"
-              aria-pressed={editing}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.75} />
-              {editing ? "Done" : t("dashboard.editWidgets")}
-            </button>
-            <button
-              type="button"
-              onClick={() => openModal("csv")}
-              className="dash-btn-primary text-on-accent"
-            >
-              + {t("dashboard.importTrades")}
-            </button>
-          </div>
-        </div>
-
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pt-3 pb-3.5 sm:px-5">
         {editing && (
           <div className="dash-card flex flex-wrap gap-2 p-4">
             {(Object.keys(labels) as Array<keyof typeof labels>).map((id) => (

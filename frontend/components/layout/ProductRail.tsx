@@ -16,8 +16,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { RailProfile } from "@/components/layout/RailProfile";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { useSidebar } from "@/components/providers/SidebarProvider";
+import { BrandLockup } from "@/components/ui/Logo";
 import type { MessageKey } from "@/lib/i18n";
 import { isJournalPath } from "@/lib/nav";
 
@@ -110,7 +112,7 @@ export function ProductRail({
 }) {
   const pathname = usePathname() || "";
   const { t } = useLocale();
-  const { setMobileOpen } = useSidebar();
+  const { setMobileOpen, setCollapsed } = useSidebar();
   const [hovered, setHovered] = useState(false);
   const leaveTimer = useRef<number | null>(null);
   const expanded = forceExpanded || hovered;
@@ -133,9 +135,9 @@ export function ProductRail({
     >
       <aside
         className={clsx(
-          "sidebar-chrome z-30 flex h-full flex-col overflow-hidden bg-sidebar py-3 text-sidebar-foreground transition-[width,box-shadow,border-radius] duration-200 ease-out",
-          forceExpanded ? "relative w-full" : "absolute inset-y-0 left-0",
-          !forceExpanded && expanded && "rounded-r-md shadow-xl"
+          "sidebar-chrome flex h-full flex-col overflow-hidden bg-sidebar py-3 text-sidebar-foreground transition-[width] duration-200 ease-out",
+          forceExpanded ? "relative w-full" : "absolute inset-y-0 left-0 z-50",
+          !forceExpanded && expanded && "shadow-xl"
         )}
         style={forceExpanded ? undefined : { width: expanded ? EXPANDED : COLLAPSED }}
         onMouseEnter={openRail}
@@ -146,6 +148,11 @@ export function ProductRail({
         }}
         aria-label="Product navigation"
       >
+        <div className={clsx("mb-2 flex", expanded ? "px-2.5" : "justify-center px-0")}>
+          <Link href="/home" title="TradeFix" className="min-w-0" onClick={() => setMobileOpen(false)}>
+            <BrandLockup collapsed={!expanded} />
+          </Link>
+        </div>
         <nav className="flex flex-1 flex-col gap-1 px-2">
           {PRIMARY.map((item) => (
             <RailNavLink
@@ -155,7 +162,10 @@ export function ProductRail({
               active={item.isActive(pathname)}
               label={t(item.labelKey)}
               newLabel={t("common.new")}
-              onNavigate={() => setMobileOpen(false)}
+              onNavigate={() => {
+                setMobileOpen(false);
+                if (item.href === "/today") setCollapsed(false);
+              }}
             />
           ))}
         </nav>
@@ -173,6 +183,9 @@ export function ProductRail({
             />
           ))}
         </nav>
+        <div className={clsx("flex pt-2", expanded ? "px-2.5" : "justify-center px-0")}>
+          <RailProfile />
+        </div>
       </aside>
     </div>
   );

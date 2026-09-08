@@ -26,17 +26,17 @@
   --card: 0 0% 100%;
 
   /* Sidebar */
-  --color-sidebar: #231d2c;
+  --color-sidebar: #1c1c3a;
   --color-sidebar-text: #ffffff;
   --color-sidebar-secondary: #c7c2d0;
   --color-sidebar-icon: #aaa4b5;
   --color-sidebar-active: #4b4554;
   --color-sidebar-hover: #383241;
   --color-sidebar-divider: #3a3343;
-  --sidebar: 264 21% 14%;
+  --sidebar: 240 35% 17%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-muted: 255 12% 79%;
-  --sidebar-border: 264 14% 24%;
+  --sidebar-muted: 245 18% 78%;
+  --sidebar-border: 240 22% 22%;
 
   /* Borders */
   --color-border: #e8e8ec;
@@ -198,7 +198,7 @@ progress {
 
 .nav-column {
   scrollbar-width: thin;
-  scrollbar-color: rgba(20, 20, 30, 0.18) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
 }
 
 .nav-column::-webkit-scrollbar {
@@ -210,16 +210,8 @@ progress {
 }
 
 .nav-column::-webkit-scrollbar-thumb {
-  background-color: rgba(20, 20, 30, 0.14);
-  border-radius: 9999px;
-}
-
-html.dark .nav-column {
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
-}
-
-html.dark .nav-column::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
 }
 
 *:focus-visible {
