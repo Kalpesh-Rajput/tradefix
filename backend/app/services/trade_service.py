@@ -13,7 +13,8 @@ from app.models.trade_master import MasterCategory
 from app.models.user import User
 from app.schemas.trade import TradeCreate, TradeExecutionInput, TradeUpdate
 from app.services.masters_service import upsert_master
-from app.services.trade_calc import Fill, TradeCalcResult, calculate_trade, default_contract_size
+from app.services.instruments import default_contract_size
+from app.services.trade_calc import Fill, TradeCalcResult, calculate_trade
 
 
 JOURNAL_KEYS = (
@@ -29,6 +30,10 @@ JOURNAL_KEYS = (
     "exit_condition",
     "leverage",
     "contract_size",
+    "strike_price",
+    "expiry_date",
+    "tick_size",
+    "tick_value",
     "is_favourite",
     "mood",
     "strategy_name",
@@ -103,17 +108,24 @@ def apply_calc(trade: Trade, calc: TradeCalcResult) -> None:
     trade.exit_price = calc.exit_price
     trade.invested_amount = calc.invested_amount
     trade.total_sell_amount = calc.total_sell_amount
+    trade.position_value = calc.position_value
+    trade.margin_used = calc.margin_used
     trade.fees = calc.fees
     trade.pnl = calc.pnl
     trade.risk_amount = calc.risk_amount
     trade.is_close = calc.is_close
-    trade.status = calc.status
+    trade.status = calc.status if isinstance(calc.status, TradeStatus) else TradeStatus(calc.status)
     trade.year = calc.year
     trade.month = calc.month
     trade.is_equity = calc.is_equity
     extra = dict(trade.extra or {})
     extra["is_profit"] = calc.is_profit
     extra["remaining_quantity"] = calc.remaining_quantity
+    extra["display_status"] = calc.display_status
+    if calc.premium_received is not None:
+        extra["premium_received"] = calc.premium_received
+    else:
+        extra.pop("premium_received", None)
     trade.extra = extra
     if calc.is_close and not trade.closed_at:
         exits = [f for f in calc.fills if f.leg_type == "exit" and f.executed_at]
@@ -176,16 +188,24 @@ def compute_for_payload(
             fills = []
 
     leverage = payload.leverage
-    if leverage is None and existing is not None:
+    if leverage is None and existing is not None and "leverage" not in payload.model_fields_set:
         leverage = float(existing.leverage) if existing.leverage is not None else None
-    if leverage is None:
+    asset_key = asset_type.value if hasattr(asset_type, "value") else str(asset_type)
+    if leverage is None and asset_key == "forex":
         leverage = default_leverage
 
     contract_size = payload.contract_size
     if contract_size is None and existing is not None:
         contract_size = float(existing.contract_size) if existing.contract_size is not None else None
     if contract_size is None:
-        contract_size = default_contract_size(symbol)
+        contract_size = default_contract_size(asset_type, symbol)
+
+    tick_size = payload.tick_size if getattr(payload, "tick_size", None) is not None else None
+    if tick_size is None and existing is not None:
+        tick_size = float(existing.tick_size) if existing.tick_size is not None else None
+    tick_value = payload.tick_value if getattr(payload, "tick_value", None) is not None else None
+    if tick_value is None and existing is not None:
+        tick_value = float(existing.tick_value) if existing.tick_value is not None else None
 
     fees = payload.fees
     if fees is None:
@@ -221,6 +241,8 @@ def compute_for_payload(
         risk_amount=risk_amount,
         leverage=leverage,
         contract_size=contract_size,
+        tick_size=tick_size,
+        tick_value=tick_value,
         entry_condition=entry_condition,
         exit_condition=exit_condition,
         brokerage=fees,

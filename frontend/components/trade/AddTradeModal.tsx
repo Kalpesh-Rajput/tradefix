@@ -14,13 +14,16 @@ import { MasterCombobox } from "@/components/trade/MasterCombobox";
 import { NotesEditor } from "@/components/trade/NotesEditor";
 import { PartialFillsEditor } from "@/components/trade/PartialFillsEditor";
 import { ScreenshotUploader, Shot } from "@/components/trade/ScreenshotUploader";
+import { SegmentSpecificFields } from "@/components/trade/SegmentSpecificFields";
 import {
   AddTradeFormValues,
   addTradeSchema,
+  applySegmentDefaults,
   buildNotes,
   combineDateTime,
   defaultAddTradeValues,
   liveTradeCalc,
+  mapTradeToForm,
 } from "@/components/trade/schema";
 import { EmotionSelector, MistakeSelector, PositiveSelector, StrategySelector } from "@/components/trade/StrategySelector";
 import { DirectionSelector } from "@/components/trade/DirectionSelector";
@@ -32,7 +35,8 @@ import { BrokerConnectPanel } from "@/components/broker/BrokerConnectPanel";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
 import { fmtMoney } from "@/lib/format";
-import { useCreateTrade, useImportCsv, useUploadTradeScreenshot } from "@/lib/hooks/useTrades";
+import { getInstrument, symbolsFor } from "@/lib/instruments/catalog";
+import { useCreateTrade, useImportCsv, useTrade, useUpdateTrade, useUploadTradeScreenshot } from "@/lib/hooks/useTrades";
 import { useMasters, usePrecheckLists } from "@/lib/hooks/useMasters";
 import { useUpsertMoodCheckin } from "@/lib/hooks/useMood";
 import { TradeExecutionInput, TradeInput } from "@/lib/types";
@@ -45,9 +49,12 @@ const inputClass =
 export function AddTradeModal() {
   const { user } = useAuth();
   const { activeAccount, accounts } = useAccountPrefs();
-  const { open, closeModal, tab } = useAddTradeModal();
+  const { open, closeModal, tab, tradeId, initialBrokerId } = useAddTradeModal();
   const createTrade = useCreateTrade();
+  const updateTrade = useUpdateTrade();
+  const { data: editingTrade } = useTrade(tradeId || undefined);
   const uploadShot = useUploadTradeScreenshot();
+  const isEditing = Boolean(tradeId);
   const { data: precheckLists = [] } = usePrecheckLists({ enabled: open });
   useMasters("symbol", { enabled: open });
   const [shots, setShots] = useState<Shot[]>([]);
@@ -92,13 +99,34 @@ export function AddTradeModal() {
     watch,
     reset,
     setValue,
+    getValues,
     formState: { errors },
   } = form;
 
   const values = watch();
   const calc = useMemo(() => liveTradeCalc(values), [values]);
-  const isForex = values.asset_type === "forex";
-  const isOption = values.asset_type === "option";
+  const symbolSuggestions = useMemo(() => symbolsFor(values.asset_type), [values.asset_type]);
+
+  useEffect(() => {
+    const inst = getInstrument(values.asset_type, values.symbol);
+    if (!inst) return;
+    if (inst.contractSize) setValue("contract_size", inst.contractSize);
+    if (inst.lotSize && values.asset_type === "option") setValue("contract_size", inst.lotSize);
+    if (values.asset_type === "future") {
+      if (inst.tickSize != null) setValue("tick_size", inst.tickSize);
+      if (inst.tickValue != null) setValue("tick_value", inst.tickValue);
+    }
+  }, [values.asset_type, values.symbol, setValue]);
+
+  function handleSegmentChange(next: AddTradeFormValues["asset_type"]) {
+    const current = getValues();
+    const patch = applySegmentDefaults(current, next, {
+      defaultLeverage: user?.default_forex_leverage != null ? Number(user.default_forex_leverage) : 100,
+    });
+    Object.entries(patch).forEach(([key, value]) => {
+      setValue(key as keyof AddTradeFormValues, value as never, { shouldValidate: false });
+    });
+  }
 
   const blankForm = useCallback(() => {
     const defaults = defaultAddTradeValues(tradeDefaults);
@@ -110,13 +138,17 @@ export function AddTradeModal() {
     if (!open) return;
     skipDraftSaveRef.current = false;
     localStorage.removeItem(DRAFT_KEY);
-    reset(blankForm());
     setShots([]);
     setSuccess(false);
     setSaveError(null);
-    // Start each open on a blank form so the last saved trade cannot refill the fields.
+    if (!tradeId) reset(blankForm());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, tradeId]);
+
+  useEffect(() => {
+    if (!open || !tradeId || !editingTrade) return;
+    reset({ ...mapTradeToForm(editingTrade), account_id: editingTrade.account_id });
+  }, [open, tradeId, editingTrade, reset]);
 
   useEffect(() => {
     if (!open || tab !== "manual" || skipDraftSaveRef.current) return;
@@ -170,6 +202,7 @@ export function AddTradeModal() {
         quantity: Number(leg.quantity),
         price: Number(leg.price),
         executed_at: at,
+        fees: Number(leg.fees || 0),
         condition: leg.condition || data.exit_condition || null,
         sort_order: index + 1,
       });
@@ -210,20 +243,33 @@ export function AddTradeModal() {
       stop_loss: data.stop_loss != null ? Number(data.stop_loss) : null,
       entry_condition: data.entry_condition || null,
       exit_condition: data.exit_condition || lastExit?.condition || null,
-      leverage: isForex && data.leverage != null ? Number(data.leverage) : null,
+      leverage:
+        (data.asset_type === "forex" || data.asset_type === "crypto") && data.leverage != null
+          ? Number(data.leverage)
+          : null,
+      contract_size: data.contract_size != null ? Number(data.contract_size) : null,
+      strike_price: data.asset_type === "option" && data.strike_price != null ? Number(data.strike_price) : null,
+      expiry_date: data.asset_type === "option" ? data.expiry_date || data.expiry || null : null,
+      tick_size: data.asset_type === "future" && data.tick_size != null ? Number(data.tick_size) : null,
+      tick_value: data.asset_type === "future" && data.tick_value != null ? Number(data.tick_value) : null,
       is_favourite: Boolean(data.is_favourite),
       strategy_name: setupTags[0] ?? null,
       precheck_list_id: data.precheck_list_id || null,
-      extra: { ex1: "", ex2: "", ex3: "", ex4: "", ex5: "" },
+      extra: {
+        went_well: data.wentWell.join(", "),
+        display_status: snapshot.displayStatus,
+      },
       executions,
     };
 
     setSaving(true);
     try {
-      const created = await createTrade.mutateAsync(payload);
+      const saved = isEditing && tradeId
+        ? await updateTrade.mutateAsync({ id: tradeId, data: payload })
+        : await createTrade.mutateAsync(payload);
       for (const shot of shots.slice(0, 3)) {
         try {
-          await uploadShot.mutateAsync({ id: created.id, file: shot.file });
+          await uploadShot.mutateAsync({ id: saved.id, file: shot.file });
         } catch {
           setSaveError((prev) => prev ?? "Trade saved, but some screenshots failed to upload");
         }
@@ -268,11 +314,14 @@ export function AddTradeModal() {
             <header className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <div>
                 <h2 id="add-trade-title" className="font-semibold text-base text-white">
-                  Add Trade
+                  {isEditing ? "Edit Trade" : "Add Trade"}
                 </h2>
                 <p className="text-[11px] text-muted">
-                  {calc.isClose ? "Closed" : calc.sellQuantity > 0 ? "Partial · still open" : "Open position"}
-                  {isForex ? " · Forex lots & contract size applied" : ""}
+                  {calc.displayStatus === "closed"
+                    ? "Closed"
+                    : calc.displayStatus === "partially_closed"
+                      ? "Partially closed"
+                      : "Open position"}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -295,12 +344,16 @@ export function AddTradeModal() {
               </div>
             </header>
 
-            <TradeTabs />
+            {!isEditing && <TradeTabs />}
 
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 pb-4">
               {tab === "manual" && (
                 <div className="space-y-5">
-                  <AssetSelector control={control} error={errors.asset_type?.message} />
+                  <AssetSelector
+                    control={control}
+                    error={errors.asset_type?.message}
+                    onSegmentChange={handleSegmentChange}
+                  />
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div>
@@ -348,39 +401,18 @@ export function AddTradeModal() {
                       render={({ field }) => (
                         <MasterCombobox
                           category="symbol"
-                          label="Symbol"
+                          label={values.asset_type === "option" ? "Underlying" : "Symbol"}
                           value={field.value || ""}
                           onChange={field.onChange}
                           error={errors.symbol?.message}
-                          placeholder="EURUSD"
+                          placeholder={symbolSuggestions[0] || "AAPL"}
                           uppercase
+                          suggestions={symbolSuggestions}
                         />
                       )}
                     />
                     <DirectionSelector control={control} />
                   </div>
-
-                  {isOption && (
-                    <div>
-                      <FieldLabel>Call / Put</FieldLabel>
-                      <div className="flex gap-2">
-                        {["", "call", "put"].map((opt) => (
-                          <button
-                            key={opt || "none"}
-                            type="button"
-                            onClick={() => setValue("option_type", opt)}
-                            className={`rounded-lg border px-3 py-1.5 text-xs ${
-                              (values.option_type || "") === opt
-                                ? "border-primary/30 bg-primary/10 text-primary"
-                                : "border-white/10 text-zinc-400"
-                            }`}
-                          >
-                            {opt === "" ? "None" : opt === "call" ? "Call" : "Put"}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <div>
@@ -419,41 +451,13 @@ export function AddTradeModal() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <NumField
-                      label={isForex ? "Lots" : "Buy qty"}
-                      error={errors.quantity?.message}
-                      placeholder={isForex ? "0.10" : "100"}
-                      {...register("quantity")}
-                    />
-                    <NumField
-                      label="Buy price"
-                      error={errors.entry_price?.message}
-                      placeholder={isForex ? "1.08500" : "168.50"}
-                      {...register("entry_price")}
-                    />
-                    <NumField label="Stop loss" error={errors.stop_loss?.message} placeholder="Optional" {...register("stop_loss")} />
-                    <NumField label="Brokerage" error={errors.fees?.message} placeholder="0" {...register("fees")} />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {isForex && (
-                      <NumField label="Leverage" error={errors.leverage?.message} placeholder="100" {...register("leverage")} />
-                    )}
-                    <Readout label="Invested" value={fmtMoney(calc.investedAmount, { signed: false })} />
-                    <Readout
-                      label="Risk $"
-                      value={calc.riskAmount != null ? fmtMoney(calc.riskAmount, { signed: false }) : "—"}
-                    />
-                    <NumField
-                      label="Plan 1–10"
-                      error={errors.plan_compliance?.message}
-                      placeholder="8"
-                      min={1}
-                      max={10}
-                      {...register("plan_compliance")}
-                    />
-                  </div>
+                  <SegmentSpecificFields
+                    register={register}
+                    watch={watch}
+                    setValue={setValue}
+                    errors={errors}
+                    calc={calc}
+                  />
 
                   <Controller
                     control={control}
@@ -469,7 +473,7 @@ export function AddTradeModal() {
                     )}
                   />
 
-                  <PartialFillsEditor control={control} register={register} watch={watch} errors={errors} />
+                  <PartialFillsEditor control={control} register={register} watch={watch} errors={errors} calc={calc} />
 
                   <CalcStrip calc={calc} />
 
@@ -519,7 +523,7 @@ export function AddTradeModal() {
 
               {tab === "journal" && <DailyJournalTab onDone={closeModal} />}
               {tab === "csv" && <CsvTab onDone={closeModal} />}
-              {tab === "broker" && <BrokerTab />}
+              {tab === "broker" && <BrokerTab initialBrokerId={initialBrokerId} />}
             </div>
 
             {tab === "manual" && (
@@ -531,14 +535,14 @@ export function AddTradeModal() {
                 )}
                 {Object.keys(errors).length > 0 && (
                   <div className="border-t border-amber-500/20 bg-amber-500/10 px-5 py-2 text-xs text-amber-400">
-                    Fill required fields: symbol, buy price, quantity
+                    Fill required fields: symbol, entry price, quantity
                     {values.exits?.length ? ", and complete each exit row" : ""}.
                   </div>
                 )}
                 <TradeFooter
-                  saving={saving || createTrade.isPending || uploadShot.isPending}
+                  saving={saving || createTrade.isPending || updateTrade.isPending || uploadShot.isPending}
                   onSave={() => onSave()}
-                  disabled={saving || createTrade.isPending || uploadShot.isPending}
+                  disabled={saving || createTrade.isPending || updateTrade.isPending || uploadShot.isPending}
                 />
               </>
             )}
@@ -555,7 +559,7 @@ export function AddTradeModal() {
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
                       <CheckCircle2 className="h-7 w-7" />
                     </div>
-                    <p className="font-semibold text-xl text-white">Trade saved</p>
+                    <p className="font-semibold text-xl text-white">{isEditing ? "Trade updated" : "Trade saved"}</p>
                   </div>
                 </motion.div>
               )}
@@ -567,30 +571,6 @@ export function AddTradeModal() {
   );
 }
 
-function NumField({
-  label,
-  error,
-  ...props
-}: { label: string; error?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <div>
-      <FieldLabel error={error}>{label}</FieldLabel>
-      <input type="number" step="any" className={`${inputClass} font-mono ${error ? "border-destructive/50" : ""}`} {...props} />
-    </div>
-  );
-}
-
-function Readout({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <FieldLabel>{label}</FieldLabel>
-      <div className="rounded-lg border border-white/10 bg-zinc-900/60 px-3 py-2 font-mono text-sm text-zinc-200">
-        {value}
-      </div>
-    </div>
-  );
-}
-
 function CalcStrip({
   calc,
 }: {
@@ -599,11 +579,14 @@ function CalcStrip({
   const tone = calc.pnl == null ? "text-zinc-300" : calc.pnl >= 0 ? "text-emerald-400" : "text-red-400";
   return (
     <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 sm:grid-cols-5">
-      <MiniStat label="Sell qty" value={calc.sellQuantity ? String(calc.sellQuantity) : "—"} />
-      <MiniStat label="Avg exit" value={calc.exitPrice != null ? calc.exitPrice.toFixed(5) : "—"} />
-      <MiniStat label="Sell amount" value={fmtMoney(calc.totalSellAmount, { signed: false })} />
-      <MiniStat label="Remaining" value={String(calc.remainingQuantity)} />
-      <MiniStat label="Net P&L" value={calc.pnl == null ? "—" : fmtMoney(calc.pnl)} className={tone} />
+      <MiniStat label="Exit qty" value={calc.sellQuantity ? String(calc.sellQuantity) : "—"} />
+      <MiniStat label="Avg exit price" value={calc.exitPrice != null ? calc.exitPrice.toFixed(5) : "—"} />
+      <MiniStat
+        label="Exit value"
+        value={calc.sellQuantity ? fmtMoney(calc.totalSellAmount, { signed: false }) : "$0.00"}
+      />
+      <MiniStat label="Remaining" value={calc.sellQuantity ? String(calc.remainingQuantity) : String(calc.quantity || "—")} />
+      <MiniStat label="Realized P&L" value={calc.pnl == null ? "—" : fmtMoney(calc.pnl)} className={tone} />
     </div>
   );
 }
@@ -715,10 +698,10 @@ function CsvTab({ onDone }: { onDone: () => void }) {
   );
 }
 
-function BrokerTab() {
+function BrokerTab({ initialBrokerId }: { initialBrokerId?: string | null }) {
   return (
     <div className="min-h-full py-1">
-      <BrokerConnectPanel compact />
+      <BrokerConnectPanel compact initialBrokerId={initialBrokerId} />
     </div>
   );
 }

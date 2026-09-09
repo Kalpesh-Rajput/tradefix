@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -68,8 +68,12 @@ class TradeJournalFields(BaseModel):
     rating: int | None = Field(default=None, ge=1, le=5)
     entry_condition: str | None = None
     exit_condition: str | None = None
-    leverage: float | None = None
-    contract_size: float | None = None
+    leverage: float | None = Field(default=None, ge=1)
+    contract_size: float | None = Field(default=None, gt=0)
+    strike_price: float | None = Field(default=None, gt=0)
+    expiry_date: date | None = None
+    tick_size: float | None = Field(default=None, gt=0)
+    tick_value: float | None = Field(default=None, gt=0)
     is_favourite: bool | None = None
     mood: str | None = None
     strategy_name: str | None = None
@@ -150,6 +154,40 @@ class TradeCreate(TradeJournalFields):
             raise ValueError("Quantity must be greater than 0")
         if self.entry_price is not None and self.entry_price <= 0 and not has_exec:
             raise ValueError("Entry price must be greater than 0")
+        if self.stop_loss is not None and self.stop_loss < 0:
+            raise ValueError("Stop loss cannot be negative")
+        if self.leverage is not None and self.leverage < 1:
+            raise ValueError("Leverage must be at least 1")
+
+        entry_qty = self.quantity or 0
+        if self.executions:
+            entry_qty = sum(e.quantity for e in self.executions if (e.leg_type.value if hasattr(e.leg_type, "value") else e.leg_type) == "entry")
+            exit_qty = sum(e.quantity for e in self.executions if (e.leg_type.value if hasattr(e.leg_type, "value") else e.leg_type) == "exit")
+            if entry_qty and exit_qty - entry_qty > 1e-8:
+                raise ValueError("Exit quantity cannot exceed entry quantity")
+
+        asset = self.asset_type.value if hasattr(self.asset_type, "value") else str(self.asset_type)
+        if asset == "option":
+            if not self.option_type:
+                raise ValueError("Call or Put is required for options")
+            if self.strike_price is None or self.strike_price <= 0:
+                raise ValueError("Strike price must be greater than 0")
+            if not self.expiry_date:
+                raise ValueError("Expiry date is required for options")
+
+        entry = None
+        if self.entry_price and self.entry_price > 0:
+            entry = self.entry_price
+        elif self.executions:
+            entries = [e for e in self.executions if (e.leg_type.value if hasattr(e.leg_type, "value") else e.leg_type) == "entry"]
+            if entries:
+                entry = entries[0].price
+        side = self.side.value if hasattr(self.side, "value") else str(self.side)
+        if entry and self.stop_loss and self.stop_loss > 0:
+            if side == "long" and self.stop_loss >= entry:
+                raise ValueError("Long stop loss should be below entry price")
+            if side == "short" and self.stop_loss <= entry:
+                raise ValueError("Short stop loss should be above entry price")
         return self
 
 
@@ -241,6 +279,12 @@ class TradeResponse(BaseModel):
     total_sell_amount: float | None = None
     leverage: float | None = None
     contract_size: float | None = None
+    strike_price: float | None = None
+    expiry_date: date | None = None
+    tick_size: float | None = None
+    tick_value: float | None = None
+    position_value: float | None = None
+    margin_used: float | None = None
     is_favourite: bool = False
     is_deleted: bool = False
     is_sync: bool = False

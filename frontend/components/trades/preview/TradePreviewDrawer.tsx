@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
+import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { useTrade } from "@/lib/hooks/useTrades";
 import {
   formatMdY,
@@ -50,6 +51,7 @@ export function TradePreviewDrawer({
 }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { openEdit } = useAddTradeModal();
   const { data, isLoading, isError, refetch } = useTrade(tradeId);
   const listTrade = trades.find((t) => t.id === tradeId);
   const trade = data ?? listTrade;
@@ -102,14 +104,25 @@ export function TradePreviewDrawer({
             <h2 id="trade-preview-title" className="text-[16px] font-semibold text-[var(--color-text-primary)]">
               Trade Preview
             </h2>
-            <button
-              type="button"
-              onClick={() => router.push("/backtest")}
-              className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[#E2E2E7] px-2.5 text-[12px] font-medium text-[var(--color-text-primary)] hover:bg-[#F7F7F9]"
-            >
-              <Play className="h-3 w-3" fill="currentColor" />
-              Replay
-            </button>
+            <div className="flex items-center gap-2">
+              {trade ? (
+                <button
+                  type="button"
+                  onClick={() => openEdit(trade.id)}
+                  className="inline-flex h-8 items-center rounded-xl border border-[#E2E2E7] px-2.5 text-[12px] font-medium text-[var(--color-text-primary)] hover:bg-[#F7F7F9]"
+                >
+                  Edit
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => router.push("/backtest")}
+                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[#E2E2E7] px-2.5 text-[12px] font-medium text-[var(--color-text-primary)] hover:bg-[#F7F7F9]"
+              >
+                <Play className="h-3 w-3" fill="currentColor" />
+                Replay
+              </button>
+            </div>
           </div>
 
           {trade ? (
@@ -138,8 +151,20 @@ export function TradePreviewDrawer({
                 </button>
                 <span className="text-[var(--color-text-muted)]">•</span>
                 <Badge tone={trade.side === "long" ? "long" : "short"}>{trade.side.toUpperCase()}</Badge>
-                <Badge tone={trade.status === "open" ? "open" : "closed"}>
-                  {trade.status === "open" ? "Open" : "Closed"}
+                <Badge
+                  tone={
+                    trade.status === "closed"
+                      ? "closed"
+                      : Number(trade.sell_quantity ?? 0) > 0
+                        ? "open"
+                        : "open"
+                  }
+                >
+                  {trade.status === "closed"
+                    ? "Closed"
+                    : Number(trade.sell_quantity ?? 0) > 0
+                      ? "Partially Closed"
+                      : "Open"}
                 </Badge>
                 {result ? (
                   <Badge tone={result === "Win" ? "win" : result === "Loss" ? "loss" : "be"}>{result}</Badge>

@@ -1,3 +1,4 @@
+import { grossPnl } from "@/lib/tradeCalc";
 import type { Trade, TradeExecution } from "@/lib/types";
 
 export function dash(value: string | number | null | undefined): string {
@@ -97,7 +98,6 @@ export function runningPnlSeries(trade: Trade): number[] {
   if (execs.length < 2) {
     return trade.pnl != null ? [0, Number(trade.pnl)] : [];
   }
-  const sign = trade.side === "short" ? -1 : 1;
   let qty = 0;
   let cost = 0;
   let realized = 0;
@@ -110,7 +110,16 @@ export function runningPnlSeries(trade: Trade): number[] {
       qty += q;
     } else {
       const avg = qty > 0 ? cost / qty : price;
-      realized += (price - avg) * q * sign - Number(fill.fees || 0);
+      realized +=
+        grossPnl({
+          assetType: trade.asset_type,
+          symbol: trade.symbol,
+          side: trade.side,
+          quantity: q,
+          entryPrice: avg,
+          exitPrice: price,
+          contractSize: trade.contract_size,
+        }) - Number(fill.fees || 0);
       const remain = Math.max(0, qty - q);
       cost = qty > 0 && remain > 0 ? cost * (remain / qty) : 0;
       qty = remain;
@@ -122,11 +131,23 @@ export function runningPnlSeries(trade: Trade): number[] {
 
 export function executionGrossPnl(trade: Trade, fill: TradeExecution): number | null {
   if (fill.leg_type !== "exit") return 0;
-  const sign = trade.side === "short" ? -1 : 1;
-  const avg = Number(trade.entry_price);
-  const q = Number(fill.quantity);
-  const realized = (Number(fill.price) - avg) * q * sign - Number(fill.fees || 0);
+  const realized =
+    grossPnl({
+      assetType: trade.asset_type,
+      symbol: trade.symbol,
+      side: trade.side,
+      quantity: Number(fill.quantity),
+      entryPrice: Number(trade.entry_price),
+      exitPrice: Number(fill.price),
+      contractSize: trade.contract_size,
+    }) - Number(fill.fees || 0);
   return Number.isFinite(realized) ? realized : null;
+}
+
+export function tradeDisplayStatusLabel(trade: Trade): "Open" | "Partially Closed" | "Closed" {
+  if (trade.status === "closed" || trade.is_close) return "Closed";
+  if (Number(trade.sell_quantity ?? 0) > 0) return "Partially Closed";
+  return "Open";
 }
 
 export function qtyLabel(n: number | null | undefined): string {

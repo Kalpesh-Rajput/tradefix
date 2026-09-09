@@ -1,8 +1,8 @@
 import enum
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -96,6 +96,12 @@ class Trade(Base):
     total_sell_amount: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
     leverage: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True)
     contract_size: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True)
+    strike_price: Mapped[float | None] = mapped_column(Numeric(18, 6), nullable=True)
+    expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    tick_size: Mapped[float | None] = mapped_column(Numeric(18, 8), nullable=True)
+    tick_value: Mapped[float | None] = mapped_column(Numeric(18, 6), nullable=True)
+    position_value: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
+    margin_used: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
     is_favourite: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false", index=True)
     is_sync: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")

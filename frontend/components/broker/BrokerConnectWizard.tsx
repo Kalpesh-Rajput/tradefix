@@ -104,9 +104,15 @@ function StepHeader({
 interface BrokerConnectWizardProps {
   compact?: boolean;
   className?: string;
+  /** When set and no active connection, skip broker pick and open credentials. */
+  initialBrokerId?: string | null;
 }
 
-export function BrokerConnectWizard({ compact = false, className }: BrokerConnectWizardProps) {
+export function BrokerConnectWizard({
+  compact = false,
+  className,
+  initialBrokerId = null,
+}: BrokerConnectWizardProps) {
   const toast = useToast();
   const { logout } = useAuth();
   const { activeAccount } = useAccountPrefs();
@@ -128,6 +134,7 @@ export function BrokerConnectWizard({ compact = false, className }: BrokerConnec
   const [selectedBrokerId, setSelectedBrokerId] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
   const [importToJournal, setImportToJournal] = useState(true);
+  const [preselectApplied, setPreselectApplied] = useState(false);
 
   const brokers = useMemo(
     () => (catalogQuery.data?.brokers ?? []).filter((b) => b.implemented),
@@ -150,6 +157,16 @@ export function BrokerConnectWizard({ compact = false, className }: BrokerConnec
       setStep("connected");
     }
   }, [connection, step]);
+
+  useEffect(() => {
+    if (preselectApplied || connection || !initialBrokerId || brokers.length === 0) return;
+    const match = brokers.find((b) => b.id === initialBrokerId);
+    if (!match) return;
+    setSelectedBrokerId(match.id);
+    setFields({});
+    setStep("credentials");
+    setPreselectApplied(true);
+  }, [brokers, connection, initialBrokerId, preselectApplied]);
 
   async function onSwitchBroker() {
     if (connection) {

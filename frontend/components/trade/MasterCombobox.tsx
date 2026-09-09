@@ -18,6 +18,7 @@ export function MasterCombobox({
   allowCreate = true,
   uppercase = false,
   disabled,
+  suggestions,
 }: {
   category: MasterCategory;
   value: string;
@@ -28,6 +29,7 @@ export function MasterCombobox({
   allowCreate?: boolean;
   uppercase?: boolean;
   disabled?: boolean;
+  suggestions?: string[];
 }) {
   const { data = [], isLoading } = useMasters(category);
   const createMaster = useCreateMaster();
@@ -47,7 +49,13 @@ export function MasterCombobox({
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  const names = useMemo(() => data.map((m) => m.name), [data]);
+  const names = useMemo(() => {
+    const master = data.map((m) => m.name);
+    if (!suggestions?.length) return master;
+    const allowed = new Set(suggestions.map((s) => s.toUpperCase()));
+    const fromMasters = master.filter((n) => allowed.has(n.toUpperCase()));
+    return Array.from(new Set([...suggestions, ...fromMasters]));
+  }, [data, suggestions]);
   const q = query.trim();
   const qCmp = uppercase ? q.toUpperCase() : q;
   const results = useMemo(() => {

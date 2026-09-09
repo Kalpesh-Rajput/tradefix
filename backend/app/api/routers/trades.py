@@ -115,6 +115,12 @@ def _to_response(trade: Trade) -> TradeResponse:
         total_sell_amount=_num(trade.total_sell_amount),
         leverage=_num(trade.leverage),
         contract_size=_num(trade.contract_size),
+        strike_price=_num(trade.strike_price),
+        expiry_date=trade.expiry_date,
+        tick_size=_num(trade.tick_size),
+        tick_value=_num(trade.tick_value),
+        position_value=_num(trade.position_value),
+        margin_used=_num(trade.margin_used),
         is_favourite=bool(trade.is_favourite),
         is_deleted=bool(trade.is_deleted),
         is_sync=bool(trade.is_sync),
@@ -277,8 +283,14 @@ def create_trade(
         rating=payload.rating,
         entry_condition=payload.entry_condition,
         exit_condition=payload.exit_condition,
-        leverage=payload.leverage if payload.leverage is not None else default_lev,
+        leverage=payload.leverage
+        if payload.leverage is not None
+        else (default_lev if payload.asset_type.value == "forex" else None),
         contract_size=payload.contract_size,
+        strike_price=payload.strike_price,
+        expiry_date=payload.expiry_date,
+        tick_size=payload.tick_size,
+        tick_value=payload.tick_value,
         is_favourite=bool(payload.is_favourite),
         strategy_name=payload.strategy_name or (setup_tags[0] if setup_tags else None),
         strategy_id=payload.strategy_id,
@@ -327,6 +339,7 @@ def update_trade(
     journal = {k: update_data.pop(k) for k in list(update_data.keys()) if k in (
         "session", "trade_type", "option_type", "analysis_timeframe", "entry_timeframe",
         "stop_loss", "profit_target", "rating", "entry_condition", "exit_condition", "leverage", "contract_size",
+        "strike_price", "expiry_date", "tick_size", "tick_value",
         "is_favourite", "mood", "strategy_name", "strategy_id", "precheck_list_id", "extra",
         "sell_quantity",
     )}

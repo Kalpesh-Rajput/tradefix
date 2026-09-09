@@ -35,9 +35,9 @@ const NAV: {
 }[] = [
   { href: "/today", labelKey: "nav.today", icon: LayoutDashboard, testId: "nav-today", iconColor: "#7C5CBF" },
   { href: "/day", labelKey: "nav.dayView", icon: Sun, testId: "nav-dayView", iconColor: "#F59E0B" },
+  { href: "/trades", labelKey: "nav.tradeLog", icon: ClipboardList, testId: "nav-tradeLog", iconColor: "#EC4899" },
   { href: "/diary", labelKey: "nav.journal", icon: NotebookPen, testId: "nav-journal", iconColor: "#3B82F6" },
   { href: "/notebook", labelKey: "nav.notebook", icon: BookOpen, testId: "nav-notebook", iconColor: "#8B5CF6" },
-  { href: "/trades", labelKey: "nav.tradeLog", icon: ClipboardList, testId: "nav-tradeLog", iconColor: "#EC4899" },
   { href: "/analytics", labelKey: "nav.analytics", icon: BarChart3, testId: "nav-analytics", iconColor: "#10B981" },
   { href: "/calendar", labelKey: "nav.calendar", icon: CalendarDays, testId: "nav-calendar", iconColor: "#6366F1" },
   { href: "/trading-plan", labelKey: "nav.tradingPlan", icon: ListChecks, testId: "nav-tradingPlan", iconColor: "#F97316" },
@@ -57,7 +57,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { t } = useLocale();
-  const { openModal } = useAddTradeModal();
+  const { openFlow } = useAddTradeModal();
   const { setMobileOpen } = useSidebar();
 
   void forceExpanded;
@@ -83,7 +83,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={() => {
-            openModal("manual");
+            openFlow();
             setMobileOpen(false);
           }}
           className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-primary text-[13px] font-semibold text-primary-foreground text-on-accent transition-colors duration-150 hover:bg-primary-hover"

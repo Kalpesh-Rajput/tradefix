@@ -32,7 +32,9 @@ function LabelRow({ label, hint }: { label: string; hint?: string }) {
   return (
     <div className="mb-1.5 flex h-4 items-center gap-1 text-[11px] font-medium leading-4 text-[var(--color-text-label)]">
       <span className="truncate">{label}</span>
-      <Info className="h-3 w-3 shrink-0 text-[#777881]" strokeWidth={1.75} title={hint} />
+      <span title={hint} className="inline-flex shrink-0">
+        <Info className="h-3 w-3 text-[#777881]" strokeWidth={1.75} aria-hidden />
+      </span>
     </div>
   );
 }

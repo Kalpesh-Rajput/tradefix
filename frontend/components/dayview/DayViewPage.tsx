@@ -76,7 +76,7 @@ function mergeDays(days: CalendarDay[], id: string, title: string, date: string)
 export function DayViewPage() {
   const { t, locale } = useLocale();
   const { formatMoney, activeAccount, loading: accountsLoading } = useAccountPrefs();
-  const { openModal } = useAddTradeModal();
+  const { openFlow } = useAddTradeModal();
   const accountId = activeAccount?.id;
   const initial = useMemo(() => monthRange(), []);
   const [dateFrom, setDateFrom] = useState(initial.from);
@@ -187,7 +187,7 @@ export function DayViewPage() {
                 <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">{t("dayView.emptyHint")}</p>
                 <button
                   type="button"
-                  onClick={() => openModal("manual")}
+                  onClick={() => openFlow()}
                   className="dash-btn-primary text-on-accent mt-4"
                 >
                   {t("common.addTrade")}

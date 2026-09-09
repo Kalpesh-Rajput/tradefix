@@ -10,9 +10,11 @@ import { FieldLabel } from "@/components/trade/ui";
 export function AssetSelector({
   control,
   error,
+  onSegmentChange,
 }: {
   control: Control<AddTradeFormValues>;
   error?: string;
+  onSegmentChange?: (next: AddTradeFormValues["asset_type"]) => void;
 }) {
   return (
     <div>
@@ -30,7 +32,10 @@ export function AssetSelector({
                   type="button"
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => field.onChange(opt.value)}
+                  onClick={() => {
+                    field.onChange(opt.value);
+                    onSegmentChange?.(opt.value);
+                  }}
                   className={clsx(
                     "rounded-lg border px-3 py-1.5 text-xs transition-colors",
                     active

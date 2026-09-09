@@ -8,7 +8,7 @@ import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { Trade } from "@/lib/types";
 
 export function TodaysTrades({ trades }: { trades: Trade[] }) {
-  const { openModal } = useAddTradeModal();
+  const { openFlow } = useAddTradeModal();
   const { formatMoney, displayPnl } = useAccountPrefs();
 
   if (trades.length === 0) return null;
@@ -27,7 +27,7 @@ export function TodaysTrades({ trades }: { trades: Trade[] }) {
         </div>
         <button
           type="button"
-          onClick={() => openModal("manual")}
+          onClick={() => openFlow()}
           className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-zinc-400 transition hover:border-primary/40 hover:text-primary"
         >
           <Plus className="h-3.5 w-3.5" />

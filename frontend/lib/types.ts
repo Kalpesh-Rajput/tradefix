@@ -87,6 +87,12 @@ export interface Trade {
   total_sell_amount?: number | null;
   leverage?: number | null;
   contract_size?: number | null;
+  strike_price?: number | null;
+  expiry_date?: string | null;
+  tick_size?: number | null;
+  tick_value?: number | null;
+  position_value?: number | null;
+  margin_used?: number | null;
   is_favourite?: boolean;
   is_deleted?: boolean;
   is_sync?: boolean;
@@ -169,6 +175,10 @@ export interface TradeInput {
   exit_condition?: string | null;
   leverage?: number | null;
   contract_size?: number | null;
+  strike_price?: number | null;
+  expiry_date?: string | null;
+  tick_size?: number | null;
+  tick_value?: number | null;
   is_favourite?: boolean;
   strategy_name?: string | null;
   strategy_id?: string | null;

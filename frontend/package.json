@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:forex-parity": "npx --yes tsx scripts/check-forex-parity.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",

@@ -9,6 +9,7 @@ import { useDropzone } from "react-dropzone";
 
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { ChipGroup } from "@/components/trade/ui";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -62,6 +63,7 @@ export default function TradeDetailPage() {
   const { user } = useAuth();
   const { displayPnl } = useAccountPrefs();
   const toast = useToast();
+  const { openEdit } = useAddTradeModal();
 
   const { data: trade, isLoading, isError } = useTrade(params.id);
   const updateTrade = useUpdateTrade();
@@ -220,9 +222,14 @@ export default function TradeDetailPage() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Trades
         </Link>
-        <Button variant="danger" size="sm" onClick={handleDelete} disabled={deleteTrade.isPending}>
-          Delete
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="secondary" onClick={() => openEdit(trade.id)}>
+            Edit Trade
+          </Button>
+          <Button variant="danger" size="sm" onClick={handleDelete} disabled={deleteTrade.isPending}>
+            Delete
+          </Button>
+        </div>
       </div>
 
       {/* Header */}
@@ -231,7 +238,12 @@ export default function TradeDetailPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-white">{trade.symbol}</h1>
             <p className="mt-1 text-sm capitalize text-zinc-500">
-              {trade.side} · {trade.asset_type} · {trade.status}
+              {trade.side} · {trade.asset_type} ·{" "}
+              {trade.status === "closed"
+                ? "closed"
+                : Number(trade.remaining_quantity ?? 0) > 0 && Number(trade.sell_quantity ?? 0) > 0
+                  ? "partially closed"
+                  : "open"}
             </p>
           </div>
           <div className="text-right">

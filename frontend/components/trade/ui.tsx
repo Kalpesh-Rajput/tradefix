@@ -109,6 +109,42 @@ export function Section({
   );
 }
 
+const inputClass =
+  "w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-primary/40 disabled:opacity-40";
+
+export function formInputClass(error?: string) {
+  return `${inputClass} ${error ? "border-destructive/50" : ""}`;
+}
+
+export function NumField({
+  label,
+  error,
+  ...props
+}: { label: string; error?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div>
+      <FieldLabel error={error}>{label}</FieldLabel>
+      <input
+        type="number"
+        step="any"
+        className={`${formInputClass(error)} font-mono`}
+        {...props}
+      />
+    </div>
+  );
+}
+
+export function Readout({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <FieldLabel>{label}</FieldLabel>
+      <div className="rounded-lg border border-white/10 bg-zinc-900/60 px-3 py-2 font-mono text-sm text-zinc-200">
+        {value}
+      </div>
+    </div>
+  );
+}
+
 export function FieldLabel({ children, error }: { children: ReactNode; error?: string }) {
   return (
     <div className="mb-1 flex items-center justify-between">

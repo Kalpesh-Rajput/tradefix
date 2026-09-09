@@ -52,7 +52,7 @@ export default function TodayPage() {
   const { t, formatChartDate } = useLocale();
   const { user } = useAuth();
   const { displayPnl, formatMoney, activeAccount, loading: accountsLoading } = useAccountPrefs();
-  const { openModal } = useAddTradeModal();
+  const { openFlow } = useAddTradeModal();
   const name = firstName(user?.name, user?.email);
   const { widgets, editing, setEditing, toggle, labels } = useDashboardWidgets();
   const accountId = activeAccount?.id;
@@ -253,7 +253,7 @@ export default function TodayPage() {
         greeting={`${t(greetingKey)}, ${name} 👋`}
         editing={editing}
         onToggleEdit={() => setEditing((v) => !v)}
-        onImport={() => openModal("csv")}
+        onImport={() => openFlow()}
       />
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pt-3 pb-3.5 sm:px-5">

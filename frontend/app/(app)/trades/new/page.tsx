@@ -5,15 +5,15 @@ import { useEffect } from "react";
 
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 
-/** Legacy route — opens the Add Trade modal and returns to Trades. */
+/** Legacy route — opens the Add Trade flow and returns to Trades. */
 export default function NewTradePage() {
   const router = useRouter();
-  const { openModal } = useAddTradeModal();
+  const { openFlow } = useAddTradeModal();
 
   useEffect(() => {
-    openModal("manual");
+    openFlow();
     router.replace("/trades");
-  }, [openModal, router]);
+  }, [openFlow, router]);
 
   return (
     <div className="flex h-40 items-center justify-center text-sm text-muted">Opening Add Trade…</div>

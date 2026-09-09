@@ -1,0 +1,223 @@
+{
+  "description": "Golden Forex calc fixtures — freeze TradeFix trade_calc / tradeCalc behavior. quantity = lots.",
+  "opened_at": "2026-03-01T14:30:00+00:00",
+  "cases": [
+    {
+      "id": "eurusd_long_full",
+      "asset_type": "forex",
+      "symbol": "EURUSD",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 1.1,
+      "exit_price": 1.105,
+      "sell_quantity": 1,
+      "leverage": 100,
+      "fees": 0,
+      "expect": { "pnl": 500.0, "position_value": 110000.0, "margin_used": 1100.0 }
+    },
+    {
+      "id": "eurusd_short_full",
+      "asset_type": "forex",
+      "symbol": "EURUSD",
+      "side": "short",
+      "quantity": 1,
+      "entry_price": 1.1,
+      "exit_price": 1.095,
+      "sell_quantity": 1,
+      "leverage": 100,
+      "fees": 0,
+      "expect": { "pnl": 500.0 }
+    },
+    {
+      "id": "gbpusd_long_half_lot",
+      "asset_type": "forex",
+      "symbol": "GBPUSD",
+      "side": "long",
+      "quantity": 0.5,
+      "entry_price": 1.25,
+      "exit_price": 1.255,
+      "sell_quantity": 0.5,
+      "leverage": 50,
+      "fees": 0,
+      "expect": { "pnl": 250.0, "margin_used": 1250.0 }
+    },
+    {
+      "id": "usdjpy_long_quote_conversion",
+      "asset_type": "forex",
+      "symbol": "USDJPY",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 150.0,
+      "exit_price": 151.0,
+      "sell_quantity": 1,
+      "leverage": 100,
+      "fees": 0,
+      "expect": { "pnl": 662.25 }
+    },
+    {
+      "id": "usdjpy_short_quote_conversion",
+      "asset_type": "forex",
+      "symbol": "USDJPY",
+      "side": "short",
+      "quantity": 1,
+      "entry_price": 150.0,
+      "exit_price": 149.0,
+      "sell_quantity": 1,
+      "fees": 0,
+      "expect": { "pnl": 671.14 }
+    },
+    {
+      "id": "usdchf_long",
+      "asset_type": "forex",
+      "symbol": "USDCHF",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 0.9,
+      "exit_price": 0.905,
+      "sell_quantity": 1,
+      "fees": 0,
+      "expect": { "pnl": 552.49 }
+    },
+    {
+      "id": "usdcad_long",
+      "asset_type": "forex",
+      "symbol": "USDCAD",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 1.35,
+      "exit_price": 1.355,
+      "sell_quantity": 1,
+      "fees": 0,
+      "expect": { "pnl": 369.0 }
+    },
+    {
+      "id": "xauusd_long",
+      "asset_type": "forex",
+      "symbol": "XAUUSD",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 2000.0,
+      "exit_price": 2010.0,
+      "sell_quantity": 1,
+      "fees": 0,
+      "expect": { "pnl": 1000.0, "position_value": 200000.0 }
+    },
+    {
+      "id": "xagusd_long",
+      "asset_type": "forex",
+      "symbol": "XAGUSD",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 25.0,
+      "exit_price": 25.5,
+      "sell_quantity": 1,
+      "fees": 0,
+      "expect": { "pnl": 2500.0, "position_value": 125000.0 }
+    },
+    {
+      "id": "eurusd_open_no_exit",
+      "asset_type": "forex",
+      "symbol": "EURUSD",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 1.1,
+      "stop_loss": 1.09,
+      "leverage": 100,
+      "expect": { "pnl": null, "margin_used": 1100.0, "risk_amount": 1000.0, "display_status": "open" }
+    },
+    {
+      "id": "eurusd_fees_net",
+      "asset_type": "forex",
+      "symbol": "EURUSD",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 1.1,
+      "exit_price": 1.105,
+      "sell_quantity": 1,
+      "fees": 15,
+      "expect": { "pnl": 485.0, "fees": 15.0 }
+    },
+    {
+      "id": "eurusd_leverage_100",
+      "asset_type": "forex",
+      "symbol": "EURUSD",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 1.1,
+      "exit_price": 1.105,
+      "sell_quantity": 1,
+      "stop_loss": 1.095,
+      "leverage": 100,
+      "expect": { "pnl": 500.0, "margin_used": 1100.0, "risk_amount": 500.0 }
+    },
+    {
+      "id": "eurusd_leverage_10",
+      "asset_type": "forex",
+      "symbol": "EURUSD",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 1.1,
+      "exit_price": 1.105,
+      "sell_quantity": 1,
+      "stop_loss": 1.095,
+      "leverage": 10,
+      "expect": { "pnl": 500.0, "margin_used": 11000.0, "risk_amount": 500.0 }
+    },
+    {
+      "id": "eurusd_partial_one_exit",
+      "asset_type": "forex",
+      "symbol": "EURUSD",
+      "side": "long",
+      "leverage": 100,
+      "fills": [
+        { "leg_type": "entry", "quantity": 1.0, "price": 1.1 },
+        { "leg_type": "exit", "quantity": 0.4, "price": 1.105 }
+      ],
+      "expect": { "pnl": 200.0, "remaining_quantity": 0.6, "display_status": "partially_closed" }
+    },
+    {
+      "id": "eurusd_multi_partial_full",
+      "asset_type": "forex",
+      "symbol": "EURUSD",
+      "side": "long",
+      "leverage": 100,
+      "fees": 10,
+      "fills": [
+        { "leg_type": "entry", "quantity": 1.0, "price": 1.1 },
+        { "leg_type": "exit", "quantity": 0.25, "price": 1.105 },
+        { "leg_type": "exit", "quantity": 0.25, "price": 1.11 },
+        { "leg_type": "exit", "quantity": 0.5, "price": 1.115 }
+      ],
+      "expect": {
+        "pnl": 1115.0,
+        "sell_quantity": 1.0,
+        "fees": 10.0,
+        "display_status": "closed",
+        "exit_price": 1.11125,
+        "realized_gross": 1125.0
+      }
+    },
+    {
+      "id": "eurusd_over_exit_clamped",
+      "asset_type": "forex",
+      "symbol": "EURUSD",
+      "side": "long",
+      "fills": [
+        { "leg_type": "entry", "quantity": 1.0, "price": 1.1 },
+        { "leg_type": "exit", "quantity": 1.2, "price": 1.105 }
+      ],
+      "expect": { "remaining_quantity": 0.0, "display_status": "closed", "pnl": 600.0 }
+    },
+    {
+      "id": "gold_alias_contract_size",
+      "asset_type": "forex",
+      "symbol": "GOLD",
+      "side": "long",
+      "quantity": 1,
+      "entry_price": 2000.0,
+      "exit_price": 2010.0,
+      "sell_quantity": 1,
+      "expect": { "pnl": 1000.0, "position_value": 200000.0 }
+    }
+  ]
+}

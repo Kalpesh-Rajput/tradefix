@@ -4,7 +4,9 @@ import clsx from "clsx";
 import {
   ArrowDownRight,
   ArrowUpRight,
+  ClipboardList,
   Filter,
+  Menu,
   Pencil,
   Plus,
   Search,
@@ -12,13 +14,17 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { PortfolioSwitcher } from "@/components/dashboard/PortfolioSwitcher";
+import { NavCollapseButton } from "@/components/layout/NavCollapseButton";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { useQuickLog } from "@/components/providers/QuickLogProvider";
+import { useSidebar } from "@/components/providers/SidebarProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { ASSET_OPTIONS } from "@/components/trade/schema";
 import { TradeViewKpis } from "@/components/trades/TradeViewKpis";
@@ -27,7 +33,11 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 import { useDeleteTrade, useDeleteTrades, useTrades } from "@/lib/hooks/useTrades";
+import { isJournalPath } from "@/lib/nav";
 import type { AssetType, Trade, TradeSide } from "@/lib/types";
+
+const iconBtnClass =
+  "inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-40";
 
 type StatusTab = "all" | "open" | "closed";
 
@@ -103,11 +113,15 @@ function readStored(): Partial<LocalFilters> {
 
 export function TradesLogPage() {
   const { user } = useAuth();
+  const { t } = useLocale();
+  const pathname = usePathname();
   const toast = useToast();
-  const { openModal } = useAddTradeModal();
+  const { openFlow } = useAddTradeModal();
   const { openQuickLog } = useQuickLog();
+  const { collapsed, mobileOpen, setMobileOpen } = useSidebar();
   const { activeAccount, displayPnl, formatMoney, loading: accountsLoading } = useAccountPrefs();
   const accountId = activeAccount?.id;
+  const showJournalToggle = isJournalPath(pathname) && collapsed;
 
   const [filters, setFilters] = useState<LocalFilters>({
     search: "",
@@ -287,35 +301,39 @@ export function TradesLogPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-background)]">
-      <header className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 pb-4 pt-4 sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-[20px] font-semibold tracking-tight text-[var(--color-text-primary)]">
-            Trade View
-          </h1>
-          <div className="flex items-center gap-2">
-            <PortfolioSwitcher className="[&_button]:h-9 [&_button]:rounded-xl [&_button]:border-[#E2E2E7] [&_button]:bg-white [&_button]:shadow-none [&_button]:text-[12px]" />
+      <header className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 pb-3 pt-3 sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-text-secondary)] transition-colors hover:bg-black/[0.05] hover:text-[var(--color-text-primary)] md:hidden"
+              aria-label={mobileOpen ? t("common.closeMenu") : t("common.openMenu")}
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+            {showJournalToggle && <NavCollapseButton variant="light" />}
+            <h1 className="truncate text-[20px] font-semibold tracking-tight text-[var(--color-text-primary)]">
+              Trade View
+            </h1>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <PortfolioSwitcher iconOnly />
             <button
               type="button"
               onClick={() => openQuickLog(lastClosedTradeId)}
               disabled={!lastClosedTradeId}
-              className="dash-btn-secondary disabled:cursor-not-allowed disabled:opacity-40"
-              title={lastClosedTradeId ? "Quick log last closed trade" : "No closed trades yet"}
+              className={iconBtnClass}
+              aria-label="Quick Log"
+              title={lastClosedTradeId ? "Quick Log" : "No closed trades yet"}
             >
-              Quick Log
-            </button>
-            <button
-              type="button"
-              onClick={() => openModal("manual")}
-              className="dash-btn-primary text-on-accent"
-            >
-              <Plus className="h-4 w-4" strokeWidth={2.25} />
-              Add Trade
+              <ClipboardList className="h-3.5 w-3.5" strokeWidth={1.75} />
             </button>
           </div>
         </div>
 
-        <div className="mt-3.5 flex flex-wrap items-center gap-2">
-          <div className="relative min-w-[220px] flex-1">
+        <div className="mt-2.5 flex flex-wrap items-center gap-2 sm:flex-nowrap">
+          <div className="relative min-w-0 flex-1 basis-full sm:basis-auto">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
             <input
               value={filters.search}
@@ -325,14 +343,16 @@ export function TradesLogPage() {
             />
           </div>
 
-          <DateRangePicker
-            dateFrom={filters.dateFrom}
-            dateTo={filters.dateTo}
-            onChange={(from, to) => setFilters((f) => ({ ...f, dateFrom: from, dateTo: to }))}
-            triggerClassName="h-9 rounded-xl border-[#E2E2E7] text-[13px]"
-          />
+          <div className="shrink-0">
+            <DateRangePicker
+              dateFrom={filters.dateFrom}
+              dateTo={filters.dateTo}
+              onChange={(from, to) => setFilters((f) => ({ ...f, dateFrom: from, dateTo: to }))}
+              triggerClassName="h-9 rounded-xl border-[#E2E2E7] text-[13px]"
+            />
+          </div>
 
-          <div className="relative" ref={filtersRef}>
+          <div className="relative shrink-0" ref={filtersRef}>
             <button
               type="button"
               onClick={() => setFiltersOpen((v) => !v)}
@@ -412,7 +432,7 @@ export function TradesLogPage() {
             )}
           </div>
 
-          <div className="ml-auto flex items-center rounded-xl border border-[#E2E2E7] bg-white p-0.5">
+          <div className="flex shrink-0 items-center rounded-xl border border-[#E2E2E7] bg-white p-0.5">
             {(
               [
                 { key: "all", label: "All", count: counts.all },
@@ -497,7 +517,7 @@ export function TradesLogPage() {
             {trades.length === 0 && (
               <button
                 type="button"
-                onClick={() => openModal("manual")}
+                onClick={() => openFlow()}
                 className="dash-btn-primary text-on-accent mt-4"
               >
                 <Plus className="h-4 w-4" />

@@ -14,6 +14,7 @@ import { ConnectorsProvider } from "@/components/providers/ConnectorsProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { QuickLogProvider } from "@/components/providers/QuickLogProvider";
 import { SidebarProvider, useSidebar } from "@/components/providers/SidebarProvider";
+import { AddTradesFlow } from "@/components/add-trades/AddTradesFlow";
 import { AddTradeModal } from "@/components/trade/AddTradeModal";
 import { useLiveAccount } from "@/lib/hooks/useLiveAccount";
 import { isJournalPath } from "@/lib/nav";
@@ -79,6 +80,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             >
               {children}
             </AppShell>
+            <AddTradesFlow />
             <AddTradeModal />
           </SidebarProvider>
         </QuickLogProvider>
@@ -130,7 +132,7 @@ function AppShell({
         )}
         <HeaderActionsProvider>
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
-            <AppHeader />
+            {!isTradesLog && <AppHeader />}
             <main
               className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
                 isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isNotebook

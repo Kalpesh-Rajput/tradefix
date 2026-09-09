@@ -7,7 +7,16 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 
-export function PortfolioSwitcher({ className }: { className?: string }) {
+const iconBtnClass =
+  "inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-50";
+
+export function PortfolioSwitcher({
+  className,
+  iconOnly = false,
+}: {
+  className?: string;
+  iconOnly?: boolean;
+}) {
   const { accounts, activeAccount, setActiveAccountId, loading } = useAccountPrefs();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -44,17 +53,29 @@ export function PortfolioSwitcher({ className }: { className?: string }) {
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
+        aria-label="Select Portfolio"
+        title="Select Portfolio"
         disabled={loading || accounts.length === 0}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9 min-w-[180px] items-center justify-between gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-medium text-foreground transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] disabled:cursor-not-allowed disabled:opacity-50"
+        className={
+          iconOnly
+            ? iconBtnClass
+            : "inline-flex h-9 min-w-[180px] items-center justify-between gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-medium text-foreground transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] disabled:cursor-not-allowed disabled:opacity-50"
+        }
       >
-        <span className="flex min-w-0 items-center gap-2">
-          <Briefcase className="h-3.5 w-3.5 shrink-0 text-muted" />
-          <span className="truncate">{label}</span>
-        </span>
-        <ChevronDown
-          className={clsx("h-3.5 w-3.5 shrink-0 text-muted transition", open && "rotate-180")}
-        />
+        {iconOnly ? (
+          <Briefcase className="h-3.5 w-3.5" strokeWidth={1.75} />
+        ) : (
+          <>
+            <span className="flex min-w-0 items-center gap-2">
+              <Briefcase className="h-3.5 w-3.5 shrink-0 text-muted" />
+              <span className="truncate">{label}</span>
+            </span>
+            <ChevronDown
+              className={clsx("h-3.5 w-3.5 shrink-0 text-muted transition", open && "rotate-180")}
+            />
+          </>
+        )}
       </button>
 
       {open && (

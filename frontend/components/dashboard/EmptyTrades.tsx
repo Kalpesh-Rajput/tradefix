@@ -5,12 +5,12 @@ import { Plus } from "lucide-react";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 
 export function EmptyTrades() {
-  const { openModal } = useAddTradeModal();
+  const { openFlow } = useAddTradeModal();
 
   return (
     <button
       type="button"
-      onClick={() => openModal("manual")}
+      onClick={() => openFlow()}
       className="group flex w-full items-center gap-3 rounded-xl border border-dashed border-zinc-700 px-4 py-3.5 text-left transition-colors hover:border-primary/50 hover:bg-primary/5"
     >
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 transition-colors group-hover:bg-primary/10">

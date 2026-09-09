@@ -24,7 +24,7 @@ export function DashboardHeader({
   const { user } = useAuth();
   const { t, formatTodayLabelShort } = useLocale();
   const { formatMoney } = useAccountPrefs();
-  const { openModal } = useAddTradeModal();
+  const { openFlow } = useAddTradeModal();
   const name = firstName(user?.name, user?.email);
   const positive = todaysPnl >= 0;
 
@@ -39,7 +39,7 @@ export function DashboardHeader({
         <div className="mt-1 flex shrink-0 items-center gap-2">
           <button
             type="button"
-            onClick={() => openModal("manual")}
+            onClick={() => openFlow()}
             className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             <Plus className="h-4 w-4" strokeWidth={2.5} />
