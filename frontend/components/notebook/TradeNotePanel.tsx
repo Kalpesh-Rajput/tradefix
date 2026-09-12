@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, PanelLeft } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -21,11 +21,13 @@ export function TradeNotePanel({
   locale,
   formatMoney,
   onDirtyChange,
+  onToggleFolders,
 }: {
   tradeId: string;
   locale: string;
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
   onDirtyChange?: (dirty: boolean) => void;
+  onToggleFolders?: () => void;
 }) {
   const toast = useToast();
   const { data: trade, isLoading, isError, refetch } = useTrade(tradeId);
@@ -117,8 +119,18 @@ export function TradeNotePanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-[var(--color-surface)]">
-      <header className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 sm:px-5">
-        <div className="min-w-0">
+      <header className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-[var(--color-border)] px-2 sm:px-5">
+        <div className="flex min-w-0 items-center gap-1">
+          {onToggleFolders ? (
+            <button
+              type="button"
+              onClick={onToggleFolders}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]"
+              aria-label="Toggle folders"
+            >
+              <PanelLeft className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+          ) : null}
           <h2 className="truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
             {trade.symbol} · {trade.side}
           </h2>

@@ -78,6 +78,9 @@ def _to_response(account: Account, trade_count: int = 0) -> AccountResponse:
         pnl_display_mode=account.pnl_display_mode,
         default_fee_per_trade=account.default_fee_per_trade,
         is_default=account.is_default,
+        source=account.source or "dummy",
+        broker_id=account.broker_id,
+        broker_name=account.broker_name,
         trade_count=trade_count,
     )
 
@@ -128,6 +131,9 @@ def create_account(
         pnl_display_mode=payload.pnl_display_mode,
         default_fee_per_trade=payload.default_fee_per_trade,
         is_default=False,
+        source=payload.source,
+        broker_id=payload.broker_id if payload.source == "broker" else None,
+        broker_name=payload.broker_name if payload.source == "broker" else None,
     )
     db.add(account)
     db.flush()

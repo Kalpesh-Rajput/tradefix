@@ -70,114 +70,15 @@ Frontend runs at `http://localhost:3000`. Sign up, and you'll land on `/today`.
 
 ## 4. Share TradeFix with a live ngrok link
 
-Use this when you want a public HTTPS link so someone can test the TradeFix app. Your PC must stay on and awake. A **free ngrok URL dies** when you close ngrok, sleep the PC, or lose internet — start a new tunnel and send the new URL.
+Full step-by-step (install, three windows, tester notes, troubleshooting, MT5): **[NGROK.md](./NGROK.md)**.
 
-### One-time ngrok setup
-
-1. Install ngrok: https://ngrok.com/download  
-2. Copy your token: https://dashboard.ngrok.com/get-started/your-authtoken  
-3. In PowerShell:
-
-```powershell
-ngrok config add-authtoken PASTE_YOUR_TOKEN_HERE
-```
-
-### Every time you need a new test link
-
-**Window 1 — backend**
-
-```powershell
-cd C:\test\KR\Project-TradeFix\TradeFix\backend
-.\venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload --port 8001
-```
-
-**Window 2 — frontend**
-
-```powershell
-cd C:\test\KR\Project-TradeFix\TradeFix\frontend
-npm run dev
-```
-
-Wait until it says Ready on `http://localhost:3000`.
-
-**Window 3 — ngrok** (points at the website, port 3000):
+Short version: keep backend (`:8001`) and frontend (`:3000`) running, then:
 
 ```powershell
 ngrok http 3000
 ```
 
-Copy the **https** Forwarding URL, for example `https://5f47-27-107-88-122.ngrok-free.app`.  
-You can also open http://127.0.0.1:4040 and copy it from there.
-
-Check:
-
-```text
-https://YOUR-NGROK-URL
-https://YOUR-NGROK-URL/api/health
-```
-
-`/api/health` should return `{"status":"ok","app":"TradeFix"}`. The first browser visit may show an ngrok warning — click **Visit Site**.
-
-Leave all three windows open while people test. Next.js already proxies `/api` and `/uploads` to the backend, so testers only need the one ngrok link.
-
-### Stop
-
-`Ctrl+C` in the ngrok window. Next session you get a **new** free URL — send that new link.
-
----
-
-## 5. Live ngrok URL (broker / MT5)
-
-The broker page talks to **TradeFix-Connectors** through a *second* ngrok URL (`NEXT_PUBLIC_CONNECTORS_URL` in `frontend/.env.local`). This is not the same tunnel as section 4.
-
-Leave **MetaTrader 5**, the Connectors API, and that ngrok tunnel running while you use live broker sync.
-
-### Every time you need a live broker URL
-
-**Window 1 — MetaTrader 5**  
-Open MT5 and stay logged in. Keep the PC awake.
-
-**Window 2 — TradeFix-Connectors API** (not TradeFix on port 8001):
-
-```powershell
-cd C:\test\KR\Project-TradeFix\TradeFix-Connectors
-.\scripts\start-api.ps1
-```
-
-If port 8000 is already in use:
-
-```powershell
-.\scripts\start-api.ps1 -Port 8100
-```
-
-**Window 3 — ngrok** (same port as the Connectors API):
-
-```powershell
-cd C:\test\KR\Project-TradeFix\TradeFix-Connectors
-.\scripts\start-ngrok.ps1
-```
-
-If the API is on 8100:
-
-```powershell
-.\scripts\start-ngrok.ps1 -Port 8100
-```
-
-Copy the **https** Forwarding line (no trailing slash). Check `https://YOUR-CONNECTORS-NGROK-URL/health`.
-
-### Point TradeFix at the new broker URL
-
-1. Edit `frontend/.env.local`:
-
-```env
-NEXT_PUBLIC_CONNECTORS_URL=https://YOUR-CONNECTORS-NGROK-URL
-```
-
-2. Restart the frontend (`Ctrl+C`, then `npm run dev`).
-3. Open `http://localhost:3000` → **Settings → Broker**. The URL is shown at the top as a clickable link.
-
-Free ngrok usually allows **one** tunnel at a time. If you already have the TradeFix app tunnel (section 4) running, stop it before starting the Connectors tunnel, or use a paid ngrok plan for two tunnels.
+Send the **https** Forwarding URL. Your PC must stay on. A free ngrok URL dies when you close ngrok or sleep the PC — start a new tunnel and send the new URL. Testers only need that one link (`/api` is proxied). First visit may show ngrok **Visit Site**.
 
 ## What's implemented
 

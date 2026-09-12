@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, MoreHorizontal, Star, X } from "lucide-react";
+import { CalendarDays, ExternalLink, MoreHorizontal, PanelLeft, Star, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -8,9 +8,15 @@ import { createPortal } from "react-dom";
 import { DaySummaryCard } from "@/components/dayview/notes/DaySummaryCard";
 import { NoteTemplateSelector } from "@/components/dayview/notes/NoteTemplateSelector";
 import { RichNoteEditor } from "@/components/dayview/notes/RichNoteEditor";
+import { formatNetPnl, pnlHex } from "@/components/dayview/pnlStyle";
+import { formatNoteStamp } from "@/components/notebook/dateFormat";
+import { NotebookDayPerformance } from "@/components/notebook/NotebookDayPerformance";
+import { NotebookTemplatePills } from "@/components/notebook/NotebookTemplatePills";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { ScreenshotGrid } from "@/components/media/ScreenshotGrid";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
+import type { CalendarDay, NotebookFolder } from "@/lib/types";
 import {
   DEFAULT_TEMPLATE_ID,
   defaultNoteHtml,
@@ -27,6 +33,7 @@ export type DayNoteTarget = {
   pnl: number;
   trades: number;
   winRate: number;
+  day?: CalendarDay;
 };
 
 export function DayNoteEditor({
@@ -35,6 +42,9 @@ export function DayNoteEditor({
   formatMoney,
   onClose,
   onDirtyChange,
+  onToggleFolders,
+  folders = [],
+  folderId = null,
   variant = "modal",
 }: {
   accountId: string;
@@ -42,9 +52,13 @@ export function DayNoteEditor({
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
   onClose?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
+  onToggleFolders?: () => void;
+  folders?: NotebookFolder[];
+  folderId?: string | null;
   variant?: "modal" | "page";
 }) {
   const toast = useToast();
+  const { locale } = useLocale();
   const router = useRouter();
   const date = target.date.slice(0, 10);
   const { data: existing, isLoading, isError, refetch } = useDayNote(accountId, date);
@@ -57,6 +71,7 @@ export function DayNoteEditor({
   const [html, setHtml] = useState("");
   const [templateId, setTemplateId] = useState(DEFAULT_TEMPLATE_ID);
   const [favorite, setFavorite] = useState(false);
+  const [assignedFolderId, setAssignedFolderId] = useState<string | null>(folderId);
   const [baseline, setBaseline] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -85,10 +100,11 @@ export function DayNoteEditor({
     setHtml(nextHtml);
     setTemplateId(nextTemplate);
     setFavorite(Boolean(existing?.is_favorite));
+    setAssignedFolderId(folderId ?? existing?.folder_id ?? null);
     setBaseline(nextHtml);
     setHydrated(true);
     setRevision((n) => n + 1);
-  }, [existing, isLoading, date, accountId]);
+  }, [existing, isLoading, date, accountId, folderId]);
 
   const saving = upsert.isPending || patch.isPending;
 
@@ -100,6 +116,7 @@ export function DayNoteEditor({
         content: html,
         template_id: templateId,
         is_favorite: favorite,
+        folder_id: assignedFolderId,
       });
       setBaseline(html);
       if (!opts?.quiet) toast.success("Note saved");
@@ -108,7 +125,7 @@ export function DayNoteEditor({
       toast.error("Couldn’t save note", err instanceof Error ? err.message : undefined);
       return null;
     }
-  }, [accountId, date, favorite, html, templateId, toast, upsert]);
+  }, [accountId, assignedFolderId, date, favorite, html, templateId, toast, upsert]);
 
   function applyTemplate(template: NoteTemplate) {
     if (!isNoteContentEmpty(html) && html !== defaultNoteHtml()) {
@@ -222,6 +239,19 @@ export function DayNoteEditor({
     }
   }
 
+  async function moveToFolder(nextId: string | null) {
+    setAssignedFolderId(nextId);
+    setMenuOpen(false);
+    if (!existing) return;
+    try {
+      await patch.mutateAsync({ id: existing.id, folder_id: nextId });
+      toast.success(nextId ? "Moved to folder" : "Removed from folder");
+    } catch {
+      setAssignedFolderId(existing.folder_id ?? null);
+      toast.error("Couldn’t move note");
+    }
+  }
+
   async function deleteNote() {
     if (!existing) {
       setHtml(defaultNoteHtml());
@@ -240,69 +270,121 @@ export function DayNoteEditor({
     }
   }
 
-  const editor = (
-    <div className="relative flex min-h-0 flex-1 flex-col bg-[var(--color-surface)]">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-5">
-        <h2 id="day-note-title" className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-          Day view
-        </h2>
-        <div className="flex flex-wrap items-center justify-end gap-1.5">
-          <NoteTemplateSelector currentId={templateId} onSelect={applyTemplate} />
-          {variant === "modal" ? (
-            <button
-              type="button"
-              onClick={() => void openNotebook()}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[12px] font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-primary-very-light)]"
-            >
-              View in Notebook
-              <ExternalLink className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => void toggleFavorite()}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]"
-            aria-label={favorite ? "Unstar note" : "Star note"}
-          >
-            <Star
-              className="h-4 w-4"
-              strokeWidth={1.75}
-              fill={favorite ? "currentColor" : "none"}
-              style={favorite ? { color: "#F3C623" } : undefined}
-            />
-          </button>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setMenuOpen((v) => !v)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]"
-              aria-label="More"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-            {menuOpen ? (
-              <div className="absolute right-0 z-30 mt-1 w-36 overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-[var(--shadow-dropdown)]">
+  const created = formatNoteStamp(existing?.created_at, locale);
+  const updated = formatNoteStamp(existing?.updated_at, locale);
+  const page = variant === "page";
+
+  const actions = (
+    <div className="flex flex-wrap items-center justify-end gap-1.5">
+      {page ? null : <NoteTemplateSelector currentId={templateId} onSelect={applyTemplate} />}
+      {variant === "modal" ? (
+        <button
+          type="button"
+          onClick={() => void openNotebook()}
+          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[12px] font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-primary-very-light)]"
+        >
+          View in Notebook
+          <ExternalLink className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
+        </button>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => void toggleFavorite()}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]"
+        aria-label={favorite ? "Unstar note" : "Star note"}
+      >
+        <Star
+          className="h-4 w-4"
+          strokeWidth={1.75}
+          fill={favorite ? "currentColor" : "none"}
+          style={favorite ? { color: "#F3C623" } : undefined}
+        />
+      </button>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]"
+          aria-label="More"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+        {menuOpen ? (
+          <div className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-[var(--shadow-dropdown)]">
+            {folders.length ? (
+              <>
+                <p className="px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">
+                  Move to folder
+                </p>
                 <button
                   type="button"
-                  onClick={() => void deleteNote()}
-                  className="block w-full px-3 py-1.5 text-left text-[12px] text-negative hover:bg-[var(--color-danger-bg)]"
+                  onClick={() => void moveToFolder(null)}
+                  className="block w-full px-3 py-1.5 text-left text-[12px] hover:bg-[var(--color-primary-very-light)]"
                 >
-                  Delete
+                  Daily Journal
                 </button>
-              </div>
+                {folders.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => void moveToFolder(item.id)}
+                    className="block w-full truncate px-3 py-1.5 text-left text-[12px] hover:bg-[var(--color-primary-very-light)]"
+                  >
+                    {item.name}
+                    {assignedFolderId === item.id ? " ✓" : ""}
+                  </button>
+                ))}
+                <div className="my-1 h-px bg-[var(--color-border)]" />
+              </>
             ) : null}
-          </div>
-          {onClose ? (
             <button
               type="button"
-              onClick={requestClose}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]"
-              aria-label="Close"
+              onClick={() => void deleteNote()}
+              className="block w-full px-3 py-1.5 text-left text-[12px] text-negative hover:bg-[var(--color-danger-bg)]"
             >
-              <X className="h-4 w-4" />
+              Delete
+            </button>
+          </div>
+        ) : null}
+      </div>
+      {onClose ? (
+        <button
+          type="button"
+          onClick={requestClose}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      ) : null}
+    </div>
+  );
+
+  const editor = (
+    <div className="relative flex min-h-0 flex-1 flex-col bg-[var(--color-surface)]">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-3 py-3 sm:px-5">
+        <div className="flex min-w-0 items-center gap-1.5">
+          {page && onToggleFolders ? (
+            <button
+              type="button"
+              onClick={onToggleFolders}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]"
+              aria-label="Toggle folders"
+            >
+              <PanelLeft className="h-4 w-4" strokeWidth={1.75} />
             </button>
           ) : null}
+          {page ? <CalendarDays className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]" strokeWidth={1.75} /> : null}
+          <h2 id="day-note-title" className="truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+            {page ? target.title : "Day view"}
+          </h2>
+          {page && assignedFolderId ? (
+            <span className="hidden max-w-[140px] truncate rounded-full bg-[var(--color-primary-very-light)] px-2 py-0.5 text-[10px] font-medium text-primary sm:inline">
+              {folders.find((item) => item.id === assignedFolderId)?.name ?? "Folder"}
+            </span>
+          ) : null}
         </div>
+        {actions}
       </header>
 
       {isLoading || !hydrated ? (
@@ -319,14 +401,29 @@ export function DayNoteEditor({
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="shrink-0 px-4 pb-3 sm:px-5">
-            <DaySummaryCard
-              title={target.title}
-              pnl={target.pnl}
-              trades={target.trades}
-              winRate={target.winRate}
-              formatMoney={formatMoney}
-            />
+          <div className="shrink-0 space-y-3 px-4 pb-3 sm:px-5">
+            {page ? (
+              <>
+                <p className="text-[15px] font-semibold tabular-nums" style={{ color: pnlHex(target.pnl) }}>
+                  Net P&L {formatNetPnl(target.pnl, formatMoney)}
+                </p>
+                <p className="text-[11px] text-[var(--color-text-tertiary)]">
+                  Created: {created ?? "--"}
+                  <span className="mx-2 text-[var(--color-text-muted)]">·</span>
+                  Last updated: {updated ?? "--"}
+                </p>
+                <NotebookDayPerformance day={target.day} formatMoney={formatMoney} />
+                <NotebookTemplatePills currentId={templateId} onSelect={applyTemplate} />
+              </>
+            ) : (
+              <DaySummaryCard
+                title={target.title}
+                pnl={target.pnl}
+                trades={target.trades}
+                winRate={target.winRate}
+                formatMoney={formatMoney}
+              />
+            )}
           </div>
           <RichNoteEditor
             html={html}
@@ -335,7 +432,13 @@ export function DayNoteEditor({
             fullscreen={fullscreen}
             onToggleFullscreen={() => setFullscreen((v) => !v)}
           />
-          <div className="max-h-[38%] shrink-0 overflow-y-auto overscroll-contain border-t border-[var(--color-border)] px-4 py-3 sm:px-5">
+          <div
+            className={
+              page
+                ? "shrink-0 border-t border-[var(--color-border)] px-4 py-2 sm:px-5"
+                : "max-h-[38%] shrink-0 overflow-y-auto overscroll-contain border-t border-[var(--color-border)] px-4 py-3 sm:px-5"
+            }
+          >
             <input
               ref={fileRef}
               type="file"
@@ -350,6 +453,7 @@ export function DayNoteEditor({
             <ScreenshotGrid
               urls={existing?.screenshot_urls ?? []}
               max={5}
+              compact={page}
               uploading={uploadShot.isPending}
               canAdd={!uploadShot.isPending && !saving}
               onAdd={() => fileRef.current?.click()}

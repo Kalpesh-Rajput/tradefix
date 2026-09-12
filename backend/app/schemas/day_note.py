@@ -22,6 +22,7 @@ class DayNoteUpsert(BaseModel):
     content: str = ""
     template_id: str = Field(default="day-journal", max_length=64)
     is_favorite: bool | None = None
+    folder_id: uuid.UUID | None = None
 
     @field_validator("content")
     @classmethod
@@ -39,6 +40,7 @@ class DayNoteUpdate(BaseModel):
     content: str | None = None
     template_id: str | None = Field(default=None, max_length=64)
     is_favorite: bool | None = None
+    folder_id: uuid.UUID | None = None
 
     @field_validator("content")
     @classmethod
@@ -56,6 +58,7 @@ class DayNoteResponse(BaseModel):
     content: str
     screenshot_urls: list[str] = Field(default_factory=list)
     is_favorite: bool
+    folder_id: uuid.UUID | None = None
     created_at: datetime
     updated_at: datetime
 

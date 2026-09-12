@@ -75,6 +75,7 @@ class User(Base):
     mood_checkins: Mapped[list["MoodCheckin"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     daily_recaps: Mapped[list["DailyRecap"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     day_notes: Mapped[list["DayNote"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    notebook_folders: Mapped[list["NotebookFolder"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     daily_checkins: Mapped[list["DailyCheckin"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     prop_settings: Mapped[list["PropSettings"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     insights: Mapped[list["Insight"]] = relationship(back_populates="user", cascade="all, delete-orphan")

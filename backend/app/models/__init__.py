@@ -3,6 +3,7 @@ from app.models.agent_run import AgentRun
 from app.models.daily_checkin import DailyCheckin
 from app.models.daily_recap import DailyRecap
 from app.models.day_note import DayNote
+from app.models.notebook_folder import NotebookFolder
 from app.models.insight import Insight
 from app.models.mentor import MentorAccess, TradeComment
 from app.models.mood import MoodCheckin
@@ -24,6 +25,7 @@ __all__ = [
     "MoodCheckin",
     "DailyRecap",
     "DayNote",
+    "NotebookFolder",
     "DailyCheckin",
     "PropSettings",
     "MentorAccess",

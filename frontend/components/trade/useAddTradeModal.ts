@@ -11,7 +11,18 @@ interface AddTradeModalState {
   tradeId: string | null;
   /** Passed into BrokerConnectWizard when opening the broker tab from the flow. */
   initialBrokerId: string | null;
-  openModal: (tab?: AddTradeTab, opts?: { initialBrokerId?: string | null }) => void;
+  /** Prefill the MT5/trade server field. */
+  initialServer: string | null;
+  /** Newly created account to preselect on the Add Trade form. */
+  initialAccountId: string | null;
+  openModal: (
+    tab?: AddTradeTab,
+    opts?: {
+      initialBrokerId?: string | null;
+      initialAccountId?: string | null;
+      initialServer?: string | null;
+    }
+  ) => void;
   openEdit: (tradeId: string) => void;
   openFlow: () => void;
   closeFlow: () => void;
@@ -29,6 +40,8 @@ const useAddTradeModalStore = create<AddTradeModalState>((set) => ({
   tab: "manual",
   tradeId: null,
   initialBrokerId: null,
+  initialServer: null,
+  initialAccountId: null,
   openModal: (tab = "manual", opts) =>
     set({
       open: true,
@@ -36,12 +49,30 @@ const useAddTradeModalStore = create<AddTradeModalState>((set) => ({
       tab,
       tradeId: null,
       initialBrokerId: opts?.initialBrokerId ?? null,
+      initialServer: opts?.initialServer ?? null,
+      initialAccountId: opts?.initialAccountId ?? null,
     }),
   openEdit: (tradeId) =>
-    set({ open: true, flowOpen: false, tab: "manual", tradeId, initialBrokerId: null }),
+    set({
+      open: true,
+      flowOpen: false,
+      tab: "manual",
+      tradeId,
+      initialBrokerId: null,
+      initialServer: null,
+      initialAccountId: null,
+    }),
   openFlow: () =>
-    set({ flowOpen: true, open: false, tradeId: null, initialBrokerId: null }),
+    set({
+      flowOpen: true,
+      open: false,
+      tradeId: null,
+      initialBrokerId: null,
+      initialServer: null,
+      initialAccountId: null,
+    }),
   closeFlow: () => set({ flowOpen: false }),
-  closeModal: () => set({ open: false, tradeId: null, initialBrokerId: null }),
+  closeModal: () =>
+    set({ open: false, tradeId: null, initialBrokerId: null, initialServer: null, initialAccountId: null }),
   setTab: (tab) => set({ tab }),
 }));

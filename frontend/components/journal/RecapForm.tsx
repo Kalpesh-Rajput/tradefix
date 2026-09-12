@@ -47,6 +47,8 @@ export function RecapForm({
   existing,
   dayPnl,
   saving,
+  tone = "journal",
+  onDirtyChange,
   onSave,
   onDelete,
   onUploadScreenshot,
@@ -57,6 +59,8 @@ export function RecapForm({
   existing: DailyRecap | null;
   dayPnl: DayPnlSummary | undefined;
   saving?: boolean;
+  tone?: "journal" | "notebook";
+  onDirtyChange?: (dirty: boolean) => void;
   onSave: (values: RecapFormValues, pendingShots: File[]) => Promise<void>;
   onDelete?: () => Promise<void>;
   onUploadScreenshot?: (file: File, onProgress?: (p: number) => void) => Promise<void>;
@@ -86,6 +90,11 @@ export function RecapForm({
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const light = tone === "notebook";
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   // Sync when switching entries / computed P&L updates (and form not dirty)
   useEffect(() => {
@@ -262,21 +271,40 @@ export function RecapForm({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 pb-4 pt-2">
+    <div className={clsx("mx-auto flex w-full max-w-3xl flex-col gap-8 pb-4 pt-2", light && "gap-6")}>
       <header>
-        <h2 className="text-[1.875rem] font-semibold leading-tight tracking-tight text-white sm:text-[2rem]">
-          Journal
-        </h2>
-        <p className="mt-3 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+        {light ? null : (
+          <h2 className="text-[1.875rem] font-semibold leading-tight tracking-tight text-white sm:text-[2rem]">
+            Journal
+          </h2>
+        )}
+        <p
+          className={clsx(
+            "text-[11px] font-medium uppercase tracking-wider",
+            light ? "text-[var(--color-text-muted)]" : "mt-3 text-zinc-500"
+          )}
+        >
           Recap #{recapNumber}
         </p>
-        <p className="mt-1.5 text-xl font-semibold tracking-tight text-white">{dateLabel}</p>
+        <p
+          className={clsx(
+            "font-semibold tracking-tight",
+            light ? "mt-1 text-[18px] text-[var(--color-text-primary)]" : "mt-1.5 text-xl text-white"
+          )}
+        >
+          {dateLabel}
+        </p>
       </header>
 
       {/* P&L Summary */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+          <h3
+            className={clsx(
+              "text-[11px] font-medium uppercase tracking-wider",
+              light ? "text-[var(--color-text-muted)]" : "text-zinc-500"
+            )}
+          >
             P&amp;L Summary
           </h3>
           <button
@@ -295,7 +323,9 @@ export function RecapForm({
               "rounded-md px-2.5 py-1 text-xs font-medium transition",
               pnlOverride
                 ? "bg-primary/20 text-primary"
-                : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                : light
+                  ? "text-[var(--color-text-tertiary)] hover:bg-[var(--color-primary-very-light)] hover:text-[var(--color-text-primary)]"
+                  : "text-zinc-400 hover:bg-white/5 hover:text-white"
             )}
           >
             {pnlOverride ? "Using override" : "Override P&L"}
@@ -307,6 +337,7 @@ export function RecapForm({
             value={displayGross}
             formatMoney={formatMoney}
             editable={pnlOverride}
+            light={light}
             onChange={(n) => {
               markDirty();
               setGrossPnl(n);
@@ -318,21 +349,29 @@ export function RecapForm({
             formatMoney={formatMoney}
             forceNegative
             editable={pnlOverride}
+            light={light}
             onChange={(n) => {
               markDirty();
               setFees(Math.abs(n));
             }}
           />
-          <PnlCard label="Net P&L" value={displayNet} formatMoney={formatMoney} />
+          <PnlCard label="Net P&L" value={displayNet} formatMoney={formatMoney} light={light} />
         </div>
         {!pnlOverride && (dayPnl?.trade_count ?? existing?.trade_count ?? 0) === 0 && (
-          <p className="mt-2 text-xs text-zinc-600">No closed trades for this day — totals are $0.</p>
+          <p className={clsx("mt-2 text-xs", light ? "text-[var(--color-text-tertiary)]" : "text-zinc-600")}>
+            No closed trades for this day — totals are $0.
+          </p>
         )}
       </section>
 
       {/* Mood */}
       <section>
-        <h3 className="mb-3 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+        <h3
+          className={clsx(
+            "mb-3 text-[11px] font-medium uppercase tracking-wider",
+            light ? "text-[var(--color-text-muted)]" : "text-zinc-500"
+          )}
+        >
           How did today go?
         </h3>
         <div className="grid grid-cols-3 gap-3">
@@ -348,9 +387,10 @@ export function RecapForm({
                 }}
                 className={clsx(
                   "flex flex-col items-center gap-2 rounded-xl border px-3 py-5 transition",
-                  active
-                    ? "border-white/40 bg-white/[0.06] text-white"
-                    : "border-white/[0.08] bg-transparent text-zinc-400 hover:border-white/20 hover:text-zinc-200"
+                  active && light && "border-primary/40 bg-[var(--color-primary-light)] text-primary",
+                  active && !light && "border-white/40 bg-white/[0.06] text-white",
+                  !active && light && "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]",
+                  !active && !light && "border-white/[0.08] bg-transparent text-zinc-400 hover:border-white/20 hover:text-zinc-200"
                 )}
               >
                 <span className="text-2xl" aria-hidden>
@@ -366,10 +406,17 @@ export function RecapForm({
       {/* Work on tags */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+          <h3
+            className={clsx(
+              "text-[11px] font-medium uppercase tracking-wider",
+              light ? "text-[var(--color-text-muted)]" : "text-zinc-500"
+            )}
+          >
             What to work on
           </h3>
-          <span className="text-[10px] text-zinc-600">multi-select</span>
+          <span className={clsx("text-[10px]", light ? "text-[var(--color-text-muted)]" : "text-zinc-600")}>
+            multi-select
+          </span>
         </div>
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => {
@@ -381,9 +428,10 @@ export function RecapForm({
                 onClick={() => toggleTag(tag)}
                 className={clsx(
                   "rounded-lg border px-3 py-1.5 text-xs transition",
-                  active
-                    ? "border-white/50 bg-white/[0.08] text-white"
-                    : "border-white/[0.08] bg-zinc-900/60 text-zinc-400 hover:border-white/20 hover:text-zinc-200"
+                  active && light && "border-primary/40 bg-[var(--color-primary-light)] text-primary",
+                  active && !light && "border-white/50 bg-white/[0.08] text-white",
+                  !active && light && "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]",
+                  !active && !light && "border-white/[0.08] bg-zinc-900/60 text-zinc-400 hover:border-white/20 hover:text-zinc-200"
                 )}
               >
                 {tag}
@@ -412,7 +460,12 @@ export function RecapForm({
 
       {/* Reflection */}
       <section>
-        <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+        <h3
+          className={clsx(
+            "mb-2 text-[11px] font-medium uppercase tracking-wider",
+            light ? "text-[var(--color-text-muted)]" : "text-zinc-500"
+          )}
+        >
           Reflection
         </h3>
         <Textarea
@@ -433,7 +486,7 @@ export function RecapForm({
         <ScreenshotGrid
           urls={savedUrls}
           pending={pendingShots.map((shot) => ({ id: shot.id, src: shot.preview, label: shot.file.name }))}
-          tone="dark"
+          tone={light ? "light" : "dark"}
           max={MAX_SHOTS}
           uploading={uploading}
           canAdd={!uploading && totalShots < MAX_SHOTS}
@@ -445,7 +498,14 @@ export function RecapForm({
       </section>
 
       {/* Footer actions */}
-      <div className="sticky bottom-0 z-10 -mx-4 border-t border-white/[0.06] bg-zinc-950/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8">
+      <div
+        className={clsx(
+          "sticky bottom-0 z-10 px-4 py-3 backdrop-blur sm:px-5",
+          light
+            ? "-mx-4 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 sm:-mx-5"
+            : "-mx-4 border-t border-white/[0.06] bg-zinc-950/95 sm:-mx-8 sm:px-8"
+        )}
+      >
         <div className="flex items-center gap-2">
           <Button
             className="flex-1"
@@ -486,6 +546,7 @@ function PnlCard({
   formatMoney,
   editable,
   forceNegative,
+  light,
   onChange,
 }: {
   label: string;
@@ -493,27 +554,42 @@ function PnlCard({
   formatMoney: (n: number, opts?: { signed?: boolean }) => string;
   editable?: boolean;
   forceNegative?: boolean;
+  light?: boolean;
   onChange?: (n: number) => void;
 }) {
   const display = forceNegative ? -Math.abs(value) : value;
+  const shell = light
+    ? "rounded-xl border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3"
+    : "rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-3";
+  const caption = light
+    ? "text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]"
+    : "text-[10px] uppercase tracking-wider text-zinc-500";
   if (editable && onChange) {
     return (
-      <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-3">
-        <p className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</p>
+      <div className={shell}>
+        <p className={caption}>{label}</p>
         <Input
           type="number"
           step="0.01"
           value={Number.isFinite(value) ? value : 0}
           onChange={(e) => onChange(Number(e.target.value) || 0)}
-          className={clsx("mt-1 !border-0 !bg-transparent !px-0 !py-0 font-mono text-lg", moneyColor(display))}
+          className={clsx(
+            "mt-1 !border-0 !bg-transparent !px-0 !py-0 font-mono text-lg",
+            light ? (display >= 0 ? "text-[#2F9E6A]" : "text-[#E35D68]") : moneyColor(display)
+          )}
         />
       </div>
     );
   }
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-3">
-      <p className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</p>
-      <p className={clsx("mt-1 font-mono text-lg tabular-nums", moneyColor(display))}>
+    <div className={shell}>
+      <p className={caption}>{label}</p>
+      <p
+        className={clsx(
+          "mt-1 font-mono text-lg tabular-nums",
+          light ? (display >= 0 ? "text-[#2F9E6A]" : "text-[#E35D68]") : moneyColor(display)
+        )}
+      >
         {formatMoney(display)}
       </p>
     </div>

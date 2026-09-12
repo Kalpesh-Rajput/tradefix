@@ -25,6 +25,7 @@ export function ScreenshotGrid({
   tone = "light",
   emptyHint = "Drop charts here or click to browse",
   addLabel = "Add",
+  compact = false,
 }: {
   urls: string[];
   pending?: PendingShot[];
@@ -37,6 +38,7 @@ export function ScreenshotGrid({
   tone?: "light" | "dark";
   emptyHint?: string;
   addLabel?: string;
+  compact?: boolean;
 }) {
   const [index, setIndex] = useState<number | null>(null);
   const viewUrls = useMemo(() => [...pending.map((p) => p.src), ...urls], [pending, urls]);
@@ -51,12 +53,12 @@ export function ScreenshotGrid({
     ? "absolute right-1.5 top-1.5 rounded bg-black/70 p-1.5 text-white opacity-0 transition group-hover:opacity-100"
     : "absolute right-1.5 top-1.5 rounded bg-[var(--color-text-primary)]/70 p-1.5 text-white opacity-0 transition group-hover:opacity-100";
   const empty = dark
-    ? "flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-10 text-zinc-500 transition hover:border-white/30 hover:text-zinc-300 disabled:opacity-40"
-    : "flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--color-border)] py-8 text-[var(--color-text-tertiary)] transition hover:border-[var(--color-border-light)] hover:text-[var(--color-text-secondary)] disabled:opacity-40";
+    ? `flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 text-zinc-500 transition hover:border-white/30 hover:text-zinc-300 disabled:opacity-40 ${compact ? "py-4" : "py-10"}`
+    : `flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--color-border)] text-[var(--color-text-tertiary)] transition hover:border-[var(--color-border-light)] hover:text-[var(--color-text-secondary)] disabled:opacity-40 ${compact ? "py-3" : "py-8"}`;
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className={clsx("flex items-center justify-between gap-2", compact ? "mb-1.5" : "mb-3")}>
         <div>
           <h3
             className={clsx(
@@ -94,12 +96,16 @@ export function ScreenshotGrid({
           <span className="text-[12px]">{emptyHint}</span>
         </button>
       ) : (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className={clsx("grid gap-2", compact ? "grid-cols-5" : "grid-cols-2 sm:grid-cols-3")}>
           {pending.map((shot, i) => (
             <div key={shot.id} className={tile}>
               <button type="button" className="block w-full" onClick={() => setIndex(i)} aria-label="View screenshot">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={shot.src} alt={shot.label || "Pending screenshot"} className="h-28 w-full object-cover sm:h-32" />
+                <img
+                  src={shot.src}
+                  alt={shot.label || "Pending screenshot"}
+                  className={clsx("w-full object-cover", compact ? "h-16" : "h-28 sm:h-32")}
+                />
               </button>
               <span className="absolute left-1.5 top-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
                 Pending
@@ -127,7 +133,7 @@ export function ScreenshotGrid({
                   aria-label="View screenshot"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt="Screenshot" className="h-28 w-full object-cover sm:h-32" />
+                  <img src={src} alt="Screenshot" className={clsx("w-full object-cover", compact ? "h-16" : "h-28 sm:h-32")} />
                 </button>
                 {onDelete ? (
                   <button

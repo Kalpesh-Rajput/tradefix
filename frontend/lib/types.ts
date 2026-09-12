@@ -2,6 +2,7 @@ export type AssetType = "stock" | "option" | "future" | "forex" | "crypto";
 export type TradeSide = "long" | "short";
 export type TradeStatus = "open" | "closed";
 export type PnlDisplayMode = "net" | "gross";
+export type AccountSource = "dummy" | "broker";
 
 export interface Account {
   id: string;
@@ -12,6 +13,9 @@ export interface Account {
   pnl_display_mode: PnlDisplayMode;
   default_fee_per_trade: number;
   is_default: boolean;
+  source: AccountSource;
+  broker_id?: string | null;
+  broker_name?: string | null;
   trade_count: number;
 }
 
@@ -23,6 +27,9 @@ export interface AccountInput {
   pnl_display_mode?: PnlDisplayMode;
   default_fee_per_trade?: number;
   is_default?: boolean;
+  source?: AccountSource;
+  broker_id?: string | null;
+  broker_name?: string | null;
 }
 
 export interface AccountUpdateInput {
@@ -672,6 +679,7 @@ export interface DayNote {
   content: string;
   screenshot_urls: string[];
   is_favorite: boolean;
+  folder_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -682,4 +690,14 @@ export interface DayNoteInput {
   content: string;
   template_id: string;
   is_favorite?: boolean;
+  folder_id?: string | null;
+}
+
+export interface NotebookFolder {
+  id: string;
+  account_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 }

@@ -28,6 +28,7 @@ _CURRENCIES = {
     "AED",
 }
 _PNL_MODES = {"net", "gross"}
+_ACCOUNT_SOURCES = {"dummy", "broker"}
 
 
 class AccountCreate(BaseModel):
@@ -38,6 +39,9 @@ class AccountCreate(BaseModel):
     pnl_display_mode: str = Field(default="net", max_length=16)
     default_fee_per_trade: Decimal = Field(default=Decimal("0"))
     is_default: bool = False
+    source: str = Field(default="dummy", max_length=16)
+    broker_id: str | None = Field(default=None, max_length=64)
+    broker_name: str | None = Field(default=None, max_length=255)
 
     @field_validator("name")
     @classmethod
@@ -70,6 +74,22 @@ class AccountCreate(BaseModel):
         if cleaned not in _PNL_MODES:
             raise ValueError("Invalid P&L display mode")
         return cleaned
+
+    @field_validator("source")
+    @classmethod
+    def validate_source(cls, value: str) -> str:
+        cleaned = value.strip().lower()
+        if cleaned not in _ACCOUNT_SOURCES:
+            raise ValueError("Invalid account source")
+        return cleaned
+
+    @field_validator("broker_id", "broker_name")
+    @classmethod
+    def clean_optional(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
 
     @field_validator("initial_balance", "default_fee_per_trade")
     @classmethod
@@ -134,6 +154,9 @@ class AccountResponse(BaseModel):
     pnl_display_mode: str
     default_fee_per_trade: Decimal
     is_default: bool
+    source: str = "dummy"
+    broker_id: str | None = None
+    broker_name: str | None = None
     trade_count: int = 0
 
     model_config = {"from_attributes": True}

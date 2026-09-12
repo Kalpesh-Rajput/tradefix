@@ -25,6 +25,9 @@ class DayNote(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False, default="")
     screenshot_urls: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     is_favorite: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    folder_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("notebook_folders.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -32,3 +35,4 @@ class DayNote(Base):
 
     user: Mapped["User"] = relationship(back_populates="day_notes")
     account: Mapped["Account"] = relationship(back_populates="day_notes")
+    folder: Mapped["NotebookFolder | None"] = relationship(back_populates="day_notes")

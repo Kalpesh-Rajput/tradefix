@@ -244,9 +244,7 @@ Useful checks:
 
 Use this only if you need a quick look while **your computer stays on**. Not a real always-on deploy.
 
-1. Run backend and frontend locally as usual (see root `README.md`).
-2. Expose your machine with [ngrok](https://ngrok.com) (or Cloudflare Tunnel).
-3. Send the temporary URL.
+Full instructions: **[NGROK.md](./NGROK.md)**.
 
 Prefer **Neon + Render + Vercel** if your brother should open the app anytime without your PC running.
 

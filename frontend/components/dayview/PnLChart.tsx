@@ -21,15 +21,17 @@ const LINE = "#4A4D57";
 export function PnLChart({
   values,
   formatMoney,
+  className,
 }: {
   values: number[];
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
+  className?: string;
 }) {
   const gid = useId().replace(/:/g, "");
   const series = useMemo(() => buildSeries(values), [values]);
 
   return (
-    <div className="h-[148px] w-full min-w-0 sm:w-[42%] sm:max-w-[420px] sm:shrink-0">
+    <div className={className ?? "h-[148px] w-full min-w-0 sm:w-[42%] sm:max-w-[420px] sm:shrink-0"}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={series} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
           <defs>

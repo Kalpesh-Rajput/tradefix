@@ -20,7 +20,12 @@ import { Button } from "@/components/ui/Button";
 import { Input, PasswordInput } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { CONNECTORS_URL, ConnectorsApiError } from "@/lib/connectors/api";
-import type { BrokerCatalogItem, BrokerConnectPayload } from "@/lib/connectors/types";
+import { MT5_SERVERS, tradeServerHintsFor } from "@/lib/brokers/mt5-servers";
+import type {
+  BrokerCatalogItem,
+  BrokerConnectPayload,
+  ConnectResponse,
+} from "@/lib/connectors/types";
 import { useBrokerCatalog, useBrokerConnect, useBrokerDisconnect, useBrokerSync } from "@/lib/hooks/useBroker";
 
 type WizardStep = "pick" | "credentials" | "connected";
@@ -35,13 +40,17 @@ type FieldKey =
   | "symbols";
 
 const FIELD_META: Record<FieldKey, { label: string; hint?: string; placeholder?: string }> = {
-  login: { label: "Account login", placeholder: "12345678" },
+  login: { label: "Login ID", placeholder: "12345678" },
   password: {
     label: "Investor password",
     hint: "Use the read-only investor password, not your trading password.",
     placeholder: "••••••••",
   },
-  server: { label: "Server", hint: "Must match exactly what you see in MetaTrader 5.", placeholder: "Exness-MT5Real" },
+  server: {
+    label: "Server",
+    hint: "Copy the exact name from MetaTrader 5 → File → Login to Trade Account.",
+    placeholder: "FundingPips2-SIM",
+  },
   api_key: { label: "API key", placeholder: "Your read-only API key" },
   api_secret: { label: "API secret", placeholder: "Your API secret" },
   passphrase: { label: "Passphrase", placeholder: "API passphrase" },
@@ -106,12 +115,24 @@ interface BrokerConnectWizardProps {
   className?: string;
   /** When set and no active connection, skip broker pick and open credentials. */
   initialBrokerId?: string | null;
+  /** Prefill the trade-server field on the credentials form. */
+  initialServer?: string | null;
+  /** Company picked in Add Trades (shown above login). */
+  companyLabel?: string | null;
+  /** Render inside Add Trades: skip stored connection and the inner back button. */
+  embedded?: boolean;
+  /** Called after a successful Connectors login so the journal account can be created. */
+  onConnected?: (res: ConnectResponse) => void | Promise<void>;
 }
 
 export function BrokerConnectWizard({
   compact = false,
   className,
   initialBrokerId = null,
+  initialServer = null,
+  companyLabel = null,
+  embedded = false,
+  onConnected,
 }: BrokerConnectWizardProps) {
   const toast = useToast();
   const { logout } = useAuth();
@@ -130,11 +151,15 @@ export function BrokerConnectWizard({
   const syncMutation = useBrokerSync();
   const disconnectMutation = useBrokerDisconnect();
 
-  const [step, setStep] = useState<WizardStep>(() => (connection ? "connected" : "pick"));
+  const [step, setStep] = useState<WizardStep>(() => {
+    if (embedded) return initialBrokerId ? "credentials" : "pick";
+    return connection ? "connected" : "pick";
+  });
   const [selectedBrokerId, setSelectedBrokerId] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
   const [importToJournal, setImportToJournal] = useState(true);
   const [preselectApplied, setPreselectApplied] = useState(false);
+  const [sessionConnected, setSessionConnected] = useState(false);
 
   const brokers = useMemo(
     () => (catalogQuery.data?.brokers ?? []).filter((b) => b.implemented),
@@ -153,20 +178,22 @@ export function BrokerConnectWizard({
   }
 
   useEffect(() => {
+    if (embedded && !sessionConnected) return;
     if (connection && step !== "credentials") {
       setStep("connected");
     }
-  }, [connection, step]);
+  }, [connection, embedded, sessionConnected, step]);
 
   useEffect(() => {
-    if (preselectApplied || connection || !initialBrokerId || brokers.length === 0) return;
+    if (preselectApplied || !initialBrokerId || brokers.length === 0) return;
+    if (!embedded && connection) return;
     const match = brokers.find((b) => b.id === initialBrokerId);
     if (!match) return;
     setSelectedBrokerId(match.id);
-    setFields({});
+    setFields(initialServer ? { server: initialServer } : {});
     setStep("credentials");
     setPreselectApplied(true);
-  }, [brokers, connection, initialBrokerId, preselectApplied]);
+  }, [brokers, connection, embedded, initialBrokerId, initialServer, preselectApplied]);
 
   async function onSwitchBroker() {
     if (connection) {
@@ -186,7 +213,9 @@ export function BrokerConnectWizard({
       return;
     }
     setSelectedBrokerId(broker.id);
-    setFields({});
+    setFields(
+      broker.id === initialBrokerId && initialServer ? { server: initialServer } : {}
+    );
     setStep("credentials");
   }
 
@@ -198,6 +227,12 @@ export function BrokerConnectWizard({
         payload: buildPayload(selectedBroker.id, fields),
         brokerName: selectedBroker.name,
       });
+      setSessionConnected(true);
+      try {
+        if (onConnected) await onConnected(res);
+      } catch (err) {
+        toast.error("Broker connected, but the journal account could not be saved", brokerErrorMessage(err));
+      }
       toast.success(
         "Broker connected",
         `${selectedBroker.name} · ${res.account.currency} ${res.account.balance.toFixed(2)}`
@@ -373,33 +408,61 @@ export function BrokerConnectWizard({
   if (step === "credentials" && selectedBroker) {
     return (
       <div className={clsx("space-y-5", compact && "mx-auto max-w-lg", className)}>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setStep("pick")}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div className="flex items-center gap-3">
-            <BrokerIcon name={selectedBroker.name} size={32} />
-            <div>
-              <p className="font-semibold text-foreground">{selectedBroker.name}</p>
-              <p className="text-xs text-muted">
-                {brokerCategoryLabel(selectedBroker.id)} · read-only
+        {embedded ? (
+          <div className="text-center">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted">Add Trades</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              Connect {selectedBroker.name}
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              Enter your login, investor password, and server to sync trades.
+            </p>
+            {companyLabel ? (
+              <p className="mt-3 text-sm text-foreground">
+                Server: <span className="font-medium">{companyLabel}</span>
               </p>
-            </div>
+            ) : null}
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setStep("pick")}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <div className="flex items-center gap-3">
+                <BrokerIcon name={selectedBroker.name} size={32} />
+                <div>
+                  <p className="font-semibold text-foreground">{selectedBroker.name}</p>
+                  <p className="text-xs text-muted">
+                    {brokerCategoryLabel(selectedBroker.id)} · read-only
+                  </p>
+                </div>
+              </div>
+            </div>
+            <StepHeader
+              step={2}
+              total={totalSteps}
+              title={`Connect ${selectedBroker.name}`}
+              subtitle={
+                initialServer
+                  ? "Enter account login, investor password, and confirm the server to sync trades."
+                  : selectedBroker.notes
+              }
+            />
+          </>
+        )}
 
-        <StepHeader
-          step={2}
-          total={totalSteps}
-          title={`Connect ${selectedBroker.name}`}
-          subtitle={selectedBroker.notes}
-        />
+        {embedded && !authenticated ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/90">
+            Broker access links when you sign in. Sign out and back in once if this is your first time.
+          </div>
+        ) : null}
 
-        <form onSubmit={onConnect} className="space-y-4 rounded-xl border border-border bg-surface/40 p-5">
+        <form onSubmit={onConnect} className="space-y-4 rounded-xl border border-border bg-card p-5">
           {selectedBroker.fields.map((field) => {
             const key = field as FieldKey;
             const meta = FIELD_META[key] ?? { label: field };
@@ -440,26 +503,49 @@ export function BrokerConnectWizard({
               );
             }
 
-            if (key === "server" && selectedBroker.server_hints.length > 0) {
+            if (key === "server") {
+              const isMt5 = selectedBroker.kind === "mt5" || selectedBroker.id === "mt5" || selectedBroker.id === "exness";
+              const hintOptions = Array.from(
+                new Set(
+                  [
+                    ...tradeServerHintsFor(initialServer),
+                    ...tradeServerHintsFor(fields.server),
+                    initialServer,
+                    ...(isMt5 ? MT5_SERVERS : selectedBroker.server_hints),
+                    fields.server,
+                  ]
+                    .map((item) => item?.trim())
+                    .filter((item): item is string => Boolean(item))
+                )
+              );
               return (
                 <div key={key}>
                   <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted">
                     {meta.label}
                   </label>
-                  <select
+                  <Input
+                    list="broker-server-hints"
                     value={fields.server ?? ""}
                     onChange={(e) => updateField("server", e.target.value)}
-                    className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary"
                     required
-                  >
-                    <option value="">Select server…</option>
-                    {selectedBroker.server_hints.map((hint) => (
-                      <option key={hint} value={hint}>
-                        {hint}
-                      </option>
-                    ))}
-                  </select>
-                  {meta.hint && <p className="mt-1 text-xs text-muted">{meta.hint}</p>}
+                    autoComplete="off"
+                    placeholder={meta.placeholder}
+                  />
+                  {hintOptions.length > 0 ? (
+                    <datalist id="broker-server-hints">
+                      {hintOptions.map((hint) => (
+                        <option key={hint} value={hint} />
+                      ))}
+                    </datalist>
+                  ) : null}
+                  {initialServer && tradeServerHintsFor(initialServer).length > 0 ? (
+                    <p className="mt-1 text-xs text-muted">
+                      Selected {initialServer}. If connect fails, use the trade-server name from MT5
+                      (for example {tradeServerHintsFor(initialServer)[0]}).
+                    </p>
+                  ) : meta.hint ? (
+                    <p className="mt-1 text-xs text-muted">{meta.hint}</p>
+                  ) : null}
                 </div>
               );
             }
@@ -482,7 +568,7 @@ export function BrokerConnectWizard({
             );
           })}
 
-          <Button type="submit" disabled={connectMutation.isPending} className="w-full">
+          <Button type="submit" disabled={connectMutation.isPending || !authenticated} className="w-full">
             {connectMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

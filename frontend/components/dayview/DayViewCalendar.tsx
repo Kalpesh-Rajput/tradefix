@@ -14,14 +14,28 @@ export function DayViewCalendar({
   month,
   onMonthChange,
   onSelectDate,
+  onRangeChange,
+  variant = "dayview",
+  selectedDate,
+  rangeFrom,
+  rangeTo,
+  selectMode = "single",
 }: {
   days: CalendarDay[];
   month?: string | null;
   onMonthChange?: (start: string, end: string) => void;
   onSelectDate?: (date: string) => void;
+  onRangeChange?: (from: string, to: string) => void;
+  variant?: "dayview" | "picker";
+  selectedDate?: string | null;
+  rangeFrom?: string | null;
+  rangeTo?: string | null;
+  selectMode?: "single" | "range";
 }) {
   const [cursor, setCursor] = useState(() => monthDate(month));
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(selectedDate ?? null);
+  const [draftFrom, setDraftFrom] = useState<string | null>(rangeFrom ?? null);
+  const [draftTo, setDraftTo] = useState<string | null>(rangeTo ?? null);
 
   useEffect(() => {
     const next = monthDate(month);
@@ -30,9 +44,16 @@ export function DayViewCalendar({
     );
   }, [month]);
 
+  useEffect(() => {
+    setDraftFrom(rangeFrom ?? null);
+    setDraftTo(rangeTo ?? null);
+  }, [rangeFrom, rangeTo]);
+
   const year = cursor.getFullYear();
   const monthIndex = cursor.getMonth();
   const todayKey = localIso(new Date());
+  const from = draftFrom;
+  const to = draftTo ?? draftFrom;
 
   const dayMap = useMemo(() => {
     const map = new Map<string, CalendarDay>();
@@ -62,8 +83,33 @@ export function DayViewCalendar({
     );
   }
 
+  function handleSelect(iso: string) {
+    if (selectMode === "range") {
+      if (!draftFrom || (draftFrom && draftTo)) {
+        setDraftFrom(iso);
+        setDraftTo(null);
+        return;
+      }
+      const start = draftFrom < iso ? draftFrom : iso;
+      const end = draftFrom < iso ? iso : draftFrom;
+      setDraftFrom(start);
+      setDraftTo(end);
+      onRangeChange?.(start, end);
+      return;
+    }
+    setSelected(iso);
+    onSelectDate?.(iso);
+  }
+
   return (
-    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-sm)]">
+    <div
+      className={clsx(
+        "bg-[var(--color-surface)]",
+        variant === "picker"
+          ? "p-0"
+          : "rounded-xl border border-[var(--color-border)] p-3 shadow-[var(--shadow-sm)]"
+      )}
+    >
       <div className="mb-2 flex h-7 items-center justify-between">
         <button
           type="button"
@@ -73,7 +119,7 @@ export function DayViewCalendar({
         >
           <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.75} />
         </button>
-        <h3 className="text-[13px] font-medium text-[var(--color-text-primary)]">{monthLabel(cursor)}</h3>
+        <h3 className="text-[13px] font-semibold text-[var(--color-text-primary)]">{monthLabel(cursor)}</h3>
         <button
           type="button"
           onClick={() => shift(1)}
@@ -92,31 +138,32 @@ export function DayViewCalendar({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1.5">
         {cells.map((cell) => {
-          if (!cell.iso) return <div key={cell.key} className="h-7" />;
+          if (!cell.iso) return <div key={cell.key} className="h-9" />;
           const data = dayMap.get(cell.iso);
           const traded = (data?.trades ?? 0) > 0;
           const pnl = data?.pnl ?? 0;
           const isToday = cell.iso === todayKey;
-          const isSelected = cell.iso === selected;
+          const isSelected = selectMode === "single" && cell.iso === (selectedDate ?? selected);
+          const inRange = Boolean(from && to && cell.iso >= from && cell.iso <= to);
+          const isEdge = cell.iso === from || cell.iso === to;
 
           return (
             <button
               key={cell.key}
               type="button"
-              onClick={() => {
-                setSelected(cell.iso);
-                onSelectDate?.(cell.iso!);
-              }}
+              onClick={() => handleSelect(cell.iso!)}
               className={clsx(
-                "flex h-7 items-center justify-center rounded-[5px] text-[11px] font-medium tabular-nums",
+                "flex h-9 items-center justify-center rounded-lg text-[11px] font-medium tabular-nums",
                 !traded && "text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-very-light)]",
                 traded && pnl > 0 && "bg-[#E8F6EE] text-[#1F7A4D]",
                 traded && pnl < 0 && "bg-[#FDECEE] text-[#C23B3B]",
                 traded && pnl === 0 && "bg-[#F3F4F6] text-[#4A4B52]",
-                isToday && "ring-1 ring-[#C9CBD4]",
-                isSelected && "ring-2 ring-[#5B4696]/35"
+                isToday && !isSelected && !isEdge && "ring-1 ring-[#C9CBD4]",
+                isSelected && "ring-2 ring-primary/45",
+                inRange && !traded && "bg-[var(--color-primary-light)] text-primary",
+                isEdge && "ring-2 ring-primary/55"
               )}
             >
               {cell.day}
@@ -124,6 +171,15 @@ export function DayViewCalendar({
           );
         })}
       </div>
+      {selectMode === "range" ? (
+        <p className="mt-2 text-center text-[10px] text-[var(--color-text-muted)]">
+          {from && to && from !== to
+            ? `${from} → ${to}`
+            : from
+              ? "Select an end date"
+              : "Select a start date"}
+        </p>
+      ) : null}
     </div>
   );
 }

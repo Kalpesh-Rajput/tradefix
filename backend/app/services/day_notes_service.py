@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models.account import Account
 from app.models.day_note import DayNote
+from app.models.notebook_folder import NotebookFolder
 from app.models.user import User
 from app.schemas.day_note import DayNoteResponse, DayNoteUpdate, DayNoteUpsert
 from app.services.storage import delete_local_upload
@@ -56,14 +57,25 @@ def list_notes(db: Session, user: User, account_id: uuid.UUID) -> list[DayNote]:
     )
 
 
+def _owned_folder(db: Session, user: User, account_id: uuid.UUID, folder_id: uuid.UUID | None) -> None:
+    if folder_id is None:
+        return
+    folder = db.get(NotebookFolder, folder_id)
+    if not folder or folder.user_id != user.id or folder.account_id != account_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
+
+
 def upsert_note(db: Session, user: User, payload: DayNoteUpsert) -> DayNote:
     _owned_account(db, user, payload.account_id)
+    _owned_folder(db, user, payload.account_id, payload.folder_id)
     existing = get_by_day(db, user, payload.account_id, payload.date)
     if existing:
         existing.content = payload.content
         existing.template_id = payload.template_id
         if payload.is_favorite is not None:
             existing.is_favorite = payload.is_favorite
+        if payload.folder_id is not None:
+            existing.folder_id = payload.folder_id
         db.commit()
         db.refresh(existing)
         logger.info("Updated day note %s for %s", existing.id, payload.date)
@@ -76,6 +88,7 @@ def upsert_note(db: Session, user: User, payload: DayNoteUpsert) -> DayNote:
         content=payload.content,
         template_id=payload.template_id,
         is_favorite=bool(payload.is_favorite),
+        folder_id=payload.folder_id,
     )
     db.add(note)
     db.commit()
@@ -87,6 +100,8 @@ def upsert_note(db: Session, user: User, payload: DayNoteUpsert) -> DayNote:
 def update_note(db: Session, user: User, note_id: uuid.UUID, payload: DayNoteUpdate) -> DayNote:
     note = get_note(db, user, note_id)
     data = payload.model_dump(exclude_unset=True)
+    if "folder_id" in data:
+        _owned_folder(db, user, note.account_id, data["folder_id"])
     for key, value in data.items():
         setattr(note, key, value)
     db.commit()

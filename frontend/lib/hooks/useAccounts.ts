@@ -14,7 +14,14 @@ export function useCreateAccount() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: AccountInput) => api.post<Account>("/api/accounts", data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
+    onSuccess: (created) => {
+      qc.setQueryData<Account[]>(["accounts"], (prev) => {
+        if (!prev) return [created];
+        if (prev.some((account) => account.id === created.id)) return prev;
+        return [...prev, created];
+      });
+      void qc.invalidateQueries({ queryKey: ["accounts"] });
+    },
   });
 }
 

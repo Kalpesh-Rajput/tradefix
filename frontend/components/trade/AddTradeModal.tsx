@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, Resolver, useForm } from "react-hook-form";
 import { useDropzone } from "react-dropzone";
 
+import { AccountPicker } from "@/components/accounts/AccountPicker";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { AssetSelector } from "@/components/trade/AssetSelector";
@@ -49,7 +50,7 @@ const inputClass =
 export function AddTradeModal() {
   const { user } = useAuth();
   const { activeAccount, accounts } = useAccountPrefs();
-  const { open, closeModal, tab, tradeId, initialBrokerId } = useAddTradeModal();
+  const { open, closeModal, tab, tradeId, initialBrokerId, initialServer, initialAccountId } = useAddTradeModal();
   const createTrade = useCreateTrade();
   const updateTrade = useUpdateTrade();
   const { data: editingTrade } = useTrade(tradeId || undefined);
@@ -131,8 +132,12 @@ export function AddTradeModal() {
   const blankForm = useCallback(() => {
     const defaults = defaultAddTradeValues(tradeDefaults);
     const template = user?.journal_template?.trim() || "";
-    return { ...defaults, notes: template, account_id: activeAccount?.id || null };
-  }, [tradeDefaults, user?.journal_template, activeAccount?.id]);
+    return {
+      ...defaults,
+      notes: template,
+      account_id: initialAccountId || activeAccount?.id || null,
+    };
+  }, [tradeDefaults, user?.journal_template, initialAccountId, activeAccount?.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -143,7 +148,7 @@ export function AddTradeModal() {
     setSaveError(null);
     if (!tradeId) reset(blankForm());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, tradeId]);
+  }, [open, tradeId, initialAccountId]);
 
   useEffect(() => {
     if (!open || !tradeId || !editingTrade) return;
@@ -234,7 +239,7 @@ export function AddTradeModal() {
       notes: notes || null,
       rules_broken: data.mistakes,
       status: snapshot.status,
-      account_id: data.account_id || activeAccount?.id,
+      account_id: data.account_id || initialAccountId || activeAccount?.id,
       session: data.session || null,
       trade_type: data.trade_type || null,
       option_type: data.option_type || null,
@@ -358,13 +363,13 @@ export function AddTradeModal() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div>
                       <FieldLabel>Account</FieldLabel>
-                      <select className={inputClass} {...register("account_id")}>
-                        {accounts.map((account) => (
-                          <option key={account.id} value={account.id}>
-                            {account.name}
-                          </option>
-                        ))}
-                      </select>
+                      <AccountPicker
+                        accounts={accounts}
+                        value={values.account_id || ""}
+                        onChange={(id) => setValue("account_id", id, { shouldDirty: true })}
+                        tone="trade"
+                        placeholder="Select account"
+                      />
                     </div>
                     <Controller
                       control={control}
@@ -523,7 +528,9 @@ export function AddTradeModal() {
 
               {tab === "journal" && <DailyJournalTab onDone={closeModal} />}
               {tab === "csv" && <CsvTab onDone={closeModal} />}
-              {tab === "broker" && <BrokerTab initialBrokerId={initialBrokerId} />}
+              {tab === "broker" && (
+                <BrokerTab initialBrokerId={initialBrokerId} initialServer={initialServer} />
+              )}
             </div>
 
             {tab === "manual" && (
@@ -698,10 +705,16 @@ function CsvTab({ onDone }: { onDone: () => void }) {
   );
 }
 
-function BrokerTab({ initialBrokerId }: { initialBrokerId?: string | null }) {
+function BrokerTab({
+  initialBrokerId,
+  initialServer,
+}: {
+  initialBrokerId?: string | null;
+  initialServer?: string | null;
+}) {
   return (
     <div className="min-h-full py-1">
-      <BrokerConnectPanel compact initialBrokerId={initialBrokerId} />
+      <BrokerConnectPanel compact initialBrokerId={initialBrokerId} initialServer={initialServer} />
     </div>
   );
 }

@@ -22,6 +22,7 @@ from app.api.routers import (
     prop,
     recaps,
     day_notes,
+    notebook_folders,
     trades,
     watchlist,
 )
@@ -71,6 +72,7 @@ app.include_router(watchlist.router)
 app.include_router(mood.router)
 app.include_router(recaps.router)
 app.include_router(day_notes.router)
+app.include_router(notebook_folders.router)
 app.include_router(checkins.router)
 app.include_router(prop.router)
 app.include_router(coach.router)

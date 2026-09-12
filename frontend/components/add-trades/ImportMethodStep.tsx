@@ -40,7 +40,7 @@ export function ImportMethodStep({ broker, isDemo, onContinue }: ImportMethodSte
                 <Layers className="h-3.5 w-3.5" />
               </span>
               <span className="text-sm text-muted">
-                You&apos;re setting up a <span className="font-medium text-foreground">Demo account</span>
+                You&apos;re setting up a <span className="font-medium text-foreground">Dummy account</span>
               </span>
             </>
           ) : broker ? (

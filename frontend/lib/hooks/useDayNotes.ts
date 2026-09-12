@@ -59,6 +59,7 @@ export function usePatchDayNote() {
       content?: string;
       template_id?: string;
       is_favorite?: boolean;
+      folder_id?: string | null;
     }) => api.patch<DayNote>(`/api/day-notes/${id}`, data),
     onSuccess: (note) => {
       qc.invalidateQueries({ queryKey: ["day-notes", note.account_id] });
