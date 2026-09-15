@@ -15,6 +15,7 @@ from app.api.routers import (
     coach,
     imports,
     insights,
+    media,
     mentor,
     mood,
     masters,
@@ -77,6 +78,7 @@ app.include_router(checkins.router)
 app.include_router(prop.router)
 app.include_router(coach.router)
 app.include_router(mentor.router)
+app.include_router(media.router)
 
 uploads_path = Path(settings.upload_dir)
 uploads_path.mkdir(parents=True, exist_ok=True)

@@ -27,7 +27,7 @@ export function GoalsProgressCard({
           </Link>
         </div>
         <p className="mt-2 text-sm text-zinc-500">
-          Set weekly, monthly, or yearly P&L targets to track progress here.
+          Set weekly, monthly, yearly, or daily P&L targets to track progress here.
         </p>
       </section>
     );

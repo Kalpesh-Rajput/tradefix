@@ -11,7 +11,7 @@ import {
 } from "@/components/dashboard/zella/DashboardCharts";
 import { DrawdownChart } from "@/components/dashboard/zella/DrawdownChart";
 import { MetricCards } from "@/components/dashboard/zella/MetricCards";
-import { PnlCalendarHeatmap } from "@/components/dashboard/zella/PnlCalendarHeatmap";
+import { ShareablePnlCalendar } from "@/components/dashboard/zella/ShareablePnlCalendar";
 import { PositionsTradesWidget } from "@/components/dashboard/zella/PositionsTradesWidget";
 import { ProgressTracker } from "@/components/dashboard/zella/ProgressTracker";
 import { TradeScatterChart } from "@/components/dashboard/zella/TradeScatterChart";
@@ -369,7 +369,7 @@ export default function TodayPage() {
                 )}
                 {widgets.calendar && (
                   <div className="h-[360px] min-w-0 lg:col-span-2 lg:h-full">
-                    <PnlCalendarHeatmap
+                    <ShareablePnlCalendar
                       className="h-full min-h-0 min-w-0"
                       days={calendar?.days ?? []}
                       month={calStart}

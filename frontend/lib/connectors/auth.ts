@@ -31,6 +31,19 @@ export async function loginConnectorsWithPassword(email: string, password: strin
   }
 }
 
+export async function loginConnectorsWithFirebase(idToken: string): Promise<ConnectorsAuthResult> {
+  try {
+    const tokens = await connectorsApi.firebase(idToken);
+    saveConnectorsLogin(tokens);
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Could not sign in to broker API",
+    };
+  }
+}
+
 /**
  * Ensure the user has a Connectors account and an active session.
  * Tries login first; if the account only exists on the web app, registers then logs in.

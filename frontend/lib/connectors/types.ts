@@ -4,6 +4,7 @@ export interface ConnectorsHealth {
   status: string;
   broker_mode: string;
   firebase_sso: string;
+  [key: string]: string | undefined;
 }
 
 export interface ConnectorsTokenResponse {
@@ -106,4 +107,10 @@ export interface StoredBrokerConnection {
   equity: number;
   connected_at: string;
   last_synced_at?: string | null;
+  journal_account_id?: string | null;
+  warning?: string | null;
+  permissions?: Record<string, boolean> | null;
+  market_type?: string | null;
+  symbols?: string[] | null;
+  kind?: string | null;
 }

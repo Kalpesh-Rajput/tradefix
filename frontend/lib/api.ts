@@ -139,4 +139,22 @@ export const api = {
     a.remove();
     URL.revokeObjectURL(url);
   },
+  getBlob: async (path: string) => {
+    const token = getToken();
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "GET",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      let detail = res.statusText;
+      try {
+        const body = await res.json();
+        detail = body.detail || detail;
+      } catch {
+        // ignore
+      }
+      throw new ApiError(typeof detail === "string" ? detail : JSON.stringify(detail), res.status);
+    }
+    return res.blob();
+  },
 };

@@ -42,11 +42,31 @@ function defaultHeaders(token?: string | null): Record<string, string> {
   return headers;
 }
 
+function locLabel(loc: unknown): string {
+  if (!Array.isArray(loc)) return "";
+  return loc.filter((part) => part !== "body" && typeof part === "string").join(".");
+}
+
 function parseErrorDetail(body: unknown, fallback: string): { message: string; code?: string } {
   if (!body || typeof body !== "object") return { message: fallback };
   const record = body as Record<string, unknown>;
   const detail = record.detail;
   if (typeof detail === "string") return { message: detail };
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (!item || typeof item !== "object") return null;
+        const row = item as Record<string, unknown>;
+        const msg = typeof row.msg === "string" ? row.msg : typeof row.message === "string" ? row.message : null;
+        if (!msg) return null;
+        const field = locLabel(row.loc);
+        return field ? `${field}: ${msg}` : msg;
+      })
+      .filter((item): item is string => Boolean(item));
+    if (messages.length > 0) return { message: messages.join("; ") };
+    return { message: fallback };
+  }
   if (detail && typeof detail === "object") {
     const d = detail as Record<string, unknown>;
     const message = typeof d.message === "string" ? d.message : fallback;
@@ -138,6 +158,12 @@ export const connectorsApi = {
       body: JSON.stringify({ email, password, device_label: "tradefix-web" }),
     }),
 
+  firebase: (idToken: string) =>
+    rawRequest<ConnectorsTokenResponse>("/api/auth/firebase", {
+      method: "POST",
+      body: JSON.stringify({ id_token: idToken, device_label: "tradefix-web" }),
+    }),
+
   catalog: () => rawRequest<BrokerCatalogResponse>("/api/broker/catalog"),
 
   connect: (payload: BrokerConnectPayload) =>
@@ -170,4 +196,8 @@ export const connectorsApi = {
 
 export function saveConnectorsLogin(res: ConnectorsTokenResponse): void {
   setConnectorsTokens(res.access_token, res.refresh_token);
+}
+
+export function tradingViewWebhookUrl(connectionId: string): string {
+  return `${CONNECTORS_URL}/api/broker/tradingview/webhook/${connectionId}`;
 }

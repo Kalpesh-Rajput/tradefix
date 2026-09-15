@@ -1,11 +1,17 @@
 "use client";
 
 import clsx from "clsx";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { BookOpen, ChevronLeft, ChevronRight, RefreshCw, Sun, Target } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode, type Ref } from "react";
 
 import { localIso, monthLabel, parseLocalIso } from "@/lib/dateLocal";
 import type { CalendarDay } from "@/lib/types";
+
+export type CalendarDayMarks = {
+  mood?: boolean;
+  journaled?: boolean;
+  routines?: boolean;
+};
 
 export type PnlHeatmapDay = {
   date: string;
@@ -75,12 +81,26 @@ export function PnlCalendarHeatmap({
   days,
   month,
   className,
+  size = "compact",
+  selectedDate,
+  marks,
+  headerActions,
+  captureRef,
+  monthlyGoal,
+  dailyGoal,
   onMonthChange,
   onSelectDate,
 }: {
   days: Array<PnlHeatmapDay | CalendarDay>;
   month?: string | null;
   className?: string;
+  size?: "compact" | "page";
+  selectedDate?: string | null;
+  marks?: Map<string, CalendarDayMarks>;
+  headerActions?: ReactNode;
+  captureRef?: Ref<HTMLDivElement>;
+  monthlyGoal?: number | null;
+  dailyGoal?: number | null;
   onMonthChange?: (start: string, end: string) => void;
   onSelectDate?: (date: string) => void;
 }) {
@@ -173,11 +193,29 @@ export function PnlCalendarHeatmap({
     onSelectDate?.(todayKey);
   }
 
+  const page = size === "page";
+  const selectedKey = selectedDate !== undefined ? selectedDate : selected;
+
   return (
-    <div className={clsx("dash-card flex h-full min-h-0 flex-col overflow-hidden", className)}>
-      <div className="flex h-11 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-[#EEEFF2] px-3">
+    <div
+      ref={captureRef}
+      className={clsx("dash-card flex h-full min-h-0 flex-col overflow-hidden", className)}
+    >
+      <div
+        className={clsx(
+          "flex shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-[#EEEFF2]",
+          page ? "h-12 px-4" : "h-11 px-3"
+        )}
+      >
         <div className="flex items-center gap-2">
-          <h3 className="text-[13px] font-semibold tracking-tight text-[#1F2128]">{monthLabel(cursor)}</h3>
+          <h3
+            className={clsx(
+              "font-semibold tracking-tight text-[#1F2128]",
+              page ? "text-[15px]" : "text-[13px]"
+            )}
+          >
+            {monthLabel(cursor)}
+          </h3>
           <div className="flex items-center">
             <button
               type="button"
@@ -204,7 +242,7 @@ export function PnlCalendarHeatmap({
             This month
           </button>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#6B6E78]">
+        <div className="flex shrink-0 flex-nowrap items-center gap-2 text-[11px] text-[#6B6E78]">
           <span>Monthly stats:</span>
           <span
             className={clsx(
@@ -221,15 +259,41 @@ export function PnlCalendarHeatmap({
           <span className="inline-flex h-6 items-center rounded-full bg-[#EEE8F8] px-2 text-[11px] font-semibold text-[#5B4696]">
             {monthStats.days} {monthStats.days === 1 ? "day" : "days"}
           </span>
+          {monthlyGoal != null && monthlyGoal > 0 && (
+            <span
+              className={clsx(
+                "inline-flex h-6 items-center rounded-full px-2 text-[11px] font-semibold tabular-nums",
+                monthStats.pnl >= monthlyGoal
+                  ? "bg-[#E8F6EE] text-[#1F7A4D]"
+                  : "bg-[#F4F5F7] text-[#4A4D57]"
+              )}
+            >
+              {Math.max(0, Math.min(100, Math.round((monthStats.pnl / monthlyGoal) * 100)))}% goal
+            </span>
+          )}
+          {headerActions}
         </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-x-auto">
-        <div className="grid h-full min-w-[640px] grid-cols-[1fr_72px] gap-1 p-2">
+        <div
+          className={clsx(
+            "grid h-full gap-1",
+            page
+              ? "min-w-[760px] grid-cols-[1fr_96px] p-3"
+              : "min-w-[640px] grid-cols-[1fr_72px] p-2"
+          )}
+        >
           <div className="flex min-h-0 flex-col">
             <div className="mb-1 grid shrink-0 grid-cols-7 gap-1">
               {WEEKDAYS.map((d) => (
-                <div key={d} className="py-0.5 text-center text-[10px] font-medium text-[#8B8D96]">
+                <div
+                  key={d}
+                  className={clsx(
+                    "py-0.5 text-center font-medium text-[#8B8D96]",
+                    page ? "text-[12px]" : "text-[10px]"
+                  )}
+                >
                   {d}
                 </div>
               ))}
@@ -239,7 +303,10 @@ export function PnlCalendarHeatmap({
                 const traded = Boolean(cell.inMonth && cell.data && cell.data.trades > 0);
                 const tone = traded ? toneFor(cell.data!.pnl, peak) : null;
                 const isToday = cell.iso === todayKey;
-                const isSelected = cell.iso != null && cell.iso === selected;
+                const isSelected = cell.iso != null && cell.iso === selectedKey;
+                const mark = cell.iso ? marks?.get(cell.iso) : undefined;
+                const hitDaily =
+                  traded && dailyGoal != null && dailyGoal > 0 && cell.data!.pnl >= dailyGoal;
 
                 return (
                   <button
@@ -252,7 +319,8 @@ export function PnlCalendarHeatmap({
                       onSelectDate?.(cell.iso);
                     }}
                     className={clsx(
-                      "relative flex h-full min-h-0 flex-col overflow-hidden rounded-md border px-1 pb-0.5 pt-0.5 text-left",
+                      "relative flex h-full min-h-0 flex-col overflow-hidden rounded-md border text-left",
+                      page ? "px-1.5 pb-1 pt-1" : "px-1 pb-0.5 pt-0.5",
                       !cell.inMonth && "border-transparent bg-transparent",
                       cell.inMonth && !traded && "border-[#EEEFF2] bg-white",
                       traded && "border",
@@ -267,19 +335,50 @@ export function PnlCalendarHeatmap({
                   >
                     {cell.inMonth && (
                       <>
-                        <span className="self-end text-[9px] font-medium leading-none text-[#8B8D96]">{cell.day}</span>
+                        <div className="flex items-start justify-between gap-0.5">
+                          <DayMarkIcons mark={mark} />
+                          <span
+                            className={clsx(
+                              "ml-auto font-medium leading-none text-[#8B8D96]",
+                              page ? "text-[11px]" : "text-[9px]"
+                            )}
+                          >
+                            {cell.day}
+                          </span>
+                        </div>
                         {traded ? (
                           <div className="mt-0.5 flex min-h-0 flex-1 flex-col items-center justify-center text-center">
                             <span
-                              className="text-[13px] font-semibold tabular-nums leading-none"
+                              className={clsx(
+                                "font-semibold tabular-nums leading-none",
+                                page ? "text-[18px]" : "text-[13px]"
+                              )}
                               style={{ color: tone?.text }}
                             >
                               {compactPnl(cell.data!.pnl)}
                             </span>
-                            <span className="mt-0.5 text-[8px] leading-tight text-[#8B8D96]">
+                            <span
+                              className={clsx(
+                                "leading-tight text-[#8B8D96]",
+                                page ? "mt-1 text-[10px]" : "mt-0.5 text-[8px]"
+                              )}
+                            >
                               {cell.data!.trades} {cell.data!.trades === 1 ? "trade" : "trades"}
                             </span>
-                            <span className="text-[8px] leading-tight text-[#8B8D96]">{cell.data!.winRate.toFixed(1)}%</span>
+                            <span
+                              className={clsx(
+                                "leading-tight text-[#8B8D96]",
+                                page ? "text-[10px]" : "text-[8px]"
+                              )}
+                            >
+                              {cell.data!.winRate.toFixed(1)}%
+                            </span>
+                            {hitDaily && (
+                              <span className="mt-0.5 inline-flex items-center gap-0.5 text-[8px] font-medium text-[#5B4696]">
+                                <Target className="h-2.5 w-2.5" strokeWidth={2} />
+                                Goal
+                              </span>
+                            )}
                           </div>
                         ) : null}
                       </>
@@ -298,10 +397,13 @@ export function PnlCalendarHeatmap({
                   key={week.week}
                   className="flex h-full min-h-0 flex-col items-center justify-center rounded-md border border-[#EEEFF2] bg-white px-1 py-1"
                 >
-                  <p className="text-[9px] font-medium text-[#8B8D96]">Week {week.week}</p>
+                  <p className={clsx("font-medium text-[#8B8D96]", page ? "text-[11px]" : "text-[9px]")}>
+                    Week {week.week}
+                  </p>
                   <p
                     className={clsx(
-                      "mt-0.5 text-[12px] font-semibold tabular-nums leading-none",
+                      "mt-0.5 font-semibold tabular-nums leading-none",
+                      page ? "text-[15px]" : "text-[12px]",
                       week.pnl > 0 && "text-[#1F7A4D]",
                       week.pnl < 0 && "text-[#C23B3B]",
                       week.pnl === 0 && "text-[#4A4D57]"
@@ -309,7 +411,12 @@ export function PnlCalendarHeatmap({
                   >
                     {compactPnl(week.pnl)}
                   </p>
-                  <span className="mt-1 inline-flex h-4 items-center rounded-full bg-[#F3F4F6] px-1.5 text-[8px] text-[#6B6E78]">
+                  <span
+                    className={clsx(
+                      "mt-1 inline-flex items-center rounded-full bg-[#F3F4F6] text-[#6B6E78]",
+                      page ? "h-5 px-2 text-[10px]" : "h-4 px-1.5 text-[8px]"
+                    )}
+                  >
                     {week.days} {week.days === 1 ? "day" : "days"}
                   </span>
                 </div>
@@ -319,5 +426,16 @@ export function PnlCalendarHeatmap({
         </div>
       </div>
     </div>
+  );
+}
+
+function DayMarkIcons({ mark }: { mark?: CalendarDayMarks }) {
+  if (!mark?.mood && !mark?.journaled && !mark?.routines) return null;
+  return (
+    <span className="flex items-center gap-0.5">
+      {mark.mood && <Sun className="h-3 w-3 text-amber-600" aria-label="Mood" />}
+      {mark.journaled && <BookOpen className="h-3 w-3 text-sky-600" aria-label="Journaled" />}
+      {mark.routines && <RefreshCw className="h-3 w-3 text-violet-600" aria-label="Routines" />}
+    </span>
   );
 }

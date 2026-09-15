@@ -49,3 +49,16 @@ password_change_limiter = SlidingWindowRateLimiter(
     window_seconds=3600,
     detail="Too many password change attempts. Please wait and try again.",
 )
+
+# Calendar share GIF/sticker search
+giphy_search_limiter = SlidingWindowRateLimiter(
+    max_calls=60,
+    window_seconds=3600,
+    detail="Too many GIF searches. Please wait and try again.",
+)
+
+giphy_proxy_limiter = SlidingWindowRateLimiter(
+    max_calls=120,
+    window_seconds=3600,
+    detail="Too many media requests. Please wait and try again.",
+)

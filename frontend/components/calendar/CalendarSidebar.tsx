@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { Check, Loader2, Pencil, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { GoalMetricCard } from "@/components/goals/GoalMetricCard";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/ui/Toast";
+import { currentMonthKey, type GoalProgressItem } from "@/lib/goals";
 
 export type CalendarPeriodStats = {
   netPnl: number;
@@ -18,11 +21,11 @@ export type CalendarPeriodStats = {
 
 export function CalendarSidebar({
   periodLabel,
-  goalCurrent,
+  goalItems,
   stats,
 }: {
   periodLabel: string;
-  goalCurrent: number;
+  goalItems: GoalProgressItem[];
   stats: CalendarPeriodStats;
 }) {
   const { user, updateProfile } = useAuth();
@@ -49,7 +52,10 @@ export function CalendarSidebar({
     }
     setSaving(true);
     try {
-      await updateProfile({ monthly_goal: next });
+      await updateProfile({
+        monthly_goal: next,
+        monthly_goal_ack_month: currentMonthKey(),
+      });
       setEditing(false);
       toast.success("Monthly goal saved");
     } catch (err) {
@@ -105,27 +111,36 @@ export function CalendarSidebar({
   ];
 
   return (
-    <aside className="flex w-full shrink-0 flex-col border-t border-[var(--color-border)] bg-[var(--color-surface)] lg:w-[280px] lg:border-l lg:border-t-0">
-      <div className="flex-1 space-y-7 overflow-y-auto px-5 py-5">
+    <aside className="flex w-full shrink-0 flex-col border-t border-[var(--color-border)] bg-[var(--color-surface)] lg:w-[300px] lg:border-l lg:border-t-0">
+      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-5">
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
-              Monthly goal
+              Goals vs earned
             </h2>
-            {!editing && (
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                className="rounded-md p-1 text-[var(--color-text-tertiary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-primary"
-                title="Edit monthly goal"
+            <div className="flex items-center gap-1">
+              <Link
+                href="/settings/goals"
+                className="rounded-md px-1.5 py-1 text-[11px] font-medium text-primary hover:bg-[var(--color-primary-very-light)]"
               >
-                <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
-              </button>
-            )}
+                Edit
+              </Link>
+              {!editing && (
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="rounded-md p-1 text-[var(--color-text-tertiary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-primary"
+                  title="Edit monthly goal"
+                >
+                  <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
+                </button>
+              )}
+            </div>
           </div>
 
           {editing ? (
-            <div className="space-y-2">
+            <div className="mb-3 space-y-2">
+              <p className="text-[11px] font-medium text-[var(--color-text-secondary)]">Monthly P&L target</p>
               <div className="flex items-center rounded-md border border-[#E2E2E7] bg-white focus-within:border-primary/40">
                 <span className="pl-3 text-sm text-[var(--color-text-secondary)]">{currencySymbol}</span>
                 <input
@@ -162,26 +177,18 @@ export function CalendarSidebar({
                 </button>
               </div>
             </div>
-          ) : (
-            <div>
-              <p
-                className={`font-mono text-[28px] font-semibold leading-tight ${
-                  goalCurrent >= 0 ? "text-positive" : "text-negative"
-                }`}
-              >
-                {formatMoney(goalCurrent)}
-              </p>
-              {monthlyGoal != null && monthlyGoal > 0 ? (
-                <p className="mt-1.5 text-[12px] text-[var(--color-text-secondary)]">
-                  Target {formatMoney(monthlyGoal, { signed: false })} ·{" "}
-                  {Math.max(0, Math.min(100, Math.round((goalCurrent / monthlyGoal) * 100)))}%
-                </p>
-              ) : (
-                <p className="mt-1.5 text-[12px] text-[var(--color-text-tertiary)]">
-                  Set a monthly P&L target
-                </p>
-              )}
+          ) : null}
+
+          {goalItems.length ? (
+            <div className="space-y-2.5">
+              {goalItems.map((item) => (
+                <GoalMetricCard key={item.id} item={item} formatMoney={formatMoney} compact />
+              ))}
             </div>
+          ) : (
+            <p className="text-[12px] text-[var(--color-text-tertiary)]">
+              Set daily, weekly, or monthly P&L targets to measure this calendar against what you’ve earned.
+            </p>
           )}
         </section>
 

@@ -16,6 +16,7 @@ import { QuickLogProvider } from "@/components/providers/QuickLogProvider";
 import { SidebarProvider, useSidebar } from "@/components/providers/SidebarProvider";
 import { AddTradesFlow } from "@/components/add-trades/AddTradesFlow";
 import { AddTradeModal } from "@/components/trade/AddTradeModal";
+import { MonthlyGoalPrompt } from "@/components/goals/MonthlyGoalPrompt";
 import { useLiveAccount } from "@/lib/hooks/useLiveAccount";
 import { isJournalPath } from "@/lib/nav";
 
@@ -82,6 +83,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </AppShell>
             <AddTradesFlow />
             <AddTradeModal />
+            <MonthlyGoalPrompt />
           </SidebarProvider>
         </QuickLogProvider>
       </AccountProvider>

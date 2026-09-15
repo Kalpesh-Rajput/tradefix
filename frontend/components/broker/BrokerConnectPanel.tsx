@@ -7,6 +7,7 @@ interface BrokerConnectPanelProps {
   className?: string;
   initialBrokerId?: string | null;
   initialServer?: string | null;
+  journalAccountId?: string | null;
 }
 
 /** Broker connect entry — delegates to the multi-step wizard. */
@@ -15,6 +16,7 @@ export function BrokerConnectPanel({
   className,
   initialBrokerId = null,
   initialServer = null,
+  journalAccountId = null,
 }: BrokerConnectPanelProps) {
   return (
     <BrokerConnectWizard
@@ -22,6 +24,7 @@ export function BrokerConnectPanel({
       className={className}
       initialBrokerId={initialBrokerId}
       initialServer={initialServer}
+      journalAccountId={journalAccountId}
     />
   );
 }

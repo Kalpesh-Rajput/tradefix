@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     max_screenshot_bytes: int = 5 * 1024 * 1024  # 5 MB
     max_recap_screenshots: int = 5
 
+    # Optional. GIF/sticker search on the calendar share editor.
+    # Create a key at https://developers.giphy.com — client search is proxied server-side.
+    giphy_api_key: str = ""
+
     @property
     def cors_origins(self) -> list[str]:
         origins = [part.strip() for part in self.frontend_origin.split(",") if part.strip()]

@@ -119,9 +119,11 @@ class UserResponse(BaseModel):
     strategy_order: list[str] = Field(default_factory=list)
     custom_mistakes: list[str] = Field(default_factory=list)
     mistake_order: list[str] = Field(default_factory=list)
+    daily_goal: float | None = None
     weekly_goal: float | None = None
     monthly_goal: float | None = None
     yearly_goal: float | None = None
+    monthly_goal_ack_month: str | None = None
     target_trades: int | None = None
     theme: str = "light"
     accent_color: str = "purple"
@@ -306,9 +308,11 @@ class UserUpdateRequest(BaseModel):
     mistake_order: list[str] | None = None
     custom_emotion_tags: list[str] | None = None
     emotion_tag_order: list[str] | None = None
+    daily_goal: float | None = Field(default=None, ge=0)
     weekly_goal: float | None = Field(default=None, ge=0)
     monthly_goal: float | None = Field(default=None, ge=0)
     yearly_goal: float | None = Field(default=None, ge=0)
+    monthly_goal_ack_month: str | None = Field(default=None, max_length=7)
     target_trades: int | None = Field(default=None, ge=0)
     theme: str | None = Field(default=None, max_length=16)
     accent_color: str | None = Field(default=None, max_length=32)
@@ -324,6 +328,18 @@ class UserUpdateRequest(BaseModel):
             return None
         if not _USERNAME_RE.match(cleaned):
             raise ValueError("Username may only contain letters, numbers, _ . -")
+        return cleaned
+
+    @field_validator("monthly_goal_ack_month")
+    @classmethod
+    def validate_ack_month(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            return None
+        if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", cleaned):
+            raise ValueError("monthly_goal_ack_month must be YYYY-MM")
         return cleaned
 
     @field_validator("website_url", "twitter_url", "linkedin_url")

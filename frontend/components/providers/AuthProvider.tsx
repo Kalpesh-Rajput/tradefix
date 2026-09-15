@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 
 import { api, clearToken, getToken, setToken } from "@/lib/api";
 import { clearConnectorsBootstrap, stashConnectorsBootstrap } from "@/lib/connectors/bootstrap";
-import { ensureConnectorsAccount, logoutConnectors } from "@/lib/connectors/auth";
+import { ensureConnectorsAccount, loginConnectorsWithFirebase, logoutConnectors } from "@/lib/connectors/auth";
 import { isConnectorsConfigured } from "@/lib/connectors/api";
 import { postAuthPath } from "@/lib/onboarding";
 import { OnboardingUpdateInput, User, UserUpdateInput } from "@/lib/types";
@@ -90,6 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function loginWithGoogle(idToken: string) {
     const res = await api.post<{ access_token: string }>("/api/auth/google", { id_token: idToken });
     setToken(res.access_token);
+    if (isConnectorsConfigured()) {
+      await loginConnectorsWithFirebase(idToken);
+    }
     await afterAuth();
   }
 

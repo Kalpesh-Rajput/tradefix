@@ -466,9 +466,11 @@ export interface User {
   strategy_order?: string[];
   custom_mistakes?: string[];
   mistake_order?: string[];
+  daily_goal?: number | null;
   weekly_goal?: number | null;
   monthly_goal?: number | null;
   yearly_goal?: number | null;
+  monthly_goal_ack_month?: string | null;
   target_trades?: number | null;
   theme?: string;
   accent_color?: string;
@@ -526,9 +528,11 @@ export interface UserUpdateInput {
   mistake_order?: string[];
   custom_emotion_tags?: string[];
   emotion_tag_order?: string[];
+  daily_goal?: number | null;
   weekly_goal?: number | null;
   monthly_goal?: number | null;
   yearly_goal?: number | null;
+  monthly_goal_ack_month?: string | null;
   target_trades?: number | null;
   theme?: string;
   accent_color?: string;

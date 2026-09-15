@@ -257,6 +257,7 @@ def update_me(
         "default_quantity",
         "default_fee",
         "default_forex_leverage",
+        "daily_goal",
         "weekly_goal",
         "monthly_goal",
         "yearly_goal",

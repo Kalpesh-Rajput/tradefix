@@ -2,8 +2,11 @@ import type { StoredBrokerConnection } from "@/lib/connectors/types";
 
 const ACCESS_KEY = "tradefix_connectors_access_token";
 const REFRESH_KEY = "tradefix_connectors_refresh_token";
-const CONNECTION_KEY = "tradefix_broker_connection";
+const LEGACY_CONNECTION_KEY = "tradefix_broker_connection";
+const CONNECTION_MAP_KEY = "tradefix_broker_connections";
 const IMPORTED_KEY = "tradefix_broker_imported_ids";
+
+export const UNASSIGNED_CONNECTION_KEY = "__unassigned__";
 
 export function getConnectorsAccessToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -25,23 +28,117 @@ export function clearConnectorsTokens(): void {
   window.localStorage.removeItem(REFRESH_KEY);
 }
 
-export function getStoredConnection(): StoredBrokerConnection | null {
-  if (typeof window === "undefined") return null;
-  const raw = window.localStorage.getItem(CONNECTION_KEY);
-  if (!raw) return null;
+function isStoredConnection(value: unknown): value is StoredBrokerConnection {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.connection_id === "string" && typeof record.broker_id === "string";
+}
+
+function writeMap(map: Record<string, StoredBrokerConnection>): Record<string, StoredBrokerConnection> {
+  window.localStorage.setItem(CONNECTION_MAP_KEY, JSON.stringify(map));
+  return map;
+}
+
+function readMap(): Record<string, StoredBrokerConnection> {
+  if (typeof window === "undefined") return {};
+
   try {
-    return JSON.parse(raw) as StoredBrokerConnection;
+    const raw = window.localStorage.getItem(CONNECTION_MAP_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (isStoredConnection(parsed)) {
+        const migrated = { [UNASSIGNED_CONNECTION_KEY]: parsed };
+        return writeMap(migrated);
+      }
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const map: Record<string, StoredBrokerConnection> = {};
+        for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+          if (isStoredConnection(value)) map[key] = value;
+        }
+        return map;
+      }
+    }
   } catch {
-    return null;
+    // fall through to legacy
   }
+
+  try {
+    const legacy = window.localStorage.getItem(LEGACY_CONNECTION_KEY);
+    if (legacy) {
+      const conn = JSON.parse(legacy) as unknown;
+      if (isStoredConnection(conn)) {
+        const map = { [UNASSIGNED_CONNECTION_KEY]: conn };
+        window.localStorage.removeItem(LEGACY_CONNECTION_KEY);
+        return writeMap(map);
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return {};
 }
 
-export function setStoredConnection(connection: StoredBrokerConnection): void {
-  window.localStorage.setItem(CONNECTION_KEY, JSON.stringify(connection));
+export function getConnectionMap(): Record<string, StoredBrokerConnection> {
+  return readMap();
 }
 
-export function clearStoredConnection(): void {
-  window.localStorage.removeItem(CONNECTION_KEY);
+export function resolveStoredConnection(
+  map: Record<string, StoredBrokerConnection>,
+  accountId?: string | null
+): StoredBrokerConnection | null {
+  if (accountId) return map[accountId] ?? null;
+  return map[UNASSIGNED_CONNECTION_KEY] ?? null;
+}
+
+export function getStoredConnection(accountId?: string | null): StoredBrokerConnection | null {
+  return resolveStoredConnection(readMap(), accountId);
+}
+
+export function setStoredConnection(
+  connection: StoredBrokerConnection,
+  accountId?: string | null
+): Record<string, StoredBrokerConnection> {
+  const map = readMap();
+  const key = accountId || connection.journal_account_id || UNASSIGNED_CONNECTION_KEY;
+  const next: StoredBrokerConnection = {
+    ...connection,
+    journal_account_id: accountId ?? connection.journal_account_id ?? null,
+  };
+  for (const existingKey of Object.keys(map)) {
+    if (map[existingKey]?.connection_id === next.connection_id) delete map[existingKey];
+  }
+  map[key] = next;
+  return writeMap(map);
+}
+
+export function removeStoredConnection(opts?: {
+  accountId?: string | null;
+  connectionId?: string | null;
+}): Record<string, StoredBrokerConnection> {
+  const map = readMap();
+  const connectionId = opts?.connectionId;
+  const accountId = opts?.accountId;
+  if (connectionId) {
+    for (const key of Object.keys(map)) {
+      if (map[key]?.connection_id === connectionId) delete map[key];
+    }
+  } else if (accountId) {
+    delete map[accountId];
+  } else {
+    delete map[UNASSIGNED_CONNECTION_KEY];
+  }
+  return writeMap(map);
+}
+
+export function clearStoredConnection(accountId?: string | null): Record<string, StoredBrokerConnection> {
+  return removeStoredConnection({ accountId });
+}
+
+export function clearAllStoredConnections(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(CONNECTION_MAP_KEY);
+  window.localStorage.removeItem(LEGACY_CONNECTION_KEY);
 }
 
 export function getImportedBrokerTradeIds(): Set<string> {
@@ -64,5 +161,5 @@ export function addImportedBrokerTradeIds(ids: string[]): void {
 
 export function clearConnectorsSession(): void {
   clearConnectorsTokens();
-  clearStoredConnection();
+  clearAllStoredConnections();
 }

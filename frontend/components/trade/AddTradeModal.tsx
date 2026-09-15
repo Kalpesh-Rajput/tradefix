@@ -529,7 +529,11 @@ export function AddTradeModal() {
               {tab === "journal" && <DailyJournalTab onDone={closeModal} />}
               {tab === "csv" && <CsvTab onDone={closeModal} />}
               {tab === "broker" && (
-                <BrokerTab initialBrokerId={initialBrokerId} initialServer={initialServer} />
+                <BrokerTab
+                  initialBrokerId={initialBrokerId}
+                  initialServer={initialServer}
+                  journalAccountId={initialAccountId}
+                />
               )}
             </div>
 
@@ -708,13 +712,20 @@ function CsvTab({ onDone }: { onDone: () => void }) {
 function BrokerTab({
   initialBrokerId,
   initialServer,
+  journalAccountId,
 }: {
   initialBrokerId?: string | null;
   initialServer?: string | null;
+  journalAccountId?: string | null;
 }) {
   return (
     <div className="min-h-full py-1">
-      <BrokerConnectPanel compact initialBrokerId={initialBrokerId} initialServer={initialServer} />
+      <BrokerConnectPanel
+        compact
+        initialBrokerId={initialBrokerId}
+        initialServer={initialServer}
+        journalAccountId={journalAccountId}
+      />
     </div>
   );
 }

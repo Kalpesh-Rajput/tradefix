@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Cable,
   CheckCircle2,
+  Copy,
   Loader2,
   RefreshCw,
   Unplug,
@@ -17,75 +18,82 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useConnectors } from "@/components/providers/ConnectorsProvider";
 import { BrokerIcon } from "@/components/ui/BrokerIcon";
 import { Button } from "@/components/ui/Button";
-import { Input, PasswordInput } from "@/components/ui/Input";
+import { Input, PasswordInput, Select } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { CONNECTORS_URL, ConnectorsApiError } from "@/lib/connectors/api";
-import { MT5_SERVERS, tradeServerHintsFor } from "@/lib/brokers/mt5-servers";
-import type {
-  BrokerCatalogItem,
-  BrokerConnectPayload,
-  ConnectResponse,
-} from "@/lib/connectors/types";
-import { useBrokerCatalog, useBrokerConnect, useBrokerDisconnect, useBrokerSync } from "@/lib/hooks/useBroker";
+import { MT5_SERVERS } from "@/lib/brokers/mt5-servers";
+import { CONNECTORS_URL, ConnectorsApiError, tradingViewWebhookUrl } from "@/lib/connectors/api";
+import {
+  allowsCustomServer,
+  buildConnectPayload,
+  connectFieldMeta,
+  connectFormFields,
+  CUSTOM_SERVER_VALUE,
+  defaultConnectFields,
+  isConnectFieldRequired,
+  isEnvironmentServer,
+  isMtFamily,
+  isSecretField,
+} from "@/lib/connectors/connect-fields";
+import type { BrokerCatalogItem, ConnectResponse } from "@/lib/connectors/types";
+import {
+  useBrokerAccount,
+  useBrokerCatalog,
+  useBrokerConnect,
+  useBrokerDisconnect,
+  useBrokerSync,
+} from "@/lib/hooks/useBroker";
 
 type WizardStep = "pick" | "credentials" | "connected";
-type FieldKey =
-  | "login"
-  | "password"
-  | "server"
-  | "api_key"
-  | "api_secret"
-  | "passphrase"
-  | "market_type"
-  | "symbols";
 
-const FIELD_META: Record<FieldKey, { label: string; hint?: string; placeholder?: string }> = {
-  login: { label: "Login ID", placeholder: "12345678" },
-  password: {
-    label: "Investor password",
-    hint: "Use the read-only investor password, not your trading password.",
-    placeholder: "••••••••",
-  },
-  server: {
-    label: "Server",
-    hint: "Copy the exact name from MetaTrader 5 → File → Login to Trade Account.",
-    placeholder: "FundingPips2-SIM",
-  },
-  api_key: { label: "API key", placeholder: "Your read-only API key" },
-  api_secret: { label: "API secret", placeholder: "Your API secret" },
-  passphrase: { label: "Passphrase", placeholder: "API passphrase" },
-  market_type: { label: "Market type" },
-  symbols: {
-    label: "Symbols",
-    hint: "Comma-separated. Example: BTCUSDT, ETHUSDT",
-    placeholder: "BTCUSDT, ETHUSDT",
-  },
-};
+function serverDropdownOptions(broker: BrokerCatalogItem, selected?: string | null): string[] {
+  const base = isMtFamily(broker) ? [...MT5_SERVERS] : [...(broker.server_hints ?? [])];
+  const extra = selected?.trim();
+  if (extra && extra !== CUSTOM_SERVER_VALUE && !base.some((item) => item.toLowerCase() === extra.toLowerCase())) {
+    base.unshift(extra);
+  }
+  return base;
+}
+
+function credentialsHelp(broker: BrokerCatalogItem): string {
+  if (isMtFamily(broker)) {
+    return "Enter your login ID, investor password, and the exact MT5 server name.";
+  }
+  if (broker.id === "matchtrader") {
+    return "Enter your MatchTrader email, password, and broker ID.";
+  }
+  if (broker.id === "ctrader") {
+    return "Enter your cTrader client ID and access token.";
+  }
+  if (broker.id === "tradingview") {
+    return "Enter a username label and webhook secret. Connect succeeds even before any alerts arrive.";
+  }
+  if (broker.id === "tradovate" || broker.id === "ninjatrader") {
+    return "Enter your username and API password. Environment (live/demo) is optional.";
+  }
+  if (broker.fields.includes("api_key")) {
+    return "Enter the read-only API credentials for this broker.";
+  }
+  return broker.notes;
+}
+
+function antiAutofillProps(brokerId: string, field: string, secret?: boolean) {
+  return {
+    id: `tf-connect-${brokerId}-${field}`,
+    name: `tf-connect-${brokerId}-${field}`,
+    autoComplete: secret ? ("new-password" as const) : ("off" as const),
+    autoCorrect: "off" as const,
+    autoCapitalize: "none" as const,
+    spellCheck: false,
+    "data-lpignore": "true",
+    "data-1p-ignore": "true",
+    "data-bwignore": "true",
+  };
+}
 
 function brokerErrorMessage(err: unknown): string {
   if (err instanceof ConnectorsApiError) return err.message;
   if (err instanceof Error) return err.message;
   return "Something went wrong";
-}
-
-function buildPayload(brokerId: string, values: Record<string, string>): BrokerConnectPayload {
-  const payload: BrokerConnectPayload = { broker: brokerId };
-  if (values.login) payload.login = Number(values.login);
-  if (values.password) payload.password = values.password;
-  if (values.server) payload.server = values.server.trim();
-  if (values.api_key) payload.api_key = values.api_key.trim();
-  if (values.api_secret) payload.api_secret = values.api_secret;
-  if (values.passphrase) payload.passphrase = values.passphrase;
-  if (values.market_type === "spot" || values.market_type === "futures") {
-    payload.market_type = values.market_type;
-  }
-  if (values.symbols?.trim()) {
-    payload.symbols = values.symbols
-      .split(/[,;\s]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-  return payload;
 }
 
 function StepHeader({
@@ -115,14 +123,18 @@ interface BrokerConnectWizardProps {
   className?: string;
   /** When set and no active connection, skip broker pick and open credentials. */
   initialBrokerId?: string | null;
-  /** Prefill the trade-server field on the credentials form. */
+  /** Shown as context only — never written into the form. */
   initialServer?: string | null;
   /** Company picked in Add Trades (shown above login). */
   companyLabel?: string | null;
   /** Render inside Add Trades: skip stored connection and the inner back button. */
   embedded?: boolean;
+  /** Journal account to bind this connection_id to. */
+  journalAccountId?: string | null;
+  /** After connect + journal account, pull trades into the journal. */
+  autoSyncOnConnect?: boolean;
   /** Called after a successful Connectors login so the journal account can be created. */
-  onConnected?: (res: ConnectResponse) => void | Promise<void>;
+  onConnected?: (res: ConnectResponse) => void | string | Promise<void | string>;
 }
 
 export function BrokerConnectWizard({
@@ -132,6 +144,8 @@ export function BrokerConnectWizard({
   initialServer = null,
   companyLabel = null,
   embedded = false,
+  journalAccountId = null,
+  autoSyncOnConnect = false,
   onConnected,
 }: BrokerConnectWizardProps) {
   const toast = useToast();
@@ -143,7 +157,8 @@ export function BrokerConnectWizard({
     authLoading,
     health,
     healthLoading,
-    connection,
+    connectionFor,
+    linkConnectionToAccount,
   } = useConnectors();
 
   const catalogQuery = useBrokerCatalog();
@@ -151,15 +166,30 @@ export function BrokerConnectWizard({
   const syncMutation = useBrokerSync();
   const disconnectMutation = useBrokerDisconnect();
 
-  const [step, setStep] = useState<WizardStep>(() => {
-    if (embedded) return initialBrokerId ? "credentials" : "pick";
-    return connection ? "connected" : "pick";
-  });
+  const presetServer = (initialServer ?? companyLabel)?.trim() || "";
+  const [linkedAccountId, setLinkedAccountId] = useState<string | null>(journalAccountId);
+  const [step, setStep] = useState<WizardStep>(() => (embedded && initialBrokerId ? "credentials" : "pick"));
   const [selectedBrokerId, setSelectedBrokerId] = useState("");
-  const [fields, setFields] = useState<Record<string, string>>({});
+  const [fields, setFields] = useState<Record<string, string>>(() => {
+    if (!presetServer) return {};
+    return { server: presetServer };
+  });
   const [importToJournal, setImportToJournal] = useState(true);
   const [preselectApplied, setPreselectApplied] = useState(false);
   const [sessionConnected, setSessionConnected] = useState(false);
+
+  useEffect(() => {
+    if (journalAccountId) setLinkedAccountId(journalAccountId);
+  }, [journalAccountId]);
+
+  const boundAccountId = embedded
+    ? linkedAccountId
+    : linkedAccountId ?? journalAccountId ?? activeAccount?.id ?? null;
+
+  const connection = connectionFor(boundAccountId) ?? connectionFor(null);
+
+  const liveAccountQuery = useBrokerAccount(connection ? connection.journal_account_id ?? null : boundAccountId);
+  const liveAccount = liveAccountQuery.data;
 
   const brokers = useMemo(
     () => (catalogQuery.data?.brokers ?? []).filter((b) => b.implemented),
@@ -187,22 +217,26 @@ export function BrokerConnectWizard({
   useEffect(() => {
     if (preselectApplied || !initialBrokerId || brokers.length === 0) return;
     if (!embedded && connection) return;
-    const match = brokers.find((b) => b.id === initialBrokerId);
+    const match =
+      brokers.find((b) => b.id === initialBrokerId) ??
+      brokers.find((b) => b.id === "mt5" && /^(mt5|metatrader-?5)$/i.test(initialBrokerId));
     if (!match) return;
     setSelectedBrokerId(match.id);
-    setFields(initialServer ? { server: initialServer } : {});
+    setFields(defaultConnectFields(match, presetServer));
     setStep("credentials");
     setPreselectApplied(true);
-  }, [brokers, connection, embedded, initialBrokerId, initialServer, preselectApplied]);
+  }, [brokers, connection, embedded, initialBrokerId, presetServer, preselectApplied]);
 
   async function onSwitchBroker() {
     if (connection) {
       try {
-        await disconnectMutation.mutateAsync();
+        await disconnectMutation.mutateAsync(boundAccountId);
       } catch {
         // still allow picking a new broker
       }
     }
+    setSessionConnected(false);
+    setLinkedAccountId(embedded ? null : linkedAccountId);
     setStep("pick");
     setSelectedBrokerId("");
   }
@@ -214,7 +248,9 @@ export function BrokerConnectWizard({
     }
     setSelectedBrokerId(broker.id);
     setFields(
-      broker.id === initialBrokerId && initialServer ? { server: initialServer } : {}
+      broker.id === initialBrokerId
+        ? defaultConnectFields(broker, presetServer)
+        : defaultConnectFields(broker)
     );
     setStep("credentials");
   }
@@ -223,20 +259,40 @@ export function BrokerConnectWizard({
     e.preventDefault();
     if (!selectedBroker) return;
     try {
-      const res = await connectMutation.mutateAsync({
-        payload: buildPayload(selectedBroker.id, fields),
+      const payload = buildConnectPayload(selectedBroker.id, fields);
+      const { res } = await connectMutation.mutateAsync({
+        payload,
         brokerName: selectedBroker.name,
+        journalAccountId: boundAccountId,
       });
       setSessionConnected(true);
+      let accountId = boundAccountId;
       try {
-        if (onConnected) await onConnected(res);
+        if (onConnected) {
+          const returned = await onConnected(res);
+          if (typeof returned === "string" && returned) accountId = returned;
+        }
       } catch (err) {
         toast.error("Broker connected, but the journal account could not be saved", brokerErrorMessage(err));
       }
+      if (accountId) {
+        linkConnectionToAccount(accountId);
+        setLinkedAccountId(accountId);
+      }
       toast.success(
         "Broker connected",
-        `${selectedBroker.name} · ${res.account.currency} ${res.account.balance.toFixed(2)}`
+        res.warning || `${selectedBroker.name} · ${res.account.currency} ${res.account.balance.toFixed(2)}`
       );
+      if (autoSyncOnConnect && accountId) {
+        try {
+          const result = await syncMutation.mutateAsync({ importToJournal: true, accountId });
+          const parts = [`${result.sync.total_trades} trades synced`];
+          if (result.importResult) parts.push(`${result.importResult.imported} new in journal`);
+          toast.success("Sync complete", parts.join(" · "));
+        } catch (err) {
+          toast.error("Connected, but sync failed", brokerErrorMessage(err));
+        }
+      }
       setFields({});
       setStep("connected");
     } catch (err) {
@@ -249,7 +305,7 @@ export function BrokerConnectWizard({
     try {
       const result = await syncMutation.mutateAsync({
         importToJournal,
-        accountId: activeAccount?.id,
+        accountId: boundAccountId ?? activeAccount?.id,
       });
       const { sync, importResult } = result;
       const parts = [`${sync.total_trades} trades synced`];
@@ -267,7 +323,8 @@ export function BrokerConnectWizard({
     const ok = window.confirm(`Disconnect ${connection.broker_name}?`);
     if (!ok) return;
     try {
-      await disconnectMutation.mutateAsync();
+      await disconnectMutation.mutateAsync(boundAccountId);
+      setSessionConnected(false);
       setStep("pick");
       setSelectedBrokerId("");
       toast.success("Broker disconnected");
@@ -297,7 +354,16 @@ export function BrokerConnectWizard({
     );
   }
 
+  const displayBalance = liveAccount?.balance ?? connection?.balance;
+  const displayEquity = liveAccount?.equity ?? connection?.equity;
+  const displayCurrency = liveAccount?.currency ?? connection?.currency;
+  const displayServer = liveAccount?.server ?? connection?.server;
+  const displayAccountNumber = liveAccount?.account_number ?? connection?.account_number;
+
   if (step === "connected" && connection) {
+    const webhookUrl =
+      connection.broker_id === "tradingview" ? tradingViewWebhookUrl(connection.connection_id) : null;
+
     return (
       <div className={clsx("space-y-5", className)}>
         {!compact && (
@@ -337,14 +403,17 @@ export function BrokerConnectWizard({
                   <CheckCircle2 className="h-3 w-3" />
                   Connected
                 </span>
+                {connection.kind ? (
+                  <span className="text-[10px] uppercase tracking-wide text-muted">{connection.kind}</span>
+                ) : null}
               </div>
               <p className="mt-1 text-sm text-muted">
-                Account {connection.account_number} · {connection.server}
+                Account {displayAccountNumber} · {displayServer}
               </p>
               <p className="mt-2 text-xl font-semibold tabular-nums text-foreground">
-                {connection.currency} {connection.balance.toFixed(2)}
+                {displayCurrency} {Number(displayBalance ?? 0).toFixed(2)}
                 <span className="ml-2 text-sm font-normal text-muted">
-                  equity {connection.equity.toFixed(2)}
+                  equity {Number(displayEquity ?? 0).toFixed(2)}
                 </span>
               </p>
               {connection.last_synced_at && (
@@ -352,8 +421,44 @@ export function BrokerConnectWizard({
                   Last synced {new Date(connection.last_synced_at).toLocaleString()}
                 </p>
               )}
+              {connection.market_type ? (
+                <p className="mt-1 text-xs text-muted">Market: {connection.market_type}</p>
+              ) : null}
             </div>
           </div>
+
+          {connection.warning ? (
+            <div className="border-t border-amber-500/20 bg-amber-500/10 px-5 py-3 text-sm text-amber-100/90">
+              {connection.warning}
+            </div>
+          ) : null}
+
+          {webhookUrl ? (
+            <div className="space-y-2 border-t border-primary/15 px-5 py-3 text-sm">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">TradingView webhook</p>
+              <p className="text-muted">
+                POST alerts to this URL with <span className="font-mono">?secret=</span> or header{" "}
+                <span className="font-mono">X-Webhook-Secret</span> using the webhook secret you entered.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="min-w-0 flex-1 truncate rounded-lg bg-black/20 px-2 py-1.5 text-xs text-foreground">
+                  {webhookUrl}
+                </code>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(webhookUrl);
+                    toast.success("Webhook URL copied");
+                  }}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-3 border-t border-primary/15 bg-black/10 px-5 py-4">
             {!compact && (
@@ -406,6 +511,8 @@ export function BrokerConnectWizard({
   }
 
   if (step === "credentials" && selectedBroker) {
+    const formFields = connectFormFields(selectedBroker);
+
     return (
       <div className={clsx("space-y-5", compact && "mx-auto max-w-lg", className)}>
         {embedded ? (
@@ -414,14 +521,8 @@ export function BrokerConnectWizard({
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               Connect {selectedBroker.name}
             </h2>
-            <p className="mt-2 text-sm text-muted">
-              Enter your login, investor password, and server to sync trades.
-            </p>
-            {companyLabel ? (
-              <p className="mt-3 text-sm text-foreground">
-                Server: <span className="font-medium">{companyLabel}</span>
-              </p>
-            ) : null}
+            <p className="mt-2 text-sm text-muted">{credentialsHelp(selectedBroker)}</p>
+            {companyLabel ? <p className="mt-1 text-xs text-muted">{companyLabel}</p> : null}
           </div>
         ) : (
           <>
@@ -447,11 +548,7 @@ export function BrokerConnectWizard({
               step={2}
               total={totalSteps}
               title={`Connect ${selectedBroker.name}`}
-              subtitle={
-                initialServer
-                  ? "Enter account login, investor password, and confirm the server to sync trades."
-                  : selectedBroker.notes
-              }
+              subtitle={credentialsHelp(selectedBroker)}
             />
           </>
         )}
@@ -462,21 +559,28 @@ export function BrokerConnectWizard({
           </div>
         ) : null}
 
-        <form onSubmit={onConnect} className="space-y-4 rounded-xl border border-border bg-card p-5">
-          {selectedBroker.fields.map((field) => {
-            const key = field as FieldKey;
-            const meta = FIELD_META[key] ?? { label: field };
+        <form
+          onSubmit={onConnect}
+          autoComplete="off"
+          className="space-y-4 rounded-xl border border-border bg-card p-5"
+        >
+          {formFields.map((field) => {
+            const meta = connectFieldMeta(selectedBroker, field);
+            const required = isConnectFieldRequired(selectedBroker, field);
+            const lockProps = antiAutofillProps(selectedBroker.id, field, isSecretField(selectedBroker, field));
 
-            if (key === "market_type") {
+            if (field === "market_type") {
               return (
-                <div key={key}>
+                <div key={field}>
                   <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted">
                     {meta.label}
+                    {!required ? <span className="ml-1 normal-case text-muted">optional</span> : null}
                   </label>
                   <select
                     value={fields.market_type ?? "spot"}
                     onChange={(e) => updateField("market_type", e.target.value)}
                     className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-primary"
+                    required={required}
                   >
                     <option value="spot">Spot</option>
                     <option value="futures">Futures</option>
@@ -485,17 +589,17 @@ export function BrokerConnectWizard({
               );
             }
 
-            if (key === "password" || key === "api_secret" || key === "passphrase") {
+            if (isSecretField(selectedBroker, field)) {
               return (
-                <div key={key}>
+                <div key={field}>
                   <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted">
                     {meta.label}
                   </label>
                   <PasswordInput
-                    value={fields[key] ?? ""}
-                    onChange={(e) => updateField(key, e.target.value)}
-                    required
-                    autoComplete="off"
+                    {...lockProps}
+                    value={fields[field] ?? ""}
+                    onChange={(e) => updateField(field, e.target.value)}
+                    required={required}
                     placeholder={meta.placeholder}
                   />
                   {meta.hint && <p className="mt-1 text-xs text-muted">{meta.hint}</p>}
@@ -503,64 +607,83 @@ export function BrokerConnectWizard({
               );
             }
 
-            if (key === "server") {
-              const isMt5 = selectedBroker.kind === "mt5" || selectedBroker.id === "mt5" || selectedBroker.id === "exness";
-              const hintOptions = Array.from(
-                new Set(
-                  [
-                    ...tradeServerHintsFor(initialServer),
-                    ...tradeServerHintsFor(fields.server),
-                    initialServer,
-                    ...(isMt5 ? MT5_SERVERS : selectedBroker.server_hints),
-                    fields.server,
-                  ]
-                    .map((item) => item?.trim())
-                    .filter((item): item is string => Boolean(item))
-                )
-              );
-              return (
-                <div key={key}>
-                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted">
-                    {meta.label}
-                  </label>
-                  <Input
-                    list="broker-server-hints"
-                    value={fields.server ?? ""}
-                    onChange={(e) => updateField("server", e.target.value)}
-                    required
-                    autoComplete="off"
-                    placeholder={meta.placeholder}
-                  />
-                  {hintOptions.length > 0 ? (
-                    <datalist id="broker-server-hints">
-                      {hintOptions.map((hint) => (
-                        <option key={hint} value={hint} />
+            if (field === "server") {
+              const options = serverDropdownOptions(selectedBroker, fields.server || presetServer);
+              const customAllowed = allowsCustomServer(selectedBroker);
+              const envOnly = isEnvironmentServer(selectedBroker.id);
+              const current = fields.server ?? "";
+              const inList = options.some((item) => item.toLowerCase() === current.toLowerCase());
+              const selectValue = !current ? "" : inList ? current : customAllowed ? CUSTOM_SERVER_VALUE : current;
+
+              if (envOnly || options.length > 0) {
+                return (
+                  <div key={field} className="space-y-2">
+                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted">
+                      {meta.label}
+                      {!required ? <span className="ml-1 normal-case text-muted">optional</span> : null}
+                    </label>
+                    <Select
+                      value={
+                        fields.server_pick === CUSTOM_SERVER_VALUE || (!inList && current && customAllowed)
+                          ? CUSTOM_SERVER_VALUE
+                          : selectValue
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === CUSTOM_SERVER_VALUE) {
+                          setFields((prev) => ({
+                            ...prev,
+                            server: inList ? "" : prev.server,
+                            server_pick: CUSTOM_SERVER_VALUE,
+                          }));
+                          return;
+                        }
+                        setFields((prev) => ({
+                          ...prev,
+                          server: value,
+                          server_pick: value,
+                        }));
+                      }}
+                      required={required && !customAllowed}
+                    >
+                      <option value="">{envOnly ? "Default (live)" : "Select server…"}</option>
+                      {(envOnly ? ["live", "demo"] : options).map((server) => (
+                        <option key={server} value={server}>
+                          {server}
+                        </option>
                       ))}
-                    </datalist>
-                  ) : null}
-                  {initialServer && tradeServerHintsFor(initialServer).length > 0 ? (
-                    <p className="mt-1 text-xs text-muted">
-                      Selected {initialServer}. If connect fails, use the trade-server name from MT5
-                      (for example {tradeServerHintsFor(initialServer)[0]}).
-                    </p>
-                  ) : meta.hint ? (
-                    <p className="mt-1 text-xs text-muted">{meta.hint}</p>
-                  ) : null}
-                </div>
-              );
+                      {customAllowed ? (
+                        <option value={CUSTOM_SERVER_VALUE}>Enter exact server name…</option>
+                      ) : null}
+                    </Select>
+                    {customAllowed && selectValue === CUSTOM_SERVER_VALUE ? (
+                      <Input
+                        {...antiAutofillProps(selectedBroker.id, "server_custom")}
+                        value={inList ? "" : current}
+                        onChange={(e) => updateField("server", e.target.value)}
+                        required={required}
+                        placeholder="Exact MT5 server name"
+                      />
+                    ) : null}
+                    {meta.hint && <p className="mt-1 text-xs text-muted">{meta.hint}</p>}
+                  </div>
+                );
+              }
             }
 
             return (
-              <div key={key}>
+              <div key={field}>
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted">
                   {meta.label}
+                  {!required ? <span className="ml-1 normal-case text-muted">optional</span> : null}
                 </label>
                 <Input
-                  value={fields[key] ?? ""}
-                  onChange={(e) => updateField(key, e.target.value)}
-                  required
-                  autoComplete="off"
-                  type={key === "login" ? "number" : "text"}
+                  {...lockProps}
+                  value={fields[field] ?? ""}
+                  onChange={(e) => updateField(field, e.target.value)}
+                  required={required}
+                  inputMode={meta.inputMode === "numeric" ? "numeric" : undefined}
+                  type="text"
                   placeholder={meta.placeholder}
                 />
                 {meta.hint && <p className="mt-1 text-xs text-muted">{meta.hint}</p>}

@@ -24,7 +24,6 @@ import {
   type AccountFormValues,
 } from "@/lib/accounts/accountForm";
 import { buildUnifiedBrokerCatalog, type UnifiedBroker } from "@/lib/brokers/unified-catalog";
-import { resolveMt5ConnectServer } from "@/lib/brokers/mt5-servers";
 import { useAccounts, useCreateAccount } from "@/lib/hooks/useAccounts";
 import { useBrokerCatalog } from "@/lib/hooks/useBroker";
 import type { ConnectResponse } from "@/lib/connectors/types";
@@ -238,7 +237,7 @@ export function AddTradesFlow() {
     setStep("account-form");
   }
 
-  async function onBrokerConnected(res: ConnectResponse) {
+  async function onBrokerConnected(res: ConnectResponse): Promise<string | void> {
     const broker = selectedBroker;
     if (!broker) return;
     const login = String(res.account.account_number);
@@ -251,7 +250,7 @@ export function AddTradesFlow() {
     if (existing) {
       setTargetAccountId(existing.id);
       setActiveAccountId(existing.id);
-      return;
+      return existing.id;
     }
     const created = await createAccount.mutateAsync(
       accountInputFromBrokerConnect({
@@ -265,11 +264,11 @@ export function AddTradesFlow() {
     );
     setTargetAccountId(created.id);
     setActiveAccountId(created.id);
+    return created.id;
   }
 
   function openTradeForMethod(method: ImportMethod, accountId: string, broker: UnifiedBroker | null) {
     setActiveAccountId(accountId);
-    const tradeServer = resolveMt5ConnectServer(selectedServer) || selectedServer;
     const brokerIdForSync =
       broker?.connectors?.id ?? (broker?.autoSyncAvailable ? broker.id : null);
 
@@ -280,7 +279,6 @@ export function AddTradesFlow() {
       openModal("broker", {
         initialBrokerId: brokerIdForSync,
         initialAccountId: accountId,
-        initialServer: tradeServer,
       });
       return;
     }
@@ -451,11 +449,12 @@ export function AddTradesFlow() {
                   key={`${selectedBroker?.id ?? "mt5"}-${selectedServer ?? "none"}`}
                   compact
                   embedded
+                  autoSyncOnConnect
                   initialBrokerId={
                     selectedBroker?.connectors?.id ??
                     (selectedBroker?.autoSyncAvailable ? selectedBroker.id : null)
                   }
-                  initialServer={resolveMt5ConnectServer(selectedServer) || selectedServer}
+                  initialServer={selectedServer}
                   companyLabel={selectedServer}
                   onConnected={onBrokerConnected}
                 />

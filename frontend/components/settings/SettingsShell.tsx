@@ -2,7 +2,6 @@
 
 import clsx from "clsx";
 import {
-  ArrowLeft,
   Bell,
   Cable,
   CreditCard,
@@ -49,13 +48,6 @@ export function SettingsShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-full flex-col bg-background md:flex-row">
       <aside className="flex w-full shrink-0 flex-col border-b border-border bg-background md:w-[220px] md:border-b-0 md:border-r">
         <div className="space-y-4 px-4 py-5">
-          <Link
-            href="/home"
-            className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted transition hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {t("common.back")}
-          </Link>
           <div className="flex items-center gap-2">
             <Target className="h-4 w-4 text-primary" />
             <h1 className="text-lg font-semibold tracking-tight text-foreground">{t("settings.title")}</h1>
