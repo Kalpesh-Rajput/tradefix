@@ -63,6 +63,10 @@ class Settings(BaseSettings):
     # Create a key at https://developers.giphy.com — client search is proxied server-side.
     giphy_api_key: str = ""
 
+    # Delayed daily FX table. No API key. Never treat these as live/real-time quotes.
+    fx_provider_url: str = "https://open.er-api.com/v6/latest/USD"
+    fx_cache_ttl_seconds: int = 900
+
     @property
     def cors_origins(self) -> list[str]:
         origins = [part.strip() for part in self.frontend_origin.split(",") if part.strip()]

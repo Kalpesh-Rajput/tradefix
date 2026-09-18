@@ -4,6 +4,8 @@ import clsx from "clsx";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
+import { SessionFlag } from "@/components/market-sessions/SessionFlag";
+import { SessionStatusBadge } from "@/components/market-sessions/SessionChrome";
 import { formatSessionHours, formatTimeInZone, friendlyTimeZoneLabel } from "@/lib/market-sessions/timezone";
 import type { HourCycle, SessionRowView } from "@/lib/market-sessions/types";
 
@@ -22,28 +24,31 @@ export function SessionDetails({
   const convertedClose = formatTimeInZone(row.close, viewTimeZone, hourCycle);
 
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[12px]">
-      <dt className="text-[var(--color-text-muted)]">Session</dt>
-      <dd className="font-medium text-[var(--color-text-primary)]">{row.def.name}</dd>
-      <dt className="text-[var(--color-text-muted)]">Timezone</dt>
-      <dd className="text-[var(--color-text-primary)]">{row.def.timezone.replace(/_/g, " ")}</dd>
-      <dt className="text-[var(--color-text-muted)]">Local hours</dt>
-      <dd className="text-[var(--color-text-primary)]">
-        {localOpen} – {localClose}
-      </dd>
-      <dt className="text-[var(--color-text-muted)]">Selected zone</dt>
-      <dd className="min-w-0 truncate text-[var(--color-text-primary)]">
-        {friendlyTimeZoneLabel(viewTimeZone, row.open)}
-      </dd>
-      <dt className="text-[var(--color-text-muted)]">Converted</dt>
-      <dd className="text-[var(--color-text-primary)]">
-        {convertedOpen} – {convertedClose}
-      </dd>
-      <dt className="text-[var(--color-text-muted)]">Status</dt>
-      <dd className="font-medium text-[var(--color-text-primary)]">{row.isOpen ? "Open" : "Closed"}</dd>
-      <dt className="text-[var(--color-text-muted)]">Duration</dt>
-      <dd className="text-[var(--color-text-primary)]">{formatSessionHours(row.durationMinutes)}</dd>
-    </dl>
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-2 border-b border-[var(--color-border)] pb-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <SessionFlag sessionId={row.def.id} title={row.def.name} />
+          <p className="truncate text-[14px] font-semibold text-[var(--color-text-primary)]">{row.def.name}</p>
+        </div>
+        <SessionStatusBadge open={row.isOpen} />
+      </div>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[12px]">
+        <dt className="text-[var(--color-text-muted)]">Local hours</dt>
+        <dd className="tabular-nums text-[var(--color-text-primary)]">
+          {localOpen} — {localClose}
+        </dd>
+        <dt className="text-[var(--color-text-muted)]">Your timezone</dt>
+        <dd className="tabular-nums text-[var(--color-text-primary)]">
+          {convertedOpen} — {convertedClose}
+        </dd>
+        <dt className="text-[var(--color-text-muted)]">Zone</dt>
+        <dd className="min-w-0 truncate text-[var(--color-text-primary)]">
+          {friendlyTimeZoneLabel(viewTimeZone, row.open)}
+        </dd>
+        <dt className="text-[var(--color-text-muted)]">Duration</dt>
+        <dd className="text-[var(--color-text-primary)]">{formatSessionHours(row.durationMinutes)}</dd>
+      </dl>
+    </div>
   );
 }
 
@@ -83,9 +88,9 @@ export function SessionInfoPopover({
     if (!open) return;
     const rect = btnRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const width = 280;
+    const width = 292;
     const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
-    const top = Math.min(rect.bottom + 8, window.innerHeight - 240);
+    const top = Math.min(rect.bottom + 8, window.innerHeight - 260);
     setPos({ top, left });
 
     function onPointer(e: MouseEvent) {
@@ -139,7 +144,7 @@ export function SessionInfoPopover({
               aria-label={`${row.def.name} session details`}
               onMouseEnter={cancelClose}
               onMouseLeave={scheduleClose}
-              className="fixed z-[220] w-[280px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-dropdown)]"
+              className="fixed z-[220] w-[292px] rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 shadow-[var(--shadow-dropdown)]"
               style={{ top: pos.top, left: pos.left }}
             >
               <SessionDetails row={row} viewTimeZone={viewTimeZone} hourCycle={hourCycle} />

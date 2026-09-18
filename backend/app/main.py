@@ -15,6 +15,7 @@ from app.api.routers import (
     coach,
     day_notes,
     day_plans,
+    fx,
     imports,
     insights,
     media,
@@ -86,6 +87,7 @@ app.include_router(prop.router)
 app.include_router(coach.router)
 app.include_router(mentor.router)
 app.include_router(media.router)
+app.include_router(fx.router)
 
 uploads_path = Path(settings.upload_dir)
 uploads_path.mkdir(parents=True, exist_ok=True)

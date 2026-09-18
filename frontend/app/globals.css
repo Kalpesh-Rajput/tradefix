@@ -357,6 +357,120 @@ html.dark ::-webkit-scrollbar-thumb {
     box-shadow: var(--shadow-sm);
   }
 
+  .ms-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  }
+
+  .ms-card-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+  }
+
+  .ms-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+    animation: msLivePulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes msLivePulse {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+    }
+    50% {
+      opacity: 0.55;
+      box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-primary) 8%, transparent);
+    }
+  }
+
+  .fx-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+  }
+
+  .fx-chip:hover,
+  .fx-chip.is-active {
+    border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+  }
+
+  .fx-swap-icon {
+    transition: transform 280ms ease;
+  }
+
+  .fx-swap-icon.is-flipped {
+    transform: rotate(180deg);
+  }
+
+  .fx-cached-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--color-text-tertiary);
+    box-shadow: none;
+  }
+
+  .fx-skeleton {
+    display: block;
+    overflow: hidden;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--color-text-muted) 16%, var(--color-surface));
+    position: relative;
+  }
+
+  .fx-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--color-text-muted) 18%, transparent),
+      transparent
+    );
+    animation: fxShimmer 1.4s ease-in-out infinite;
+  }
+
+  @keyframes fxShimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ms-live-dot {
+      animation: none;
+    }
+    .ms-card {
+      transition: none;
+    }
+    .fx-swap-icon {
+      transition: none;
+    }
+    .fx-skeleton::after {
+      animation: none;
+    }
+  }
+
   .report-metric-scroll {
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--color-text-muted) 35%, transparent) transparent;

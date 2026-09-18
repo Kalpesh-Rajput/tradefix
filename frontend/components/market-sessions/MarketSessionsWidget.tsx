@@ -1,9 +1,9 @@
 "use client";
 
-import clsx from "clsx";
 import Link from "next/link";
 
 import { ChartCard } from "@/components/dashboard/zella/ChartCard";
+import { SessionFlag } from "@/components/market-sessions/SessionFlag";
 import { useMarketSessions } from "@/lib/hooks/useMarketSessions";
 import { formatDurationMs } from "@/lib/market-sessions/timezone";
 
@@ -38,20 +38,16 @@ export function MarketSessionsWidget() {
         {snapshot.rows.map((row) => (
           <li key={row.def.id} className="min-w-0">
             <p className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-text-primary)]">
-              <span
-                className={clsx("h-1.5 w-1.5 rounded-full", row.isOpen ? "opacity-100" : "opacity-40")}
-                style={{ background: row.def.color }}
-                aria-hidden
-              />
+              <SessionFlag sessionId={row.def.id} size="sm" />
               {row.def.name}
             </p>
-            <p className="pl-3 text-[11px] text-[var(--color-text-secondary)]">{row.isOpen ? "Open" : "Closed"}</p>
+            <p className="pl-[22px] text-[11px] text-[var(--color-text-secondary)]">
+              {row.isOpen ? "Open" : "Closed"}
+            </p>
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-[12px] text-[var(--color-text-tertiary)]">
-        Next: {nextLabel}
-      </p>
+      <p className="mt-3 text-[12px] text-[var(--color-text-tertiary)]">Next: {nextLabel}</p>
     </ChartCard>
   );
 }

@@ -213,7 +213,9 @@ export const en = {
   "journal.tradesCount": "{count} trade",
   "journal.tradesCount_other": "{count} trades",
 
-  "marketSessions.subtitle": "Know which markets are active right now",
+  "marketSessions.subtitle": "Global market hours at a glance",
+  "marketSessions.converter.title": "Currency converter",
+  "marketSessions.converter.subtitle": "Quickly convert currencies using the latest available exchange rate",
 
   "auth.login.title": "Sign in",
   "auth.signup.title": "Create account",

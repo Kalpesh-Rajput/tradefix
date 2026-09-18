@@ -15,7 +15,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
-type Option = { value: string; label: string; icon?: ReactNode };
+type Option = { value: string; label: string; icon?: ReactNode; description?: string; keywords?: string };
 
 type SearchableSelectProps = {
   options: Option[];
@@ -77,9 +77,10 @@ export function SearchableSelect({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return options;
-    return options.filter(
-      (o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q)
-    );
+    return options.filter((o) => {
+      const haystack = `${o.value} ${o.label} ${o.description ?? ""} ${o.keywords ?? ""}`.toLowerCase();
+      return haystack.includes(q);
+    });
   }, [options, query]);
 
   const updatePosition = useCallback(() => {
@@ -285,7 +286,12 @@ export function SearchableSelect({
                       }}
                     >
                       {opt.icon ? <span className="shrink-0">{opt.icon}</span> : null}
-                      <span className="min-w-0 flex-1 truncate">{opt.label}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{opt.label}</span>
+                        {opt.description ? (
+                          <span className="block truncate text-[11px] text-muted">{opt.description}</span>
+                        ) : null}
+                      </span>
                       {isSelected && (
                         <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
                       )}
@@ -330,8 +336,11 @@ export function SearchableSelect({
       >
         <span className="flex min-w-0 flex-1 items-center gap-2.5">
           {selected?.icon ? <span className="shrink-0">{selected.icon}</span> : null}
-          <span className={clsx("min-w-0 truncate", selected ? "text-foreground" : "text-muted")}>
-            {selected?.label || placeholder}
+          <span className={clsx("min-w-0", selected ? "text-foreground" : "text-muted")}>
+            <span className="block truncate">{selected?.label || placeholder}</span>
+            {selected?.description ? (
+              <span className="block truncate text-[11px] font-normal text-muted">{selected.description}</span>
+            ) : null}
           </span>
         </span>
         <ChevronDown
