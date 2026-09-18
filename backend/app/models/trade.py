@@ -111,6 +111,9 @@ class Trade(Base):
     month: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     strategy_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     strategy_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    playbook_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("playbooks.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     precheck_list_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("precheck_lists.id", ondelete="SET NULL"), nullable=True
     )
@@ -123,6 +126,7 @@ class Trade(Base):
         back_populates="trade", cascade="all, delete-orphan", order_by="TradeExecution.sort_order"
     )
     precheck_list: Mapped["PrecheckList | None"] = relationship(back_populates="trades")
+    playbook: Mapped["Playbook | None"] = relationship(back_populates="trades")
 
 
 class ExecutionLegType(str, enum.Enum):

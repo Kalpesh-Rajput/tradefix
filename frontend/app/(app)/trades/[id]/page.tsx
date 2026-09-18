@@ -1,6 +1,5 @@
 "use client";
 
-import clsx from "clsx";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -16,6 +15,7 @@ import { Input, Textarea } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ScreenshotGrid } from "@/components/media/ScreenshotGrid";
 import { useToast } from "@/components/ui/Toast";
+import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 import { resolveEmotionCatalog } from "@/lib/emotions";
 import {
   useDeleteTrade,
@@ -210,7 +210,7 @@ export default function TradeDetailPage() {
   }
 
   const pnl = displayPnl(trade.pnl, trade.fees);
-  const pnlColor = pnl == null ? "text-zinc-400" : pnl >= 0 ? "text-primary" : "text-destructive";
+  const pnlColor = pnl == null ? undefined : pnl >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX;
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 sm:px-6">
@@ -247,7 +247,7 @@ export default function TradeDetailPage() {
             </p>
           </div>
           <div className="text-right">
-            <p className={clsx("font-mono text-2xl font-semibold", pnlColor)}>{fmtPnl(pnl)}</p>
+            <p className="font-mono text-2xl font-semibold" style={{ color: pnlColor ?? "var(--color-text-muted)" }}>{fmtPnl(pnl)}</p>
             <p className="mt-0.5 font-mono text-sm text-zinc-400">{fmtR(trade.r_multiple)}</p>
           </div>
         </div>

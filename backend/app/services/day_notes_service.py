@@ -11,6 +11,7 @@ from app.models.day_note import DayNote
 from app.models.notebook_folder import NotebookFolder
 from app.models.user import User
 from app.schemas.day_note import DayNoteResponse, DayNoteUpdate, DayNoteUpsert
+from app.services.progress_tracker_service import touch_progress
 from app.services.storage import delete_local_upload
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,7 @@ def upsert_note(db: Session, user: User, payload: DayNoteUpsert) -> DayNote:
             existing.is_favorite = payload.is_favorite
         if payload.folder_id is not None:
             existing.folder_id = payload.folder_id
+        touch_progress(db, user, payload.date)
         db.commit()
         db.refresh(existing)
         logger.info("Updated day note %s for %s", existing.id, payload.date)
@@ -91,6 +93,7 @@ def upsert_note(db: Session, user: User, payload: DayNoteUpsert) -> DayNote:
         folder_id=payload.folder_id,
     )
     db.add(note)
+    touch_progress(db, user, payload.date)
     db.commit()
     db.refresh(note)
     logger.info("Created day note %s for %s", note.id, payload.date)

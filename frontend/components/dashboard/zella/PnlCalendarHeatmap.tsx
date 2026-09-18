@@ -90,6 +90,7 @@ export function PnlCalendarHeatmap({
   dailyGoal,
   onMonthChange,
   onSelectDate,
+  onOpenDate,
 }: {
   days: Array<PnlHeatmapDay | CalendarDay>;
   month?: string | null;
@@ -103,6 +104,7 @@ export function PnlCalendarHeatmap({
   dailyGoal?: number | null;
   onMonthChange?: (start: string, end: string) => void;
   onSelectDate?: (date: string) => void;
+  onOpenDate?: (date: string) => void;
 }) {
   const [cursor, setCursor] = useState(() => {
     if (month) {
@@ -317,6 +319,7 @@ export function PnlCalendarHeatmap({
                       if (!cell.iso) return;
                       setSelected(cell.iso);
                       onSelectDate?.(cell.iso);
+                      onOpenDate?.(cell.iso);
                     }}
                     className={clsx(
                       "relative flex h-full min-h-0 flex-col overflow-hidden rounded-md border text-left",

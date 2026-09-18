@@ -31,7 +31,7 @@ function normalizeRange(from: string, to: string) {
   return { from, to };
 }
 
-type PresetId =
+export type PresetId =
   | "7d"
   | "30d"
   | "90d"
@@ -40,7 +40,7 @@ type PresetId =
   | "ytd"
   | "all";
 
-function rangeForPreset(id: PresetId): { from: string; to: string } {
+export function rangeForPreset(id: PresetId): { from: string; to: string } {
   const today = startOfDay(new Date());
   const to = localIso(today);
 
@@ -90,12 +90,14 @@ export function DateRangePicker({
   onChange,
   className,
   triggerClassName,
+  buttonLabel,
 }: {
   dateFrom: string;
   dateTo: string;
   onChange: (from: string, to: string) => void;
   className?: string;
   triggerClassName?: string;
+  buttonLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [draftFrom, setDraftFrom] = useState(dateFrom);
@@ -161,12 +163,14 @@ export function DateRangePicker({
         aria-controls={listId}
         onClick={() => setOpen((v) => !v)}
         className={clsx(
-          "inline-flex min-w-[210px] max-w-[280px] items-center gap-1.5 border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[11px] font-medium text-[var(--color-text-primary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)]",
-          triggerClassName ?? "h-8 rounded-md"
+          "inline-flex items-center gap-1.5 border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[11px] font-medium text-[var(--color-text-primary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)]",
+          triggerClassName ?? "h-8 min-w-[210px] max-w-[280px] rounded-md"
         )}
       >
         <CalendarDays className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={1.75} />
-        <span className="min-w-0 flex-1 truncate text-left">{formatRangeLabel(dateFrom, dateTo)}</span>
+        <span className="min-w-0 flex-1 truncate text-left" title={formatRangeLabel(dateFrom, dateTo)}>
+          {buttonLabel || formatRangeLabel(dateFrom, dateTo)}
+        </span>
         <ChevronDown
           className={clsx(
             "h-3.5 w-3.5 shrink-0 text-[var(--color-text-muted)] transition-transform duration-150",

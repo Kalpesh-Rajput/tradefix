@@ -5,6 +5,7 @@ import { Bell, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { BackButton } from "@/components/layout/AppNavigation";
 import { useHeaderActionsSlot } from "@/components/layout/HeaderActions";
 import { NavCollapseButton } from "@/components/layout/NavCollapseButton";
 import { useLocale } from "@/components/providers/LocaleProvider";
@@ -36,6 +37,7 @@ export function AppHeader() {
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
         {showJournalToggle && <NavCollapseButton variant="light" />}
+        <BackButton />
         <div className="min-w-0">
           <h1
             className={clsx(

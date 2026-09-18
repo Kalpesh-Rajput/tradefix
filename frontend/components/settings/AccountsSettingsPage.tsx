@@ -211,7 +211,10 @@ export function AccountsSettingsPage() {
               <AccountPicker
                 accounts={accounts}
                 value={isCreate ? "__new__" : selected?.id ?? ""}
-                getLabel={accountLabel}
+                getLabel={(item) => {
+                  const match = accounts.find((account) => account.id === item.id);
+                  return match ? accountLabel(match) : item.name;
+                }}
                 extraOptions={[{ id: "__new__", label: "Create new account…" }]}
                 onChange={(id) => {
                   if (id === "__new__") {

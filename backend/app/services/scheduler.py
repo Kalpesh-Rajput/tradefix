@@ -39,12 +39,25 @@ def run_weekly_agents() -> None:
     _run_agent_for_all_users("hot_take")
 
 
+def run_progress_reminders() -> None:
+    from app.services.progress_notifications import run_streak_reminders
+
+    db = SessionLocal()
+    try:
+        run_streak_reminders(db)
+    except Exception:  # noqa: BLE001
+        logger.exception("Progress Tracker reminders failed")
+    finally:
+        db.close()
+
+
 def start_scheduler() -> None:
     if scheduler.running:
         return
     # Daily agents at 8:00 local time (before market open); weekly Hot Take on Sundays.
     scheduler.add_job(run_daily_agents, "cron", hour=8, minute=0, id="daily_agents", replace_existing=True)
     scheduler.add_job(run_weekly_agents, "cron", day_of_week="sun", hour=18, minute=0, id="weekly_agents", replace_existing=True)
+    scheduler.add_job(run_progress_reminders, "cron", minute=0, id="progress_reminders", replace_existing=True)
     scheduler.start()
 
 

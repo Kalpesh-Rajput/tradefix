@@ -52,9 +52,14 @@ export function ScreenshotGrid({
   const delBtn = dark
     ? "absolute right-1.5 top-1.5 rounded bg-black/70 p-1.5 text-white opacity-0 transition group-hover:opacity-100"
     : "absolute right-1.5 top-1.5 rounded bg-[var(--color-text-primary)]/70 p-1.5 text-white opacity-0 transition group-hover:opacity-100";
-  const empty = dark
-    ? `flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 text-zinc-500 transition hover:border-white/30 hover:text-zinc-300 disabled:opacity-40 ${compact ? "py-4" : "py-10"}`
-    : `flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--color-border)] text-[var(--color-text-tertiary)] transition hover:border-[var(--color-border-light)] hover:text-[var(--color-text-secondary)] disabled:opacity-40 ${compact ? "py-3" : "py-8"}`;
+  const empty = clsx(
+    "flex w-full items-center justify-center gap-2 border border-dashed transition disabled:opacity-40",
+    compact ? "h-14 flex-row rounded-lg px-3" : "flex-col rounded-lg py-8 sm:py-10",
+    dark
+      ? "border-white/15 text-zinc-500 hover:border-white/30 hover:text-zinc-300"
+      : "border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-border-light)] hover:text-[var(--color-text-secondary)]",
+    !compact && dark && "rounded-xl"
+  );
 
   return (
     <div>
@@ -62,14 +67,14 @@ export function ScreenshotGrid({
         <div>
           <h3
             className={clsx(
-              "text-[13px] font-semibold",
+              compact ? "text-[12px] font-semibold leading-tight" : "text-[13px] font-semibold",
               dark ? "text-white" : "text-[var(--color-text-primary)]"
             )}
           >
             Screenshots
           </h3>
-          <p className={clsx("mt-0.5 text-[11px]", dark ? "text-zinc-500" : "text-[var(--color-text-tertiary)]")}>
-            {total}/{max} · PNG, JPG, WEBP · click to view
+          <p className={clsx(compact ? "text-[11px]" : "mt-0.5 text-[11px]", dark ? "text-zinc-500" : "text-[var(--color-text-tertiary)]")}>
+            {compact ? `${total}/${max} · PNG, JPG, WEBP` : `${total}/${max} · PNG, JPG, WEBP · click to view`}
           </p>
         </div>
         {onAdd ? (
@@ -92,11 +97,11 @@ export function ScreenshotGrid({
 
       {total === 0 ? (
         <button type="button" onClick={onAdd} disabled={!canAdd || uploading} className={empty}>
-          <ImagePlus className="h-6 w-6" />
-          <span className="text-[12px]">{emptyHint}</span>
+          <ImagePlus className={compact ? "h-4 w-4 shrink-0" : "h-6 w-6"} />
+          <span className="truncate text-[12px]">{emptyHint}</span>
         </button>
       ) : (
-        <div className={clsx("grid gap-2", compact ? "grid-cols-5" : "grid-cols-2 sm:grid-cols-3")}>
+        <div className={clsx("grid gap-2", compact ? "grid-cols-3 sm:grid-cols-5" : "grid-cols-2 sm:grid-cols-3")}>
           {pending.map((shot, i) => (
             <div key={shot.id} className={tile}>
               <button type="button" className="block w-full" onClick={() => setIndex(i)} aria-label="View screenshot">

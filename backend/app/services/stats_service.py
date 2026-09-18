@@ -94,6 +94,9 @@ def empty_overview() -> dict:
         "max_drawdown_pct": 0.0,
         "avg_execution_score": None,
         "avg_r_multiple": None,
+        "win_count": 0,
+        "loss_count": 0,
+        "breakeven_count": 0,
     }
 
 
@@ -103,6 +106,7 @@ def overview_from_trades(trades: list[Trade]) -> dict:
 
     wins = [float(t.pnl) for t in trades if float(t.pnl) > 0]
     losses = [float(t.pnl) for t in trades if float(t.pnl) < 0]
+    breakevens = [t for t in trades if float(t.pnl or 0) == 0]
     total_pnl = round(sum(float(t.pnl) for t in trades), 2)
     total_fees = round(sum(float(t.fees or 0) for t in trades), 2)
 
@@ -157,6 +161,9 @@ def overview_from_trades(trades: list[Trade]) -> dict:
         "max_drawdown_pct": dd_pct,
         "avg_execution_score": round(sum(exec_scores) / len(exec_scores), 1) if exec_scores else None,
         "avg_r_multiple": round(sum(r_vals) / len(r_vals), 3) if r_vals else None,
+        "win_count": len(wins),
+        "loss_count": len(losses),
+        "breakeven_count": len(breakevens),
     }
 
 

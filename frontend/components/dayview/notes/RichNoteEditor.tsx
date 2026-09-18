@@ -20,12 +20,14 @@ export function RichNoteEditor({
   onChange,
   fullscreen,
   onToggleFullscreen,
+  layout = "fill",
 }: {
   html: string;
   revision: number;
   onChange: (next: string) => void;
   fullscreen: boolean;
   onToggleFullscreen: () => void;
+  layout?: "fill" | "document";
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [block, setBlock] = useState("H3");
@@ -109,32 +111,42 @@ export function RichNoteEditor({
     setMicOn(true);
   }
 
+  const fill = fullscreen || layout === "fill";
+
   return (
     <div
       className={
         fullscreen
           ? "absolute inset-0 z-20 flex flex-col bg-[var(--color-surface)]"
-          : "flex min-h-0 flex-1 flex-col"
+          : fill
+            ? "flex min-h-0 flex-1 flex-col"
+            : "flex flex-col"
       }
     >
-      <EditorToolbar
-        block={block}
-        font={font}
-        fontSize={fontSize}
-        onBlock={applyBlock}
-        onFont={applyFont}
-        onFontSize={applySize}
-        onCommand={run}
-        onLink={applyLink}
-        onColor={(c) => run("foreColor", c)}
-        onHighlight={(c) => run("hiliteColor", c)}
-        onMic={toggleMic}
-        onFullscreen={onToggleFullscreen}
-        micOn={micOn}
-      />
+      <div className={fill ? "shrink-0" : "sticky top-0 z-10 bg-[var(--color-surface)]"}>
+        <EditorToolbar
+          block={block}
+          font={font}
+          fontSize={fontSize}
+          onBlock={applyBlock}
+          onFont={applyFont}
+          onFontSize={applySize}
+          onCommand={run}
+          onLink={applyLink}
+          onColor={(c) => run("foreColor", c)}
+          onHighlight={(c) => run("hiliteColor", c)}
+          onMic={toggleMic}
+          onFullscreen={onToggleFullscreen}
+          micOn={micOn}
+        />
+      </div>
       <div
         ref={ref}
-        className="tf-note-editor min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4 outline-none"
+        className={
+          fill
+            ? "tf-note-editor min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 outline-none sm:px-6 sm:py-4"
+            : "tf-note-editor min-h-[min(52vh,_440px)] px-4 py-3 outline-none sm:px-6 sm:py-4"
+        }
         contentEditable
         suppressContentEditableWarning
         role="textbox"

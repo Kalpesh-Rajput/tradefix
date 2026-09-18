@@ -39,6 +39,8 @@ import { fmtMoney } from "@/lib/format";
 import { getInstrument, symbolsFor } from "@/lib/instruments/catalog";
 import { useCreateTrade, useImportCsv, useTrade, useUpdateTrade, useUploadTradeScreenshot } from "@/lib/hooks/useTrades";
 import { useMasters, usePrecheckLists } from "@/lib/hooks/useMasters";
+import { usePlaybooks } from "@/lib/hooks/usePlaybooks";
+import { playbookMatchingName } from "@/lib/playbooks/stats";
 import { useUpsertMoodCheckin } from "@/lib/hooks/useMood";
 import { TradeExecutionInput, TradeInput } from "@/lib/types";
 
@@ -57,6 +59,7 @@ export function AddTradeModal() {
   const uploadShot = useUploadTradeScreenshot();
   const isEditing = Boolean(tradeId);
   const { data: precheckLists = [] } = usePrecheckLists({ enabled: open });
+  const { data: playbooks = [] } = usePlaybooks({ enabled: open });
   useMasters("symbol", { enabled: open });
   const [shots, setShots] = useState<Shot[]>([]);
   const [success, setSuccess] = useState(false);
@@ -216,7 +219,14 @@ export function AddTradeModal() {
     const lastExit = data.exits[data.exits.length - 1];
     const closed_at = lastExit ? combineDateTime(lastExit.date, lastExit.time) : null;
     const notes = buildNotes(data);
-    const setupTags = data.strategies;
+    const selectedPlaybook =
+      playbooks.find((p) => p.id === data.playbook_id) ?? playbookMatchingName(playbooks, data.strategies[0]);
+    const setupTags = selectedPlaybook
+      ? [
+          selectedPlaybook.name,
+          ...data.strategies.filter((s) => s.toLowerCase() !== selectedPlaybook.name.toLowerCase()),
+        ]
+      : data.strategies;
     const snapshot = liveTradeCalc(data);
 
     const payload: TradeInput = {
@@ -258,7 +268,8 @@ export function AddTradeModal() {
       tick_size: data.asset_type === "future" && data.tick_size != null ? Number(data.tick_size) : null,
       tick_value: data.asset_type === "future" && data.tick_value != null ? Number(data.tick_value) : null,
       is_favourite: Boolean(data.is_favourite),
-      strategy_name: setupTags[0] ?? null,
+      strategy_name: setupTags[0] ?? selectedPlaybook?.name ?? null,
+      playbook_id: selectedPlaybook?.id ?? (data.playbook_id || null),
       precheck_list_id: data.precheck_list_id || null,
       extra: {
         went_well: data.wentWell.join(", "),
@@ -510,7 +521,19 @@ export function AddTradeModal() {
                   </div>
 
                   <Section title="Strategy">
-                    <StrategySelector control={control} />
+                    <div className="mb-3">
+                      <FieldLabel>Playbook</FieldLabel>
+                      <select className={inputClass} {...register("playbook_id")}>
+                        <option value="">None</option>
+                        {playbooks.map((pb) => (
+                          <option key={pb.id} value={pb.id}>
+                            {pb.icon ? `${pb.icon} ` : ""}
+                            {pb.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <StrategySelector control={control} extraOptions={playbooks.map((pb) => pb.name)} />
                   </Section>
                   <Section title="Emotions">
                     <EmotionSelector control={control} />

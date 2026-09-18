@@ -5,8 +5,10 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.models.playbook import Playbook
 from app.models.precheck_list import PrecheckList
 from app.models.trade import ExecutionLegType, Trade, TradeExecution, TradeStatus
 from app.models.trade_master import MasterCategory
@@ -38,6 +40,7 @@ JOURNAL_KEYS = (
     "mood",
     "strategy_name",
     "strategy_id",
+    "playbook_id",
     "precheck_list_id",
 )
 
@@ -133,6 +136,15 @@ def apply_calc(trade: Trade, calc: TradeCalcResult) -> None:
             trade.closed_at = max(f.executed_at for f in exits if f.executed_at)
     if not calc.is_close:
         trade.closed_at = trade.closed_at if calc.sell_quantity > 0 else None
+
+
+def _validate_playbook(db: Session, user_id: uuid.UUID, playbook_id: uuid.UUID | None) -> uuid.UUID | None:
+    if not playbook_id:
+        return None
+    row = db.get(Playbook, playbook_id)
+    if not row or row.user_id != user_id or row.is_archived:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Playbook not found or archived")
+    return row.id
 
 
 def _validate_precheck(db: Session, user_id: uuid.UUID, list_id: uuid.UUID | None) -> uuid.UUID | None:
@@ -252,6 +264,12 @@ def compute_for_payload(
 def apply_journal_fields(trade: Trade, data: dict, db: Session, user: User) -> None:
     if "precheck_list_id" in data:
         data["precheck_list_id"] = _validate_precheck(db, user.id, data.get("precheck_list_id"))
+    if "playbook_id" in data:
+        data["playbook_id"] = _validate_playbook(db, user.id, data.get("playbook_id"))
+        if data["playbook_id"]:
+            pb = db.get(Playbook, data["playbook_id"])
+            if pb and not trade.strategy_name:
+                data.setdefault("strategy_name", pb.name)
     if "extra" in data and data["extra"] is not None:
         extra = dict(trade.extra or {})
         extra.update(data.pop("extra") or {})

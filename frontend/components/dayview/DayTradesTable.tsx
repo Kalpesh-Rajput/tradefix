@@ -1,14 +1,25 @@
 "use client";
 
 import clsx from "clsx";
-import { Play } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { pnlHex } from "@/components/dayview/pnlStyle";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { dash, tradeRoi } from "@/lib/trades/previewStats";
 import type { Trade } from "@/lib/types";
 
-export type DayTradeColumnId = "opened_at" | "symbol" | "side" | "qty_entry" | "pnl" | "replay";
+export type DayTradeColumnId =
+  | "opened_at"
+  | "symbol"
+  | "side"
+  | "qty_entry"
+  | "instrument"
+  | "pnl"
+  | "roi"
+  | "r_multiple"
+  | "playbook"
+  | "replay";
 
 export type DayTradeColumn = {
   id: DayTradeColumnId;
@@ -23,39 +34,60 @@ export const DEFAULT_DAY_TRADE_COLUMNS: DayTradeColumnId[] = [
   "side",
   "qty_entry",
   "pnl",
-  "replay",
+];
+
+export const DETAIL_DAY_TRADE_COLUMNS: DayTradeColumnId[] = [
+  "opened_at",
+  "symbol",
+  "side",
+  "instrument",
+  "pnl",
+  "roi",
+  "r_multiple",
+  "playbook",
 ];
 
 export function DayTradesTable({
   trades,
   formatMoney,
   columns = DEFAULT_DAY_TRADE_COLUMNS,
+  columnLabels,
+  className,
 }: {
   trades: Trade[];
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
   columns?: DayTradeColumnId[];
+  columnLabels?: Partial<Record<DayTradeColumnId, string>>;
+  className?: string;
 }) {
   const { t } = useLocale();
   const router = useRouter();
 
   const defs: Record<DayTradeColumnId, DayTradeColumn> = {
-    opened_at: { id: "opened_at", label: t("dayView.col.time"), className: "w-[88px]" },
+    opened_at: { id: "opened_at", label: t("dayView.col.time"), className: "w-[96px]" },
     symbol: { id: "symbol", label: t("common.symbol"), className: "w-[100px]" },
     side: { id: "side", label: t("dayView.col.side"), className: "w-[72px]" },
     qty_entry: { id: "qty_entry", label: t("dayView.col.qtyEntry"), className: "min-w-[120px]" },
-    pnl: { id: "pnl", label: t("dayView.col.pnl"), align: "right", className: "w-[100px]" },
+    instrument: { id: "instrument", label: t("dayView.col.instrument"), className: "min-w-[140px]" },
+    pnl: { id: "pnl", label: t("dayView.col.pnl"), align: "right", className: "w-[108px]" },
+    roi: { id: "roi", label: t("dayView.col.netRoi"), align: "right", className: "w-[88px]" },
+    r_multiple: { id: "r_multiple", label: t("dayView.col.rMultiple"), align: "right", className: "w-[140px]" },
+    playbook: { id: "playbook", label: t("dayView.col.playbook"), className: "min-w-[120px]" },
     replay: { id: "replay", label: t("dayView.col.replay"), align: "center", className: "w-[64px]" },
   };
 
-  const visible = columns.map((id) => defs[id]);
+  const visible = columns.map((id) => ({
+    ...defs[id],
+    label: columnLabels?.[id] ?? defs[id].label,
+  }));
 
   if (trades.length === 0) return null;
 
   return (
-    <div className="mt-4 overflow-x-auto rounded-md border border-[var(--color-border)]">
-      <table className="w-full min-w-[640px] text-left">
+    <div className={clsx("mt-4 overflow-x-auto rounded-md border border-[var(--color-border)]", className)}>
+      <table className="w-full min-w-[720px] text-left">
         <thead>
-          <tr className="bg-[var(--color-primary-very-light)] text-[11px] font-medium text-[var(--color-text-tertiary)]">
+          <tr className="bg-[#F7F5FB] text-[11px] font-medium text-[#8B8D96]">
             {visible.map((col) => (
               <th
                 key={col.id}
@@ -77,7 +109,7 @@ export function DayTradesTable({
             return (
               <tr
                 key={trade.id}
-                className="cursor-pointer border-t border-[var(--color-border-light)] bg-[var(--color-surface)] text-[12px] hover:bg-[var(--color-primary-very-light)]"
+                className="cursor-pointer border-t border-[#EEEFF2] bg-white text-[12px] hover:bg-[#F7F8FA]"
                 onClick={() => router.push(`/trades/${trade.id}`)}
               >
                 {visible.map((col) => (
@@ -101,6 +133,18 @@ export function DayTradesTable({
   );
 }
 
+function instrumentLabel(trade: Trade) {
+  const expiry = trade.expiry_date?.slice(0, 10);
+  if (expiry) {
+    const [y, m, d] = expiry.split("-");
+    if (y && m && d) return `${trade.symbol} ${m}-${d}-${y}`;
+  }
+  if (trade.asset_type && trade.asset_type !== "stock") {
+    return `${trade.symbol} ${trade.asset_type}`;
+  }
+  return trade.symbol;
+}
+
 function Cell({
   trade,
   column,
@@ -113,7 +157,7 @@ function Cell({
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
 }) {
   if (column === "opened_at") {
-    return <span className="tabular-nums text-[var(--color-text-secondary)]">{trade.opened_at.slice(11, 16)}</span>;
+    return <span className="tabular-nums text-[#6B6E78]">{trade.opened_at.slice(11, 16)}</span>;
   }
   if (column === "symbol") {
     return (
@@ -123,14 +167,17 @@ function Cell({
     );
   }
   if (column === "side") {
-    return <span className="font-medium uppercase tracking-wide text-[var(--color-text-primary)]">{trade.side}</span>;
+    return <span className="font-medium uppercase tracking-wide text-[#1F2128]">{trade.side}</span>;
   }
   if (column === "qty_entry") {
     return (
-      <span className="tabular-nums text-[var(--color-text-secondary)]">
+      <span className="tabular-nums text-[#6B6E78]">
         {trade.quantity} @ {trade.entry_price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
       </span>
     );
+  }
+  if (column === "instrument") {
+    return <span className="text-[#4A4D57]">{instrumentLabel(trade)}</span>;
   }
   if (column === "pnl") {
     return (
@@ -139,9 +186,35 @@ function Cell({
       </span>
     );
   }
-  return (
-    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-on-accent">
-      <Play className="h-2.5 w-2.5 translate-x-[0.5px]" fill="currentColor" strokeWidth={0} />
-    </span>
-  );
+  if (column === "roi") {
+    const roi = tradeRoi(trade);
+    return (
+      <span className="tabular-nums text-[#4A4D57]">
+        {roi == null ? "—" : `${roi.toFixed(2)}%`}
+      </span>
+    );
+  }
+  if (column === "r_multiple") {
+    return (
+      <span className="tabular-nums text-[#4A4D57]">
+        {trade.r_multiple == null ? "—" : `${Number(trade.r_multiple).toFixed(2)}R`}
+      </span>
+    );
+  }
+  if (column === "playbook") {
+    const label = dash(trade.strategy_name || trade.setup_tag);
+    if (trade.playbook_id) {
+      return (
+        <Link
+          href={`/playbooks/${trade.playbook_id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="text-primary hover:underline"
+        >
+          {label}
+        </Link>
+      );
+    }
+    return <span className="text-[#4A4D57]">{label}</span>;
+  }
+  return <span className="text-[var(--color-text-muted)]">—</span>;
 }

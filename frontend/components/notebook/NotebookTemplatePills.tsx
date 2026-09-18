@@ -51,7 +51,7 @@ export function NotebookTemplatePills({
   return (
     <div>
       <p className="text-[11px] font-medium text-[var(--color-text-secondary)]">Recently used templates</p>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
+      <div className="mt-1.5 flex gap-1.5 overflow-x-auto overflow-y-hidden pb-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {templates.map((template) => (
           <button
             key={template.id}
@@ -59,7 +59,7 @@ export function NotebookTemplatePills({
             title={template.description}
             onClick={() => choose(template)}
             className={clsx(
-              "inline-flex h-7 items-center rounded-full border px-2.5 text-[11px] font-medium",
+              "inline-flex h-7 shrink-0 items-center rounded-full border px-2.5 text-[11px] font-medium",
               template.id === currentId
                 ? "border-primary/30 bg-[var(--color-primary-light)] text-primary"
                 : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-primary-very-light)]"

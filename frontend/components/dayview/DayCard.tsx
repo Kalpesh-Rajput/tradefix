@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { DailyStats } from "@/components/dayview/DailyStats";
@@ -21,13 +20,13 @@ type Props = {
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
   trades: Trade[];
   onAddNote: () => void;
+  defaultTradesOpen?: boolean;
 };
 
-export function DayCard({ row, formatMoney, trades, onAddNote }: Props) {
+export function DayCard({ row, formatMoney, trades, onAddNote, defaultTradesOpen = false }: Props) {
   const { t } = useLocale();
-  const router = useRouter();
   const toast = useToast();
-  const [tradesOpen, setTradesOpen] = useState(false);
+  const [tradesOpen, setTradesOpen] = useState(defaultTradesOpen);
   const pnl = Number(row.pnl);
   const summary = `${row.title} · ${trades.length} trades · ${formatMoney(pnl, { signed: true, digits: 2 })}`;
 
@@ -51,8 +50,7 @@ export function DayCard({ row, formatMoney, trades, onAddNote }: Props) {
         open={tradesOpen}
         onToggle={() => setTradesOpen((v) => !v)}
         formatMoney={formatMoney}
-        onReview={() => router.push("/coach")}
-        onReplay={() => router.push("/backtest")}
+        onReview={onAddNote}
         onAddNote={onAddNote}
         onMore={() => void copySummary()}
       />

@@ -361,8 +361,8 @@ export function DayNoteEditor({
   );
 
   const editor = (
-    <div className="relative flex min-h-0 flex-1 flex-col bg-[var(--color-surface)]">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-3 py-3 sm:px-5">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5 sm:py-3">
         <div className="flex min-w-0 items-center gap-1.5">
           {page && onToggleFolders ? (
             <button
@@ -400,68 +400,65 @@ export function DayNoteEditor({
           </button>
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="shrink-0 space-y-3 px-4 pb-3 sm:px-5">
-            {page ? (
-              <>
-                <p className="text-[15px] font-semibold tabular-nums" style={{ color: pnlHex(target.pnl) }}>
-                  Net P&L {formatNetPnl(target.pnl, formatMoney)}
-                </p>
-                <p className="text-[11px] text-[var(--color-text-tertiary)]">
-                  Created: {created ?? "--"}
-                  <span className="mx-2 text-[var(--color-text-muted)]">·</span>
-                  Last updated: {updated ?? "--"}
-                </p>
-                <NotebookDayPerformance day={target.day} formatMoney={formatMoney} />
-                <NotebookTemplatePills currentId={templateId} onSelect={applyTemplate} />
-              </>
-            ) : (
-              <DaySummaryCard
-                title={target.title}
-                pnl={target.pnl}
-                trades={target.trades}
-                winRate={target.winRate}
-                formatMoney={formatMoney}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div className="space-y-3 px-4 pb-3 sm:px-5">
+              {page ? (
+                <>
+                  <p className="text-[15px] font-semibold tabular-nums" style={{ color: pnlHex(target.pnl) }}>
+                    Net P&L {formatNetPnl(target.pnl, formatMoney)}
+                  </p>
+                  <p className="text-[11px] text-[var(--color-text-tertiary)]">
+                    Created: {created ?? "--"}
+                    <span className="mx-2 text-[var(--color-text-muted)]">·</span>
+                    Last updated: {updated ?? "--"}
+                  </p>
+                  <NotebookDayPerformance day={target.day} formatMoney={formatMoney} />
+                  <NotebookTemplatePills currentId={templateId} onSelect={applyTemplate} />
+                </>
+              ) : (
+                <DaySummaryCard
+                  title={target.title}
+                  pnl={target.pnl}
+                  trades={target.trades}
+                  winRate={target.winRate}
+                  formatMoney={formatMoney}
+                />
+              )}
+            </div>
+            <RichNoteEditor
+              html={html}
+              revision={revision}
+              onChange={setHtml}
+              fullscreen={fullscreen}
+              onToggleFullscreen={() => setFullscreen((v) => !v)}
+              layout="document"
+            />
+            <div className="border-t border-[var(--color-border)] px-4 py-4 sm:px-5">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.length) void handleAddScreenshots(e.target.files);
+                  e.target.value = "";
+                }}
               />
-            )}
+              <ScreenshotGrid
+                urls={existing?.screenshot_urls ?? []}
+                max={5}
+                compact={page}
+                uploading={uploadShot.isPending}
+                canAdd={!uploadShot.isPending && !saving}
+                onAdd={() => fileRef.current?.click()}
+                onDelete={(url) => void handleDeleteScreenshot(url)}
+                emptyHint={existing ? "Add a chart screenshot" : "Save this note to attach screenshots — or add one now"}
+              />
+            </div>
           </div>
-          <RichNoteEditor
-            html={html}
-            revision={revision}
-            onChange={setHtml}
-            fullscreen={fullscreen}
-            onToggleFullscreen={() => setFullscreen((v) => !v)}
-          />
-          <div
-            className={
-              page
-                ? "shrink-0 border-t border-[var(--color-border)] px-4 py-2 sm:px-5"
-                : "max-h-[38%] shrink-0 overflow-y-auto overscroll-contain border-t border-[var(--color-border)] px-4 py-3 sm:px-5"
-            }
-          >
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files?.length) void handleAddScreenshots(e.target.files);
-                e.target.value = "";
-              }}
-            />
-            <ScreenshotGrid
-              urls={existing?.screenshot_urls ?? []}
-              max={5}
-              compact={page}
-              uploading={uploadShot.isPending}
-              canAdd={!uploadShot.isPending && !saving}
-              onAdd={() => fileRef.current?.click()}
-              onDelete={(url) => void handleDeleteScreenshot(url)}
-              emptyHint={existing ? "Add a chart screenshot" : "Save this note to attach screenshots — or add one now"}
-            />
-          </div>
-          <div className="flex shrink-0 justify-end border-t border-[var(--color-border)] px-4 py-3 sm:px-5">
+          <div className="flex shrink-0 justify-end border-t border-[var(--color-border)] px-4 py-2 sm:px-5 sm:py-3">
             <button
               type="button"
               onClick={() => void save()}
@@ -484,7 +481,7 @@ export function DayNoteEditor({
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-5">
+    <div className="fixed inset-0 z-[92] flex items-center justify-center p-3 sm:p-5">
       <button
         type="button"
         className="absolute inset-0 bg-black/45"

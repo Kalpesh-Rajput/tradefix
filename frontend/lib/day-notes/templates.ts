@@ -19,6 +19,34 @@ export type NoteTemplate = {
 
 export const NOTE_TEMPLATES: NoteTemplate[] = [
   {
+    id: "session-plan",
+    name: "Session plan",
+    description: "Mindset, rules, pre-market, and session log",
+    order: 0,
+    sections: [
+      { id: "reminder", title: "Reminder on the Day", kind: "list", items: [""] },
+      { id: "mindset", title: "Mindset Check-in", kind: "list", items: [""] },
+      {
+        id: "rules",
+        title: "Today's Rules",
+        kind: "list",
+        items: ["1 LOSS = DONE", "1 WIN = DONE"],
+      },
+      {
+        id: "premarket",
+        title: "Pre-market Context",
+        kind: "list",
+        items: ["Scenarios on the Day"],
+      },
+      {
+        id: "session-log",
+        title: "Session log",
+        kind: "log",
+        hint: "Log your thoughts with timestamps for future recaps. Use voice-to-text to help you.",
+      },
+    ],
+  },
+  {
     id: "day-journal",
     name: "Day journal",
     description: "Preparation, session log, and EOD recap",
@@ -90,6 +118,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
 ];
 
 export const DEFAULT_TEMPLATE_ID = "day-journal";
+export const SESSION_PLAN_TEMPLATE_ID = "session-plan";
 
 export function getNoteTemplate(id: string | null | undefined): NoteTemplate {
   return NOTE_TEMPLATES.find((t) => t.id === id) ?? NOTE_TEMPLATES.find((t) => t.isDefault) ?? NOTE_TEMPLATES[0];

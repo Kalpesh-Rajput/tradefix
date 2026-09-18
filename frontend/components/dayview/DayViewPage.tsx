@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { DayCard, type DayViewRow } from "@/components/dayview/DayCard";
 import { DayViewCalendar } from "@/components/dayview/DayViewCalendar";
@@ -73,16 +74,44 @@ function mergeDays(days: CalendarDay[], id: string, title: string, date: string)
   };
 }
 
+function isIsoDate(value: string | null): value is string {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
+}
+
 export function DayViewPage() {
   const { t, locale } = useLocale();
   const { formatMoney, activeAccount, loading: accountsLoading } = useAccountPrefs();
   const { openFlow } = useAddTradeModal();
+  const searchParams = useSearchParams();
+  const dateParam = searchParams.get("date");
+  const focusDate = isIsoDate(dateParam) ? dateParam : null;
   const accountId = activeAccount?.id;
-  const initial = useMemo(() => monthRange(), []);
+  const initial = useMemo(() => {
+    if (focusDate) {
+      const cursor = parseLocalIso(focusDate);
+      return clampRange(
+        localIso(new Date(cursor.getFullYear(), cursor.getMonth(), 1)),
+        localIso(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0))
+      );
+    }
+    return monthRange();
+  }, [focusDate]);
   const [dateFrom, setDateFrom] = useState(initial.from);
   const [dateTo, setDateTo] = useState(initial.to);
   const [mode, setMode] = useState<"day" | "week">("day");
   const [noteRow, setNoteRow] = useState<DayViewRow | null>(null);
+
+  useEffect(() => {
+    if (!focusDate) return;
+    const cursor = parseLocalIso(focusDate);
+    const next = clampRange(
+      localIso(new Date(cursor.getFullYear(), cursor.getMonth(), 1)),
+      localIso(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0))
+    );
+    setDateFrom(next.from);
+    setDateTo(next.to);
+    setMode("day");
+  }, [focusDate]);
 
   const monthBounds = useMemo(() => {
     const cursor = parseLocalIso(dateTo || todayIso());
@@ -147,6 +176,16 @@ export function DayViewPage() {
       );
   }, [calendar?.days, mode, locale, t]);
 
+  const loading = accountsLoading || (isLoading && !!accountId);
+
+  useEffect(() => {
+    if (!focusDate || loading) return;
+    const id = window.requestAnimationFrame(() => {
+      document.getElementById(`day-${focusDate}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [focusDate, loading, rows]);
+
   function onSelectDate(date: string) {
     const el = document.getElementById(`day-${date}`);
     if (el) {
@@ -156,8 +195,6 @@ export function DayViewPage() {
     const week = localIso(startOfWeekSunday(parseLocalIso(date)));
     document.getElementById(`day-${week}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-
-  const loading = accountsLoading || (isLoading && !!accountId);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-background)]">
@@ -200,6 +237,7 @@ export function DayViewPage() {
                     key={row.id}
                     row={row}
                     formatMoney={formatMoney}
+                    defaultTradesOpen={mode === "day" && row.id === focusDate}
                     trades={
                       mode === "day"
                         ? tradesByDay.get(row.id) ?? []

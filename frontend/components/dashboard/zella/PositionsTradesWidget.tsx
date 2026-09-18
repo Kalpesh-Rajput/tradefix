@@ -1,24 +1,29 @@
 "use client";
 
 import clsx from "clsx";
-import Link from "next/link";
 import { useState } from "react";
 
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import type { Trade } from "@/lib/types";
 
 export function PositionsTradesWidget({
   openTrades,
   recentTrades,
   formatMoney,
+  displayPnl,
+  truncated,
   compact = false,
 }: {
   openTrades: Trade[];
   recentTrades: Trade[];
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
+  displayPnl?: (pnl: number | null | undefined, fees?: number | null) => number | null;
+  truncated?: boolean;
   compact?: boolean;
 }) {
   const { t, formatDate } = useLocale();
+  const { openEdit } = useAddTradeModal();
   const [tab, setTab] = useState<"open" | "recent">("recent");
   const rows = tab === "open" ? openTrades : recentTrades;
 
@@ -64,12 +69,23 @@ export function PositionsTradesWidget({
             </thead>
             <tbody>
               {rows.slice(0, 12).map((trade) => {
-                const pnl = trade.pnl ?? 0;
+                const pnl = displayPnl ? (displayPnl(trade.pnl, trade.fees) ?? 0) : (trade.pnl ?? 0);
                 const when = trade.closed_at || trade.opened_at;
+                const openTrade = () => openEdit(trade.id);
                 return (
                   <tr
                     key={trade.id}
-                    className="border-b border-[var(--color-border-light)] last:border-0 transition-colors duration-150 hover:bg-[var(--color-primary-very-light)]"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Edit ${trade.symbol} trade`}
+                    onClick={openTrade}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openTrade();
+                      }
+                    }}
+                    className="cursor-pointer border-b border-[var(--color-border-light)] last:border-0 transition-colors duration-150 hover:bg-[var(--color-primary-very-light)]"
                   >
                     <td
                       className={clsx(
@@ -77,12 +93,7 @@ export function PositionsTradesWidget({
                         "px-3 text-[12px] text-[var(--color-text-secondary)]"
                       )}
                     >
-                      <Link
-                        href={`/trades/${trade.id}`}
-                        className="hover:text-[var(--color-text-primary)]"
-                      >
-                        {formatDate(new Date(when))}
-                      </Link>
+                      {formatDate(new Date(when))}
                     </td>
                     <td
                       className={clsx(
@@ -90,7 +101,7 @@ export function PositionsTradesWidget({
                         "px-3 text-[12px] font-medium text-[#25262B]"
                       )}
                     >
-                      <Link href={`/trades/${trade.id}`}>{trade.symbol}</Link>
+                      {trade.symbol}
                     </td>
                     <td
                       className={clsx(
@@ -108,6 +119,11 @@ export function PositionsTradesWidget({
           </table>
         )}
       </div>
+      {truncated ? (
+        <p className="shrink-0 border-t border-[var(--color-border-light)] px-3 py-1.5 text-[10px] text-[var(--color-text-muted)]">
+          Showing the latest 1,000 trades in this range.
+        </p>
+      ) : null}
     </div>
   );
 }

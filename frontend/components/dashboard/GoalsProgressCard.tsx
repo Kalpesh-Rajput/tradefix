@@ -19,14 +19,14 @@ export function GoalsProgressCard({
   if (!items.length) {
     if (!emptyHint) return null;
     return (
-      <section className="rounded-xl border border-white/[0.06] bg-zinc-950/80 p-5">
+      <section className="dash-card p-3.5">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-white">{title}</h3>
-          <Link href="/settings/goals" className="text-xs text-primary hover:underline">
+          <h3 className="text-[12px] font-medium text-[var(--color-text-primary)]">{title}</h3>
+          <Link href="/settings/goals" className="text-[11px] text-primary hover:underline">
             Set goals
           </Link>
         </div>
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-[12px] text-[var(--color-text-muted)]">
           Set weekly, monthly, yearly, or daily P&L targets to track progress here.
         </p>
       </section>
@@ -34,14 +34,17 @@ export function GoalsProgressCard({
   }
 
   return (
-    <section className="rounded-xl border border-white/[0.06] bg-zinc-950/80 p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-white">{title}</h3>
-        <Link href="/settings/goals" className="text-xs text-zinc-500 transition hover:text-primary">
+    <section className="dash-card p-3.5">
+      <div className="mb-3 flex h-6 items-center justify-between gap-3">
+        <h3 className="text-[12px] font-medium text-[var(--color-text-primary)]">{title}</h3>
+        <Link
+          href="/settings/goals"
+          className="text-[11px] text-[var(--color-text-muted)] transition hover:text-primary"
+        >
           Edit
         </Link>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {items.map((item) => {
           const pct = progressPercent(item.current, item.target);
           const currentLabel =
@@ -56,14 +59,14 @@ export function GoalsProgressCard({
           return (
             <div key={item.id}>
               <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">{item.label}</span>
-                <span className="font-mono text-xs text-zinc-300">
+                <span className="text-[11px] font-medium text-[var(--color-text-label)]">{item.label}</span>
+                <span className="font-mono text-[11px] text-[var(--color-text-secondary)]">
                   {currentLabel}
-                  <span className="text-zinc-600"> / {targetLabel}</span>
+                  <span className="text-[var(--color-text-muted)]"> / {targetLabel}</span>
                   <span className="ml-2 text-primary">{pct.toFixed(0)}%</span>
                 </span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-gauge-track)]">
                 <div
                   className="h-full rounded-full bg-primary transition-[width] duration-500"
                   style={{ width: `${pct}%` }}

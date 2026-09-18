@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { DayNoteEditor } from "@/components/dayview/notes/DayNoteEditor";
-import { formatNoteTitle, formatNumericDate, notePreview } from "@/components/notebook/dateFormat";
+import { formatNoteTitle, formatNumericDate, notePreview, stripHtml } from "@/components/notebook/dateFormat";
 import { NotebookFolders } from "@/components/notebook/NotebookFolders";
 import { NotebookNoteList } from "@/components/notebook/NotebookNoteList";
 import { NotebookRecapPanel } from "@/components/notebook/NotebookRecapPanel";
@@ -214,6 +214,7 @@ export function NotebookPage() {
         favorite: note.is_favorite,
         shots: note.screenshot_urls?.length ?? 0,
         folderId: note.folder_id ?? null,
+        searchText: stripHtml(note.content),
       })),
     [notes, locale]
   );
@@ -242,6 +243,9 @@ export function NotebookPage() {
         title: formatNoteTitle(recap.date.slice(0, 10), locale),
         numericDate: formatNumericDate(recap.date.slice(0, 10)),
         subtitle: recap.day_mood ?? "Recap",
+        searchText: [recap.reflection, recap.best_decision, recap.day_mood, ...(recap.work_on ?? [])]
+          .filter(Boolean)
+          .join(" "),
       })),
     [recaps, locale]
   );
@@ -265,7 +269,13 @@ export function NotebookPage() {
         if (item.kind === "trade") {
           return item.title.toLowerCase().includes(q) || item.subtitle.toLowerCase().includes(q) || item.date.includes(q);
         }
-        return item.title.toLowerCase().includes(q) || item.date.includes(q) || item.numericDate.includes(q);
+        const extra = "searchText" in item && item.searchText ? item.searchText.toLowerCase() : "";
+        return (
+          item.title.toLowerCase().includes(q) ||
+          item.date.includes(q) ||
+          item.numericDate.includes(q) ||
+          extra.includes(q)
+        );
       });
     }
     if (favoritesOnly && (folder === "all" || folder === "daily")) {
@@ -356,8 +366,8 @@ export function NotebookPage() {
         <div
           className={
             mobilePane === "editor"
-              ? "flex min-w-0 flex-1 flex-col"
-              : "hidden min-w-0 flex-1 md:flex md:flex-col"
+              ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+              : "hidden min-h-0 min-w-0 flex-1 overflow-hidden md:flex md:flex-col"
           }
         >
           <div className="flex h-11 shrink-0 items-center border-b border-[var(--color-border)] bg-[var(--color-surface)] px-2 md:hidden">

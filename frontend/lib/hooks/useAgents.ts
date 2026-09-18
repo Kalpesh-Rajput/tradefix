@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
-import { AgentRun, Insight } from "@/lib/types";
+import { AgentRun, AgentTriggerResponse, Insight } from "@/lib/types";
 
 export function useAgentList() {
   return useQuery({
@@ -29,7 +29,7 @@ export function useAgentInsights() {
 export function useRunAgent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (agentName: string) => api.post(`/api/agents/${agentName}/run`),
+    mutationFn: (agentName: string) => api.post<AgentTriggerResponse>(`/api/agents/${agentName}/run`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agents"] });
       qc.invalidateQueries({ queryKey: ["insights"] });

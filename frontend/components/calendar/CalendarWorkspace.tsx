@@ -13,6 +13,7 @@ import {
   useCalendarShare,
 } from "@/components/calendar/share/CalendarShareFlow";
 import { PnlCalendarHeatmap } from "@/components/dashboard/zella/PnlCalendarHeatmap";
+import { DayDetailModal } from "@/components/dayview/DayDetailModal";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -39,6 +40,7 @@ export function CalendarWorkspace() {
   const [view, setView] = useState<View>("month");
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [openDate, setOpenDate] = useState<string | null>(null);
 
   const monthCaptureRef = useRef<HTMLDivElement>(null);
   const periodCaptureRef = useRef<HTMLDivElement>(null);
@@ -326,6 +328,7 @@ export function CalendarWorkspace() {
                 marks={marks}
                 selectedDate={selectedDate}
                 onSelectDate={setSelectedDate}
+                onOpenDate={setOpenDate}
               />
             </div>
           ) : view === "year" ? (
@@ -357,6 +360,7 @@ export function CalendarWorkspace() {
                 setCursor(new Date(y, m - 1, 1));
               }}
               onSelectDate={setSelectedDate}
+              onOpenDate={setOpenDate}
             />
           )}
 
@@ -380,6 +384,11 @@ export function CalendarWorkspace() {
         periodLabel={periodLabel}
         goalItems={goalItems}
         stats={stats}
+      />
+      <DayDetailModal
+        date={openDate}
+        day={calendar?.days.find((d) => d.date.slice(0, 10) === openDate)}
+        onClose={() => setOpenDate(null)}
       />
       {share.dialogs}
     </div>

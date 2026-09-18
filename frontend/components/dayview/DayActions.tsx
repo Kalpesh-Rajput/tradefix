@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Play, Plus, Sparkles } from "lucide-react";
+import { MoreHorizontal, Plus, Sparkles } from "lucide-react";
 
 import { useLocale } from "@/components/providers/LocaleProvider";
 
@@ -9,12 +9,10 @@ const actionClass =
 
 export function DayActions({
   onReview,
-  onReplay,
   onAddNote,
   onMore,
 }: {
   onReview: () => void;
-  onReplay: () => void;
   onAddNote: () => void;
   onMore: () => void;
 }) {
@@ -25,10 +23,6 @@ export function DayActions({
       <button type="button" onClick={onReview} className={actionClass}>
         <Sparkles className="h-3 w-3 text-primary" strokeWidth={1.75} />
         {t("dayView.reviewCoach")}
-      </button>
-      <button type="button" onClick={onReplay} className={actionClass}>
-        <Play className="h-3 w-3 text-[var(--color-text-secondary)]" strokeWidth={1.75} />
-        {t("dayView.replay")}
       </button>
       <button type="button" onClick={onAddNote} className={actionClass}>
         <Plus className="h-3 w-3 text-[var(--color-text-secondary)]" strokeWidth={2} />

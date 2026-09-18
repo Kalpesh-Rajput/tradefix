@@ -1,8 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { ChevronLeft, ChevronRight, Play } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -49,7 +48,6 @@ export function TradePreviewDrawer({
   onClose: () => void;
   onSelectTrade: (id: string) => void;
 }) {
-  const router = useRouter();
   const { user } = useAuth();
   const { openEdit } = useAddTradeModal();
   const { data, isLoading, isError, refetch } = useTrade(tradeId);
@@ -114,14 +112,6 @@ export function TradePreviewDrawer({
                   Edit
                 </button>
               ) : null}
-              <button
-                type="button"
-                onClick={() => router.push("/backtest")}
-                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[#E2E2E7] px-2.5 text-[12px] font-medium text-[var(--color-text-primary)] hover:bg-[#F7F7F9]"
-              >
-                <Play className="h-3 w-3" fill="currentColor" />
-                Replay
-              </button>
             </div>
           </div>
 

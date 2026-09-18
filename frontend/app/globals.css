@@ -357,6 +357,31 @@ html.dark ::-webkit-scrollbar-thumb {
     box-shadow: var(--shadow-sm);
   }
 
+  .report-metric-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-text-muted) 35%, transparent) transparent;
+  }
+
+  .report-metric-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .report-metric-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-text-muted) 35%, transparent);
+    border-radius: 99px;
+  }
+
+  @keyframes reportMenuIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
   .dash-btn-primary {
     display: inline-flex;
     align-items: center;
@@ -443,8 +468,8 @@ html.dark ::-webkit-scrollbar-thumb {
   }
 
   .tf-note-editor .tf-note-log {
-    min-height: 88px;
-    padding: 10px 12px;
+    min-height: min(48vh, 360px);
+    padding: 12px 14px;
     border-radius: 8px;
     background: var(--color-primary-very-light);
   }

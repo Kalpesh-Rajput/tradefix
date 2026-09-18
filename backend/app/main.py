@@ -13,16 +13,19 @@ from app.api.routers import (
     calendar,
     checkins,
     coach,
+    day_notes,
+    day_plans,
     imports,
     insights,
     media,
     mentor,
     mood,
     masters,
+    playbooks,
     precheck_lists,
+    progress_tracker,
     prop,
     recaps,
-    day_notes,
     notebook_folders,
     trades,
     watchlist,
@@ -64,6 +67,9 @@ app.include_router(accounts.router)
 app.include_router(trades.router)
 app.include_router(masters.router)
 app.include_router(precheck_lists.router)
+app.include_router(playbooks.router)
+app.include_router(playbooks.templates_router)
+app.include_router(progress_tracker.router)
 app.include_router(imports.router)
 app.include_router(analytics.router)
 app.include_router(calendar.router)
@@ -73,6 +79,7 @@ app.include_router(watchlist.router)
 app.include_router(mood.router)
 app.include_router(recaps.router)
 app.include_router(day_notes.router)
+app.include_router(day_plans.router)
 app.include_router(notebook_folders.router)
 app.include_router(checkins.router)
 app.include_router(prop.router)

@@ -22,6 +22,7 @@ from app.services.behavior import apply_behavior_flags
 from app.services.rate_limit import screenshot_upload_limiter
 from app.services.storage import delete_local_upload, save_trade_screenshot, save_trade_voice
 from app.services.trade_scores import execution_score, health_score, r_multiple
+from app.services.progress_tracker_service import touch_progress
 from app.services.trade_service import apply_calc, apply_journal_fields, compute_for_payload, remember_trade_masters, replace_executions
 from app.services.ws_hub import hub
 
@@ -131,6 +132,7 @@ def _to_response(trade: Trade) -> TradeResponse:
         month=trade.month,
         strategy_name=trade.strategy_name or trade.setup_tag,
         strategy_id=trade.strategy_id,
+        playbook_id=trade.playbook_id,
         precheck_list_id=trade.precheck_list_id,
         extra=extra,
         remaining_quantity=float(remaining) if remaining is not None else None,
@@ -294,6 +296,7 @@ def create_trade(
         is_favourite=bool(payload.is_favourite),
         strategy_name=payload.strategy_name or (setup_tags[0] if setup_tags else None),
         strategy_id=payload.strategy_id,
+        playbook_id=payload.playbook_id,
         precheck_list_id=payload.precheck_list_id,
     )
     apply_journal_fields(
@@ -309,6 +312,7 @@ def create_trade(
     db.flush()
     remember_trade_masters(db, current_user.id, trade)
     apply_behavior_flags(db, current_user.id, trade)
+    touch_progress(db, current_user, trade.opened_at, trade.closed_at)
     db.commit()
     db.refresh(trade)
     _notify(current_user.id, account.id, "trade_created")
@@ -340,7 +344,7 @@ def update_trade(
         "session", "trade_type", "option_type", "analysis_timeframe", "entry_timeframe",
         "stop_loss", "profit_target", "rating", "entry_condition", "exit_condition", "leverage", "contract_size",
         "strike_price", "expiry_date", "tick_size", "tick_value",
-        "is_favourite", "mood", "strategy_name", "strategy_id", "precheck_list_id", "extra",
+        "is_favourite", "mood", "strategy_name", "strategy_id", "playbook_id", "precheck_list_id", "extra",
         "sell_quantity",
     )}
 
@@ -387,6 +391,7 @@ def update_trade(
         replace_executions(trade, calc.fills, trade.opened_at)
     remember_trade_masters(db, current_user.id, trade)
     apply_behavior_flags(db, current_user.id, trade)
+    touch_progress(db, current_user, trade.opened_at, trade.closed_at)
     db.commit()
     db.refresh(trade)
     _notify(current_user.id, trade.account_id, "trade_updated")
@@ -399,10 +404,14 @@ def delete_trade(trade_id: uuid.UUID, db: Session = Depends(get_db), current_use
     if not trade or trade.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trade not found")
     account_id = trade.account_id
+    opened_at = trade.opened_at
+    closed_at = trade.closed_at
     for url in list(trade.screenshot_urls or []):
         delete_local_upload(url)
     delete_local_upload(trade.voice_url)
     db.delete(trade)
+    db.flush()
+    touch_progress(db, current_user, opened_at, closed_at)
     db.commit()
     _notify(current_user.id, account_id, "trade_deleted")
     return None

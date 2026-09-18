@@ -4,8 +4,10 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import clsx from "clsx";
 import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { Input, PasswordInput } from "@/components/ui/Input";
@@ -43,6 +45,7 @@ function GoogleIcon() {
 
 export function AuthCard({ mode }: AuthCardProps) {
   const { login, signup, loginWithGoogle } = useAuth();
+  const { t } = useLocale();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -92,8 +95,17 @@ export function AuthCard({ mode }: AuthCardProps) {
       initial={{ opacity: 0, y: 18, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl border border-border bg-surface/95 p-8 shadow-[0_24px_80px_-32px_hsl(var(--primary)/0.45)] backdrop-blur-sm"
+      className="relative rounded-2xl border border-border bg-surface/95 p-8 shadow-[0_24px_80px_-32px_hsl(var(--primary)/0.45)] backdrop-blur-sm"
     >
+      {isSignup ? (
+        <Link
+          href="/login"
+          className="absolute left-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-foreground/5 hover:text-foreground"
+          aria-label={t("common.back")}
+        >
+          <ArrowLeft className="h-4 w-4 rtl:rotate-180" strokeWidth={2} />
+        </Link>
+      ) : null}
       <motion.div
         className="mb-6 flex justify-center"
         initial={{ opacity: 0, scale: 0.88 }}

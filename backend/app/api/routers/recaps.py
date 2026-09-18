@@ -25,6 +25,7 @@ from app.schemas.daily_recap import (
     DailyRecapUpdate,
     DayPnlSummary,
 )
+from app.services.progress_tracker_service import touch_progress
 from app.services.rate_limit import screenshot_upload_limiter
 from app.services.storage import delete_local_upload, save_recap_screenshot
 
@@ -255,6 +256,7 @@ def upsert_recap(
             fees=payload.fees,
             net_pnl=payload.net_pnl,
         )
+        touch_progress(db, current_user, payload.date)
         db.commit()
         db.refresh(existing)
         recap = existing
@@ -277,6 +279,7 @@ def upsert_recap(
             net_pnl=payload.net_pnl,
         )
         db.add(recap)
+        touch_progress(db, current_user, payload.date)
         db.commit()
         db.refresh(recap)
         logger.info("Created daily recap user=%s date=%s id=%s", current_user.id, payload.date, recap.id)

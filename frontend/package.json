@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "npx --yes tsx scripts/test-market-sessions.ts",
+    "test:market-sessions": "npx --yes tsx scripts/test-market-sessions.ts",
     "test:forex-parity": "npx --yes tsx scripts/check-forex-parity.ts"
   },
   "dependencies": {

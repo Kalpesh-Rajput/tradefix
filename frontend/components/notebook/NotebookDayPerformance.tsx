@@ -16,10 +16,10 @@ export function NotebookDayPerformance({
   const curve = day?.curve?.length ? day.curve : [0, pnl];
 
   return (
-    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <PnLChart values={curve} formatMoney={formatMoney} className="h-[88px] w-full min-w-0 sm:w-[38%] sm:max-w-[240px] sm:shrink-0" />
-        <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <PnLChart values={curve} formatMoney={formatMoney} className="h-[72px] w-full min-w-0 sm:h-[88px] sm:w-[38%] sm:max-w-[240px] sm:shrink-0" />
+        <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4 sm:gap-x-6 sm:gap-y-3">
           <Metric label="Total trades" value={String(trades)} />
           <Metric label="Winners" value={day?.winners == null ? "--" : String(day.winners)} />
           <Metric

@@ -88,6 +88,7 @@ export const addTradeSchema = z
     exit_condition: z.string().optional().nullable(),
     is_favourite: z.boolean().optional().default(false),
     precheck_list_id: z.string().optional().nullable(),
+    playbook_id: z.string().optional().nullable(),
     mood: z.string().optional().nullable(),
     expiry: z.string().optional().nullable(),
     strategies: z.array(z.string()).default([]),
@@ -281,6 +282,7 @@ export type AddTradeFormValues = {
   exit_condition?: string | null;
   is_favourite?: boolean;
   precheck_list_id?: string | null;
+  playbook_id?: string | null;
   mood?: string | null;
   risk_amount?: number | null;
   plan_compliance?: number | null;
@@ -335,6 +337,7 @@ export function defaultAddTradeValues(opts?: {
     exit_condition: "",
     is_favourite: false,
     precheck_list_id: "",
+    playbook_id: "",
     mood: "",
     risk_amount: null,
     plan_compliance: null,
@@ -520,6 +523,7 @@ export function mapTradeToForm(trade: Trade): AddTradeFormValues {
     exit_condition: trade.exit_condition || "",
     is_favourite: Boolean(trade.is_favourite),
     precheck_list_id: trade.precheck_list_id || "",
+    playbook_id: trade.playbook_id || "",
     mood: trade.mood || "",
     risk_amount: trade.risk_amount != null ? Number(trade.risk_amount) : null,
     plan_compliance: trade.plan_compliance != null ? Number(trade.plan_compliance) : null,

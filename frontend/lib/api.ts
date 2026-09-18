@@ -36,6 +36,7 @@ export class ApiError extends Error {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
+    "ngrok-skip-browser-warning": "true",
     ...(options.body && !(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers as Record<string, string> | undefined),
@@ -67,6 +68,7 @@ function uploadWithProgress<T>(
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_URL}${path}`);
     const token = getToken();
+    xhr.setRequestHeader("ngrok-skip-browser-warning", "true");
     if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
     xhr.upload.onprogress = (event) => {
@@ -117,7 +119,10 @@ export const api = {
     const token = getToken();
     const res = await fetch(`${API_URL}${path}`, {
       method: "GET",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
     });
     if (!res.ok) {
       let detail = res.statusText;
@@ -143,7 +148,10 @@ export const api = {
     const token = getToken();
     const res = await fetch(`${API_URL}${path}`, {
       method: "GET",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
     });
     if (!res.ok) {
       let detail = res.statusText;

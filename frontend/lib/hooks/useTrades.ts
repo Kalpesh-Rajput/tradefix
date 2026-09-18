@@ -56,6 +56,7 @@ export function useCreateTrade() {
       qc.invalidateQueries({ queryKey: ["trades"] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
       qc.invalidateQueries({ queryKey: ["calendar"] });
+      qc.invalidateQueries({ queryKey: ["progress-tracker"] });
     },
   });
 }
@@ -69,6 +70,7 @@ export function useUpdateTrade() {
       qc.invalidateQueries({ queryKey: ["trades"] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
       qc.invalidateQueries({ queryKey: ["calendar"] });
+      qc.invalidateQueries({ queryKey: ["progress-tracker"] });
     },
   });
 }
@@ -81,6 +83,7 @@ export function useDeleteTrade() {
       qc.invalidateQueries({ queryKey: ["trades"] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
       qc.invalidateQueries({ queryKey: ["calendar"] });
+      qc.invalidateQueries({ queryKey: ["progress-tracker"] });
     },
   });
 }
@@ -97,6 +100,7 @@ export function useDeleteTrades() {
       qc.invalidateQueries({ queryKey: ["trades"] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
       qc.invalidateQueries({ queryKey: ["calendar"] });
+      qc.invalidateQueries({ queryKey: ["progress-tracker"] });
     },
   });
 }
@@ -116,6 +120,7 @@ export function useImportCsv() {
       qc.invalidateQueries({ queryKey: ["trades"] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
       qc.invalidateQueries({ queryKey: ["calendar"] });
+      qc.invalidateQueries({ queryKey: ["progress-tracker"] });
     },
   });
 }
@@ -125,6 +130,7 @@ function invalidateTradeQueries(qc: ReturnType<typeof useQueryClient>, tradeId?:
   if (tradeId) qc.invalidateQueries({ queryKey: ["trades", tradeId] });
   qc.invalidateQueries({ queryKey: ["analytics"] });
   qc.invalidateQueries({ queryKey: ["calendar"] });
+  qc.invalidateQueries({ queryKey: ["progress-tracker"] });
 }
 
 export function useUploadTradeScreenshot() {

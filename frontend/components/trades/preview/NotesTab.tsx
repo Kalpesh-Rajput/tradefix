@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { NoteTemplateSelector } from "@/components/dayview/notes/NoteTemplateSelector";
 import { RichNoteEditor } from "@/components/dayview/notes/RichNoteEditor";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { useToast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { isNoteContentEmpty, renderTemplateHtml, type NoteTemplate } from "@/lib/day-notes/templates";
@@ -18,7 +19,8 @@ type NoteSubTab = "trade" | "journal";
 
 export function NotesTab({ trade }: { trade: Trade }) {
   const [sub, setSub] = useState<NoteSubTab>("trade");
-  const date = (trade.opened_at || "").slice(0, 10);
+  const { dateKey } = useLocale();
+  const date = dateKey(trade.opened_at);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

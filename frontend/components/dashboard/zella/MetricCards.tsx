@@ -185,12 +185,6 @@ function ExpectancySpark({ values }: { values: number[] }) {
   );
 }
 
-function compactMoney(n: number) {
-  const abs = Math.abs(n);
-  const sign = n < 0 ? "-" : "";
-  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(abs >= 10000 ? 0 : 1)}K`;
-  return `${sign}$${Math.round(abs)}`;
-}
 
 export function MetricCards({
   netPnl,
@@ -265,7 +259,7 @@ export function MetricCards({
         <div className="min-w-0">
           <LabelRow label={t("dashboard.profitFactor")} />
           <p className="text-[18px] font-semibold leading-6 tracking-tight text-[var(--color-text-kpi)]">
-            {profitFactor ? profitFactor.toFixed(2) : "—"}
+            {Number.isFinite(profitFactor) ? profitFactor.toFixed(2) : "—"}
           </p>
         </div>
         <div className="shrink-0 self-center">
@@ -298,8 +292,8 @@ export function MetricCards({
             <div className="flex-1" style={{ backgroundColor: PNL_LOSS_HEX }} />
           </div>
           <div className="flex justify-between text-[10px] font-medium tabular-nums">
-            <span style={{ color: PNL_PROFIT_HEX }}>{compactMoney(avgWin)}</span>
-            <span style={{ color: PNL_LOSS_HEX }}>{compactMoney(-Math.abs(avgLoss))}</span>
+            <span style={{ color: PNL_PROFIT_HEX }}>{formatMoney(avgWin, { signed: false, digits: 0 })}</span>
+            <span style={{ color: PNL_LOSS_HEX }}>{formatMoney(-Math.abs(avgLoss), { signed: true, digits: 0 })}</span>
           </div>
         </div>
       </KpiShell>

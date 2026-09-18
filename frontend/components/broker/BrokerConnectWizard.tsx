@@ -170,10 +170,9 @@ export function BrokerConnectWizard({
   const [linkedAccountId, setLinkedAccountId] = useState<string | null>(journalAccountId);
   const [step, setStep] = useState<WizardStep>(() => (embedded && initialBrokerId ? "credentials" : "pick"));
   const [selectedBrokerId, setSelectedBrokerId] = useState("");
-  const [fields, setFields] = useState<Record<string, string>>(() => {
-    if (!presetServer) return {};
-    return { server: presetServer };
-  });
+  const [fields, setFields] = useState<Record<string, string>>(
+    presetServer ? { server: presetServer } : {}
+  );
   const [importToJournal, setImportToJournal] = useState(true);
   const [preselectApplied, setPreselectApplied] = useState(false);
   const [sessionConnected, setSessionConnected] = useState(false);

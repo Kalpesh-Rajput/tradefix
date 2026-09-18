@@ -38,4 +38,5 @@ class Account(Base):
     trades: Mapped[list["Trade"]] = relationship(back_populates="account", cascade="all, delete-orphan")
     daily_recaps: Mapped[list["DailyRecap"]] = relationship(back_populates="account", cascade="all, delete-orphan")
     day_notes: Mapped[list["DayNote"]] = relationship(back_populates="account", cascade="all, delete-orphan")
+    day_plans: Mapped[list["DayPlan"]] = relationship(back_populates="account", cascade="all, delete-orphan")
     notebook_folders: Mapped[list["NotebookFolder"]] = relationship(back_populates="account", cascade="all, delete-orphan")

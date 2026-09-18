@@ -21,6 +21,7 @@ from app.schemas.checkin import (
     MilestoneItem,
     MilestonesResponse,
 )
+from app.services.progress_tracker_service import touch_progress
 
 router = APIRouter(prefix="/api/checkins", tags=["checkins"])
 
@@ -105,6 +106,7 @@ def upsert_checkin(
             evening_note=payload.evening_note,
         )
         db.add(row)
+    touch_progress(db, current_user, payload.date)
     db.commit()
     db.refresh(row)
     return _to_response(row)

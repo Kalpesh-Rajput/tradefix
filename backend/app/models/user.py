@@ -77,6 +77,7 @@ class User(Base):
     mood_checkins: Mapped[list["MoodCheckin"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     daily_recaps: Mapped[list["DailyRecap"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     day_notes: Mapped[list["DayNote"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    day_plans: Mapped[list["DayPlan"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     notebook_folders: Mapped[list["NotebookFolder"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     daily_checkins: Mapped[list["DailyCheckin"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     prop_settings: Mapped[list["PropSettings"]] = relationship(back_populates="user", cascade="all, delete-orphan")
@@ -84,3 +85,22 @@ class User(Base):
     agent_runs: Mapped[list["AgentRun"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     trade_masters: Mapped[list["TradeMaster"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     precheck_lists: Mapped[list["PrecheckList"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    playbooks: Mapped[list["Playbook"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    progress_tracker_settings: Mapped[list["ProgressTrackerSettings"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    progress_tracker_config_versions: Mapped[list["ProgressTrackerConfigVersion"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    progress_tracker_manual_rules: Mapped[list["ProgressTrackerManualRule"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    progress_tracker_manual_completions: Mapped[list["ProgressTrackerManualCompletion"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    progress_tracker_day_starts: Mapped[list["ProgressTrackerDayStart"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    progress_tracker_daily_results: Mapped[list["ProgressTrackerDailyResult"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )

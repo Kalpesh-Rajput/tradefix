@@ -25,6 +25,9 @@ class OverviewStats(BaseModel):
     max_drawdown_pct: float = 0.0
     avg_execution_score: float | None = None
     avg_r_multiple: float | None = None
+    win_count: int = 0
+    loss_count: int = 0
+    breakeven_count: int = 0
 
 
 class TimeBucketStat(BaseModel):

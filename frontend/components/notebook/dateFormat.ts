@@ -34,3 +34,7 @@ export function notePreview(text: string | null | undefined) {
   if (!clean) return "Screenshots only";
   return clean.length > 72 ? `${clean.slice(0, 72)}…` : clean;
 }
+
+export function stripHtml(html: string | null | undefined) {
+  return (html ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}

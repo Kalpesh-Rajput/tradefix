@@ -22,7 +22,7 @@ export function DayViewHeader({
       <div className="flex items-center gap-2">
         <PortfolioSwitcher className="[&_button]:h-8 [&_button]:rounded-md [&_button]:border-[#E4E5EA] [&_button]:bg-white [&_button]:shadow-none [&_button]:text-[12px]" />
         <Link
-          href="/diary"
+          href="/my-day"
           className="dash-btn-primary text-on-accent h-8 px-3 text-[12px]"
         >
           <Zap className="h-3.5 w-3.5" strokeWidth={2} />

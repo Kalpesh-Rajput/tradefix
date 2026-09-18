@@ -13,10 +13,12 @@ export function ShareCard({
   overview,
   formatMoney,
   accountName,
+  compact = false,
 }: {
   overview: OverviewStats;
   formatMoney: FormatMoney;
   accountName?: string;
+  compact?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const toast = useToast();
@@ -135,14 +137,28 @@ export function ShareCard({
       <div ref={ref} className="sr-only" aria-hidden>
         TradeFix share card · WR {overview.win_rate}% · P&L {formatMoney(overview.total_pnl)}
       </div>
-      <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={download}>
-        <Download className="h-3.5 w-3.5" />
-        Card
-      </Button>
-      <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={share}>
-        <Share2 className="h-3.5 w-3.5" />
-        Share
-      </Button>
+      {compact ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={download}
+          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[11px] font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-primary-very-light)] disabled:opacity-50"
+        >
+          <Download className="h-3.5 w-3.5" strokeWidth={1.75} />
+          Export PDF
+        </button>
+      ) : (
+        <>
+          <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={download}>
+            <Download className="h-3.5 w-3.5" />
+            Card
+          </Button>
+          <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={share}>
+            <Share2 className="h-3.5 w-3.5" />
+            Share
+          </Button>
+        </>
+      )}
     </div>
   );
 }

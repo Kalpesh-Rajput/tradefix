@@ -12,7 +12,6 @@ import {
   Mic,
   Minus,
   Plus,
-  Sparkles,
   Strikethrough,
   Underline,
 } from "lucide-react";
@@ -55,7 +54,7 @@ export function EditorToolbar({
   micOn?: boolean;
 }) {
   return (
-    <div className="flex h-10 shrink-0 items-center gap-0.5 overflow-x-auto border-y border-[var(--color-border)] px-2">
+    <div className="flex h-10 shrink-0 items-center gap-0.5 overflow-x-auto overflow-y-hidden border-y border-[var(--color-border)] px-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <IconBtn label="Fullscreen" onClick={onFullscreen}>
         <Maximize2 className="h-3.5 w-3.5" />
       </IconBtn>
@@ -141,9 +140,6 @@ export function EditorToolbar({
       <IconBtn label="Insert" onClick={() => onCommand("insertParagraph")}>
         <Plus className="h-3.5 w-3.5" />
       </IconBtn>
-      <span className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-on-accent">
-        <Sparkles className="h-3 w-3" />
-      </span>
     </div>
   );
 }

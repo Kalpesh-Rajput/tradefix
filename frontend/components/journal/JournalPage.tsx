@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { JournalEmptyState } from "@/components/journal/JournalEmptyState";
 import { JournalSidebar, type JournalListItem } from "@/components/journal/JournalSidebar";
 import { RecapForm, type RecapFormValues } from "@/components/journal/RecapForm";
+import { GamePlanCard } from "@/components/progress/GamePlanCard";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -182,32 +183,38 @@ export function JournalPage() {
             Create an account in Settings to start journaling.
           </div>
         ) : showForm ? (
-          <RecapForm
-            key={`${activeDate}-${existing?.id ?? "draft"}`}
-            dateLabel={formatEntryLabel(activeDate, todayKey, locale)}
-            recapNumber={nextRecapNumber}
-            existing={existing}
-            dayPnl={dayPnl}
-            saving={upsert.isPending || uploadShot.isPending}
-            onSave={handleSave}
-            onDelete={existing ? handleDelete : undefined}
-            onUploadScreenshot={
-              existing
-                ? async (file) => {
-                    await uploadShot.mutateAsync({ id: existing.id, file });
-                  }
-                : undefined
-            }
-            onDeleteScreenshot={
-              existing
-                ? async (url) => {
-                    await deleteShot.mutateAsync({ id: existing.id, url });
-                  }
-                : undefined
-            }
-          />
+          <div className="mx-auto w-full max-w-3xl">
+            <GamePlanCard date={activeDate} accountId={accountId} />
+            <RecapForm
+              key={`${activeDate}-${existing?.id ?? "draft"}`}
+              dateLabel={formatEntryLabel(activeDate, todayKey, locale)}
+              recapNumber={nextRecapNumber}
+              existing={existing}
+              dayPnl={dayPnl}
+              saving={upsert.isPending || uploadShot.isPending}
+              onSave={handleSave}
+              onDelete={existing ? handleDelete : undefined}
+              onUploadScreenshot={
+                existing
+                  ? async (file) => {
+                      await uploadShot.mutateAsync({ id: existing.id, file });
+                    }
+                  : undefined
+              }
+              onDeleteScreenshot={
+                existing
+                  ? async (url) => {
+                      await deleteShot.mutateAsync({ id: existing.id, url });
+                    }
+                  : undefined
+              }
+            />
+          </div>
         ) : (
-          <JournalEmptyState onAdd={openToday} />
+          <div className="mx-auto w-full max-w-3xl">
+            <GamePlanCard date={activeDate} accountId={accountId} />
+            <JournalEmptyState onAdd={openToday} />
+          </div>
         )}
       </div>
     </div>

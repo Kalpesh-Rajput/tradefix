@@ -10,6 +10,7 @@ import {
   ZellaScoreCard,
 } from "@/components/dashboard/zella/DashboardCharts";
 import { DrawdownChart } from "@/components/dashboard/zella/DrawdownChart";
+import { MarketSessionsWidget } from "@/components/market-sessions/MarketSessionsWidget";
 import { MetricCards } from "@/components/dashboard/zella/MetricCards";
 import { ShareablePnlCalendar } from "@/components/dashboard/zella/ShareablePnlCalendar";
 import { PositionsTradesWidget } from "@/components/dashboard/zella/PositionsTradesWidget";
@@ -17,6 +18,7 @@ import { ProgressTracker } from "@/components/dashboard/zella/ProgressTracker";
 import { TradeScatterChart } from "@/components/dashboard/zella/TradeScatterChart";
 import { ZellaDashboardHeader } from "@/components/dashboard/zella/ZellaDashboardHeader";
 import { useDashboardWidgets } from "@/components/dashboard/zella/useDashboardWidgets";
+import { DayDetailModal } from "@/components/dayview/DayDetailModal";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
@@ -31,22 +33,11 @@ import {
   tradeDurationPoints,
   tradeTimePoints,
 } from "@/lib/dashboardSeries";
+import { rangeForPreset } from "@/components/dashboard/DateRangePicker";
+import { localIso } from "@/lib/dateLocal";
+import { TRADE_LIST_LIMIT } from "@/lib/trades/limits";
 import { useAnalytics, useCalendar } from "@/lib/hooks/useAnalytics";
 import { useTrades } from "@/lib/hooks/useTrades";
-
-function localIso(d: Date) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function defaultRange() {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(end.getDate() - 30);
-  return { from: localIso(start), to: localIso(end) };
-}
 
 export default function TodayPage() {
   const { t, formatChartDate } = useLocale();
@@ -58,7 +49,7 @@ export default function TodayPage() {
   const accountId = activeAccount?.id;
   const accountReady = !!accountId;
 
-  const initial = useMemo(() => defaultRange(), []);
+  const initial = useMemo(() => rangeForPreset("30d"), []);
   const [dateFrom, setDateFrom] = useState(initial.from);
   const [dateTo, setDateTo] = useState(initial.to);
 
@@ -71,11 +62,13 @@ export default function TodayPage() {
   }, []);
   const [calStart, setCalStart] = useState(monthBounds.start);
   const [calEnd, setCalEnd] = useState(monthBounds.end);
+  const [openDate, setOpenDate] = useState<string | null>(null);
 
   const {
     data: analytics,
     isLoading: analyticsLoading,
     isError: analyticsError,
+    refetch: refetchAnalytics,
   } = useAnalytics(
     { account_id: accountId, date_from: dateFrom, date_to: dateTo },
     { enabled: accountReady }
@@ -83,17 +76,18 @@ export default function TodayPage() {
 
   const {
     data: trades = [],
-    isLoading: tradesLoading,
     isError: tradesError,
+    refetch: refetchTrades,
   } = useTrades(
     {
       account_id: accountId,
       date_from: `${dateFrom}T00:00:00`,
       date_to: `${dateTo}T23:59:59`,
-      limit: 500,
+      limit: TRADE_LIST_LIMIT,
     },
     { enabled: accountReady }
   );
+  const tradesTruncated = trades.length >= TRADE_LIST_LIMIT;
 
   const progressRange = useMemo(() => {
     const to = new Date();
@@ -111,30 +105,21 @@ export default function TodayPage() {
   });
 
   const overview = analytics?.overview;
+  const netPnl = overview?.total_pnl ?? 0;
+  const winRate = overview?.win_rate ?? 0;
+  const profitFactor = overview?.profit_factor ?? 0;
+  const avgWin = overview?.avg_win ?? 0;
+  const avgLoss = Math.abs(overview?.avg_loss ?? 0);
+  const avgWinLoss = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? avgWin : 0;
+  const expectancy = overview?.expectancy ?? null;
+  const wins = overview?.win_count ?? 0;
+  const losses = overview?.loss_count ?? 0;
+  const breakeven = overview?.breakeven_count ?? 0;
   const closed = useMemo(
     () => trades.filter((t) => t.status === "closed" && t.pnl != null),
     [trades]
   );
   const openTrades = useMemo(() => trades.filter((t) => t.status === "open"), [trades]);
-  const winsList = closed.filter((t) => (displayPnl(t.pnl, t.fees) ?? 0) > 0);
-  const lossesList = closed.filter((t) => (displayPnl(t.pnl, t.fees) ?? 0) < 0);
-  const beList = closed.filter((t) => (displayPnl(t.pnl, t.fees) ?? 0) === 0);
-  const grossWin = winsList.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0);
-  const grossLoss = Math.abs(lossesList.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0));
-  const profitFactor =
-    overview?.profit_factor ||
-    (grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? grossWin : 0);
-  const winRate = closed.length
-    ? (winsList.length / closed.length) * 100
-    : overview?.win_rate ?? 0;
-  const netPnl =
-    overview?.total_pnl ??
-    closed.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0);
-  const avgWin = winsList.length ? grossWin / winsList.length : overview?.avg_win ?? 0;
-  const avgLoss = lossesList.length
-    ? Math.abs(lossesList.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0) / lossesList.length)
-    : Math.abs(overview?.avg_loss ?? 0);
-  const avgWinLoss = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? avgWin : 0;
 
   const tradingDays = rangeCalendar?.days?.filter((d) => d.trades > 0) ?? [];
   const dayWins = tradingDays.filter((d) => d.pnl > 0).length;
@@ -209,26 +194,10 @@ export default function TodayPage() {
     [closed]
   );
 
-  const expectancy = useMemo(() => {
-    if (closed.length) {
-      const total = closed.reduce((s, t) => s + (displayPnl(t.pnl, t.fees) ?? 0), 0);
-      return total / closed.length;
-    }
-    return overview?.expectancy ?? null;
-  }, [closed, displayPnl, overview?.expectancy]);
-
   const expectancySeries = useMemo(() => {
-    const sorted = [...closed].sort(
-      (a, b) =>
-        new Date(a.closed_at || a.opened_at).getTime() -
-        new Date(b.closed_at || b.opened_at).getTime()
-    );
-    let sum = 0;
-    return sorted.map((t, i) => {
-      sum += displayPnl(t.pnl, t.fees) ?? 0;
-      return sum / (i + 1);
-    });
-  }, [closed, displayPnl]);
+    const curve = analytics?.equity_curve ?? [];
+    return curve.map((p, i) => p.value / (i + 1));
+  }, [analytics?.equity_curve]);
 
   const hour = new Date().getHours();
   const greetingKey =
@@ -238,8 +207,8 @@ export default function TodayPage() {
         ? "dashboard.greeting.afternoon"
         : "dashboard.greeting.evening";
 
-  const loading = accountsLoading || analyticsLoading || (tradesLoading && accountReady);
-  const hasError = analyticsError || tradesError;
+  const loading = accountsLoading || (accountReady && analyticsLoading);
+  const hasError = analyticsError;
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-background)]">
@@ -291,7 +260,14 @@ export default function TodayPage() {
           </div>
         ) : hasError ? (
           <div className="dash-card border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-foreground">
-            Couldn’t load your dashboard data. Refresh the page or try again in a moment.
+            Couldn’t load your dashboard data.
+            <button
+              type="button"
+              className="ml-3 text-primary"
+              onClick={() => void refetchAnalytics()}
+            >
+              Retry
+            </button>
           </div>
         ) : (
           <>
@@ -304,9 +280,9 @@ export default function TodayPage() {
                 dayWinPct={dayWinPct}
                 avgWin={avgWin}
                 avgLoss={avgLoss}
-                wins={winsList.length}
-                losses={lossesList.length}
-                breakeven={beList.length}
+                wins={wins}
+                losses={losses}
+                breakeven={breakeven}
                 dayWins={dayWins}
                 dayLosses={dayLosses}
                 dayBreakeven={dayBreakeven}
@@ -341,6 +317,15 @@ export default function TodayPage() {
               </div>
             )}
 
+            {tradesError ? (
+              <div className="dash-card border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-foreground">
+                Couldn’t load trades for this range.
+                <button type="button" className="ml-3 text-primary" onClick={() => void refetchTrades()}>
+                  Retry
+                </button>
+              </div>
+            ) : null}
+
             {(widgets.positions || widgets.accountBalance || widgets.calendar) && (
               <div
                 className="grid grid-cols-1 items-stretch gap-3 lg:h-[var(--dash-cal-h)] lg:grid-cols-3"
@@ -360,6 +345,8 @@ export default function TodayPage() {
                         openTrades={openTrades}
                         recentTrades={recentTrades}
                         formatMoney={formatMoney}
+                        displayPnl={displayPnl}
+                        truncated={tradesTruncated}
                       />
                     )}
                     {widgets.accountBalance && (
@@ -377,10 +364,7 @@ export default function TodayPage() {
                         setCalStart(start);
                         setCalEnd(end);
                       }}
-                      onSelectDate={(date) => {
-                        setDateFrom(date);
-                        setDateTo(date);
-                      }}
+                      onOpenDate={setOpenDate}
                     />
                   </div>
                 )}
@@ -403,6 +387,11 @@ export default function TodayPage() {
                       formatMoney={formatMoney}
                       xMode="clock"
                     />
+                    {tradesTruncated ? (
+                      <p className="mt-1 text-[10px] text-[var(--color-text-muted)]">
+                        Chart uses the latest {TRADE_LIST_LIMIT.toLocaleString()} trades in this range.
+                      </p>
+                    ) : null}
                   </div>
                 )}
                 {widgets.tradeDuration && (
@@ -414,10 +403,17 @@ export default function TodayPage() {
                       formatMoney={formatMoney}
                       xMode="duration"
                     />
+                    {tradesTruncated ? (
+                      <p className="mt-1 text-[10px] text-[var(--color-text-muted)]">
+                        Chart uses the latest {TRADE_LIST_LIMIT.toLocaleString()} trades in this range.
+                      </p>
+                    ) : null}
                   </div>
                 )}
               </div>
             )}
+
+            {widgets.marketSessions && <MarketSessionsWidget />}
 
             {widgets.progress && (
               <ProgressTracker weeks={progress.weeks} monthLabels={progress.monthLabels} />
@@ -427,6 +423,11 @@ export default function TodayPage() {
         )}
         <div className="h-2" />
       </div>
+      <DayDetailModal
+        date={openDate}
+        day={calendar?.days.find((d) => d.date.slice(0, 10) === openDate)}
+        onClose={() => setOpenDate(null)}
+      />
     </div>
   );
 }

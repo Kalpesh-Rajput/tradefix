@@ -95,6 +95,7 @@ Send the **https** Forwarding URL. Your PC must stay on. A free ngrok URL dies w
   - **Hot Take** — weekly bold thesis from your own performance trends
   - **Journal Pulse** — reads your mood check-ins vs P&L (local stand-in for SuperTrader's "The Crowd", since there's no external sentiment source in scope)
   - An in-process scheduler (APScheduler) runs the daily agents at 8am and Hot Take on Sundays; you can also click "Run now" per agent any time
+- **Progress Tracker** — trading-day rules, daily checklist, streak, and discipline heatmap (`/progress-tracker`). See [docs/progress-tracker.md](./docs/progress-tracker.md).
 - **Settings** — watchlist management (feeds Morning Brief), mood check-ins (feeds Journal Pulse), **profile** (editable fields + avatar upload to local `/uploads` storage, persisted in Postgres)
 
 ## Explicitly out of scope

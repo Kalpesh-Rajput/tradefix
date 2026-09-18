@@ -15,7 +15,8 @@ export type DashboardWidgetId =
   | "drawdown"
   | "tradeTime"
   | "tradeDuration"
-  | "progress";
+  | "progress"
+  | "marketSessions";
 
 export type DashboardWidgetConfig = Record<DashboardWidgetId, boolean>;
 
@@ -31,6 +32,7 @@ export const DEFAULT_WIDGETS: DashboardWidgetConfig = {
   tradeTime: true,
   tradeDuration: true,
   progress: true,
+  marketSessions: true,
 };
 
 const LABELS: Record<DashboardWidgetId, string> = {
@@ -45,6 +47,7 @@ const LABELS: Record<DashboardWidgetId, string> = {
   tradeTime: "Trade time performance",
   tradeDuration: "Trade duration performance",
   progress: "Progress tracker",
+  marketSessions: "Market sessions",
 };
 
 export function useDashboardWidgets() {

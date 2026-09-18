@@ -39,14 +39,14 @@ export function ExecutionsTab({
         <p className="text-[13px] text-[var(--color-text-secondary)]">
           {rows.length} execution{rows.length === 1 ? "" : "s"}
         </p>
-        {rows.length > 0 ? (
+        {rows.length > 8 ? (
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
             className="inline-flex items-center gap-1 text-[12px] font-medium text-primary hover:underline"
           >
             <FileText className="h-3.5 w-3.5" strokeWidth={1.75} />
-            {expanded || rows.length <= 8 ? "View all" : "View all"}
+            {expanded ? "Show less" : "View all"}
           </button>
         ) : null}
       </div>

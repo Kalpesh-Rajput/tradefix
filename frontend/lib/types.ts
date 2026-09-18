@@ -110,6 +110,7 @@ export interface Trade {
   month?: number | null;
   strategy_name?: string | null;
   strategy_id?: string | null;
+  playbook_id?: string | null;
   precheck_list_id?: string | null;
   extra?: Record<string, unknown>;
   remaining_quantity?: number | null;
@@ -189,6 +190,7 @@ export interface TradeInput {
   is_favourite?: boolean;
   strategy_name?: string | null;
   strategy_id?: string | null;
+  playbook_id?: string | null;
   precheck_list_id?: string | null;
   extra?: Record<string, unknown>;
   executions?: TradeExecutionInput[];
@@ -247,6 +249,9 @@ export interface OverviewStats {
   max_drawdown_pct?: number;
   avg_execution_score?: number | null;
   avg_r_multiple?: number | null;
+  win_count?: number;
+  loss_count?: number;
+  breakeven_count?: number;
 }
 
 export interface TimeBucketStat {
@@ -372,6 +377,12 @@ export interface AgentRun {
   message: string | null;
   insight_id: string | null;
   run_at: string;
+}
+
+export interface AgentTriggerResponse {
+  agent_name: string;
+  run: AgentRun;
+  insight: Insight | null;
 }
 
 export interface WatchlistItem {

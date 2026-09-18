@@ -73,8 +73,6 @@ export function StatsTab({
       <Row label="Account" value={trade.account_name || "—"} />
       <Row label="Contracts traded" value={qty} />
       <Row label="Points" value={points != null ? points.toFixed(2) : "—"} />
-      <Row label="Ticks" value="—" />
-      <Row label="Ticks Per Contract" value="—" />
       <Row label="Commissions & Fees" value={money(trade.fees, 2)} />
       <Row label="Net ROI" value={roi != null ? `${roi.toFixed(2)}%` : "—"} />
       <Row
@@ -92,14 +90,6 @@ export function StatsTab({
         >
           {strategy || "Select Strategy"}
         </button>
-      </div>
-      <div className="flex items-center justify-between border-b border-[#EFEFF2] py-2.5">
-        <span className="text-[12px] text-[var(--color-text-tertiary)]">Zella Scale</span>
-        <span className="text-[12px] font-medium text-[var(--color-text-muted)]">—</span>
-      </div>
-      <div className="flex items-center justify-between border-b border-[#EFEFF2] py-2.5">
-        <span className="text-[12px] text-[var(--color-text-tertiary)]">Price MAE / MFE</span>
-        <span className="text-[12px] font-medium text-[var(--color-text-muted)]">—</span>
       </div>
       <div className="border-b border-[#EFEFF2] py-2.5">
         <div className="mb-1.5 flex items-center justify-between">
@@ -140,7 +130,9 @@ export function StatsTab({
       <section className="pt-4">
         <h3 className="mb-2 flex items-center gap-1 text-[12px] font-semibold" style={{ color: PNL_PROFIT_HEX }}>
           Profit Target
-          <Info className="h-3 w-3 text-[var(--color-text-muted)]" strokeWidth={1.75} />
+          <span title="Price where you plan to take profit. Saved on this trade." className="inline-flex">
+            <Info className="h-3 w-3 text-[var(--color-text-muted)]" strokeWidth={1.75} />
+          </span>
         </h3>
         <label className="mb-1.5 block text-[11px] text-[var(--color-text-tertiary)]">Target in Price</label>
         <div className="flex items-center gap-2">
@@ -162,7 +154,9 @@ export function StatsTab({
       <section className="pt-4">
         <h3 className="mb-2 flex items-center gap-1 text-[12px] font-semibold" style={{ color: PNL_LOSS_HEX }}>
           Stop loss
-          <Info className="h-3 w-3 text-[var(--color-text-muted)]" strokeWidth={1.75} />
+          <span title="Price where you plan to exit if the trade moves against you. Saved on this trade." className="inline-flex">
+            <Info className="h-3 w-3 text-[var(--color-text-muted)]" strokeWidth={1.75} />
+          </span>
         </h3>
         <label className="mb-1.5 block text-[11px] text-[var(--color-text-tertiary)]">Target in Price</label>
         <div className="flex items-center gap-2">
@@ -235,20 +229,22 @@ function QtyBadge({ qty }: { qty: string }) {
 function RunningPnlChart({ data }: { data: number[] }) {
   const gid = useId().replace(/:/g, "");
   const chartData = data.map((v, i) => ({ i, v }));
+  const last = data[data.length - 1] ?? 0;
+  const color = last >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX;
   return (
     <div className="h-[56px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height={56}>
         <AreaChart data={chartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={PNL_PROFIT_HEX} stopOpacity={0.35} />
-              <stop offset="100%" stopColor={PNL_PROFIT_HEX} stopOpacity={0} />
+              <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
           <Area
             type="monotone"
             dataKey="v"
-            stroke={PNL_PROFIT_HEX}
+            stroke={color}
             strokeWidth={1.5}
             fill={`url(#${gid})`}
             isAnimationActive={false}

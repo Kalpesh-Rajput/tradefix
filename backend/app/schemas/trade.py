@@ -78,6 +78,7 @@ class TradeJournalFields(BaseModel):
     mood: str | None = None
     strategy_name: str | None = None
     strategy_id: uuid.UUID | None = None
+    playbook_id: uuid.UUID | None = None
     precheck_list_id: uuid.UUID | None = None
     extra: dict | None = None
 
@@ -295,6 +296,7 @@ class TradeResponse(BaseModel):
     month: int | None = None
     strategy_name: str | None = None
     strategy_id: uuid.UUID | None = None
+    playbook_id: uuid.UUID | None = None
     precheck_list_id: uuid.UUID | None = None
     extra: dict = Field(default_factory=dict)
     remaining_quantity: float | None = None

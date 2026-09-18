@@ -23,6 +23,7 @@ export function ShareablePnlCalendar({
   marks,
   onMonthChange,
   onSelectDate,
+  onOpenDate,
 }: {
   days: Array<PnlHeatmapDay | CalendarDay>;
   month?: string | null;
@@ -32,6 +33,7 @@ export function ShareablePnlCalendar({
   marks?: Map<string, CalendarDayMarks>;
   onMonthChange?: (start: string, end: string) => void;
   onSelectDate?: (date: string) => void;
+  onOpenDate?: (date: string) => void;
 }) {
   const captureRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -55,6 +57,7 @@ export function ShareablePnlCalendar({
         }
         onMonthChange={onMonthChange}
         onSelectDate={onSelectDate}
+        onOpenDate={onOpenDate}
       />
       {share.dialogs}
     </>

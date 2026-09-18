@@ -13,7 +13,6 @@ export function DayCardHeader({
   onToggle,
   formatMoney,
   onReview,
-  onReplay,
   onAddNote,
   onMore,
 }: {
@@ -23,7 +22,6 @@ export function DayCardHeader({
   onToggle: () => void;
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
   onReview: () => void;
-  onReplay: () => void;
   onAddNote: () => void;
   onMore: () => void;
 }) {
@@ -45,7 +43,7 @@ export function DayCardHeader({
           {t("dayView.netPnl")} {formatNetPnl(pnl, formatMoney)}
         </span>
       </button>
-      <DayActions onReview={onReview} onReplay={onReplay} onAddNote={onAddNote} onMore={onMore} />
+      <DayActions onReview={onReview} onAddNote={onAddNote} onMore={onMore} />
     </div>
   );
 }

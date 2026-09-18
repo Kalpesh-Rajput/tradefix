@@ -15,6 +15,7 @@ export type DayListItem = {
   favorite: boolean;
   shots: number;
   folderId: string | null;
+  searchText?: string;
 };
 
 export type TradeListItem = {
@@ -35,6 +36,7 @@ export type RecapListItem = {
   title: string;
   numericDate: string;
   subtitle: string;
+  searchText?: string;
 };
 
 export type NotebookListItem = DayListItem | TradeListItem | RecapListItem;

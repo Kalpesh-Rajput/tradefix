@@ -19,12 +19,14 @@ export function WeekGrid({
   marks,
   selectedDate,
   onSelectDate,
+  onOpenDate,
 }: {
   weekStart: Date;
   days: CalendarDay[];
   marks?: Map<string, DayMarks>;
   selectedDate?: string | null;
   onSelectDate?: (iso: string) => void;
+  onOpenDate?: (iso: string) => void;
 }) {
   const dayMap = new Map(days.map((d) => [d.date, d]));
   const labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -46,7 +48,10 @@ export function WeekGrid({
           <button
             key={iso}
             type="button"
-            onClick={() => onSelectDate?.(iso)}
+            onClick={() => {
+              onSelectDate?.(iso);
+              onOpenDate?.(iso);
+            }}
             className={clsx(
               "flex min-h-[140px] flex-col rounded-lg border p-3 text-left transition-colors duration-150",
               hasTrades

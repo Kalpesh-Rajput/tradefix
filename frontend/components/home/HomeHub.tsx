@@ -43,7 +43,7 @@ export function HomeHub() {
     { labelKey: "home.prompt.bestSetups", href: "/chat?q=" + encodeURIComponent("Show my best setups") },
     { labelKey: "home.prompt.yesterday", href: "/trades" },
     { labelKey: "home.prompt.mistakes", href: "/chat?q=" + encodeURIComponent("What mistakes am I repeating?") },
-    { labelKey: "home.prompt.gamePlan", href: "/trading-plan" },
+    { labelKey: "home.prompt.gamePlan", href: "/playbooks" },
     { labelKey: "home.prompt.askAnything", href: "/chat" },
   ];
 
@@ -86,8 +86,8 @@ export function HomeHub() {
 
   const focus: { href: string; labelKey: MessageKey; icon: typeof LineChart }[] = [
     { href: "/analytics", labelKey: "home.focus.weekly", icon: LineChart },
-    { href: "/diary", labelKey: "home.focus.plan", icon: CalendarDays },
-    { href: "/trading-plan", labelKey: "home.focus.playbook", icon: ListChecks },
+    { href: "/my-day", labelKey: "home.focus.plan", icon: CalendarDays },
+    { href: "/playbooks", labelKey: "home.focus.playbook", icon: ListChecks },
     { href: "/backtest", labelKey: "home.focus.backtest", icon: FlaskConical },
   ];
 

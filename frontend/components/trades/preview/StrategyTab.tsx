@@ -6,7 +6,9 @@ import { useMemo } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/ui/Toast";
 import { useMasters } from "@/lib/hooks/useMasters";
+import { usePlaybooks } from "@/lib/hooks/usePlaybooks";
 import { useUpdateTrade } from "@/lib/hooks/useTrades";
+import { playbookMatchingName } from "@/lib/playbooks/stats";
 import { assignedStrategy } from "@/lib/trades/previewStats";
 import { resolveStrategyCatalog } from "@/lib/tradingDefaults";
 import type { Trade } from "@/lib/types";
@@ -16,28 +18,32 @@ export function StrategyTab({ trade }: { trade: Trade }) {
   const toast = useToast();
   const update = useUpdateTrade();
   const { data: masters = [] } = useMasters("strategy");
+  const { data: playbooks = [] } = usePlaybooks();
   const catalog = useMemo(() => {
     const fromUser = resolveStrategyCatalog(user);
     const fromMasters = masters.map((m) => m.name);
+    const fromPlaybooks = playbooks.map((p) => p.name);
     const seen = new Set<string>();
     const out: string[] = [];
-    for (const name of [...fromUser, ...fromMasters]) {
+    for (const name of [...fromUser, ...fromMasters, ...fromPlaybooks]) {
       const key = name.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(name);
     }
     return out;
-  }, [user, masters]);
+  }, [user, masters, playbooks]);
 
   const current = assignedStrategy(trade);
   const masterByName = useMemo(() => {
     const map = new Map(masters.map((m) => [m.name.toLowerCase(), m]));
     return map;
   }, [masters]);
+  const assignedPlaybook = playbooks.find((p) => p.id === trade.playbook_id) ?? playbookMatchingName(playbooks, current);
 
   async function assign(name: string) {
     const master = masterByName.get(name.toLowerCase());
+    const match = playbookMatchingName(playbooks, name);
     const tags = [name, ...(trade.setup_tags ?? []).filter((t) => t.toLowerCase() !== name.toLowerCase())];
     try {
       await update.mutateAsync({
@@ -45,14 +51,21 @@ export function StrategyTab({ trade }: { trade: Trade }) {
         data: {
           strategy_name: name,
           strategy_id: master?.id ?? null,
+          playbook_id: match?.id ?? null,
           setup_tag: name,
           setup_tags: tags,
         },
       });
-      toast.success("Strategy assigned");
+      toast.success(match ? "Playbook assigned" : "Strategy assigned");
     } catch (err) {
       toast.error("Couldn’t assign strategy", err instanceof Error ? err.message : undefined);
     }
+  }
+
+  async function assignPlaybook(id: string) {
+    const pb = playbooks.find((p) => p.id === id);
+    if (!pb) return;
+    await assign(pb.name);
   }
 
   async function clear() {
@@ -65,6 +78,7 @@ export function StrategyTab({ trade }: { trade: Trade }) {
         data: {
           strategy_name: null,
           strategy_id: null,
+          playbook_id: null,
           setup_tag: nextTags[0] ?? null,
           setup_tags: nextTags,
         },
@@ -103,6 +117,33 @@ export function StrategyTab({ trade }: { trade: Trade }) {
           {catalog.length} available
         </span>
       </div>
+
+      {playbooks.length ? (
+        <div className="mt-3">
+          <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]" htmlFor="preview-playbook">
+            Playbook
+          </label>
+          <select
+            id="preview-playbook"
+            value={assignedPlaybook?.id ?? ""}
+            disabled={update.isPending}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (!v) void clear();
+              else void assignPlaybook(v);
+            }}
+            className="h-10 w-full appearance-none rounded-xl border border-[#E2E2E7] bg-[#F7F7F9] px-3 text-[13px] text-[var(--color-text-primary)] outline-none focus:border-primary/40"
+          >
+            <option value="">None</option>
+            {playbooks.map((pb) => (
+              <option key={pb.id} value={pb.id}>
+                {pb.icon ? `${pb.icon} ` : ""}
+                {pb.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
 
       {current ? (
         <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-primary-very-light)] px-3 py-3">

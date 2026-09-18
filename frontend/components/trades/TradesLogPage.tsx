@@ -19,6 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { PortfolioSwitcher } from "@/components/dashboard/PortfolioSwitcher";
+import { BackButton } from "@/components/layout/AppNavigation";
 import { NavCollapseButton } from "@/components/layout/NavCollapseButton";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -92,12 +93,12 @@ function signedPct(value: number): string {
   return `${abs}%`;
 }
 
-function moneyPrice(n: number | null | undefined): string {
+function moneyPrice(
+  n: number | null | undefined,
+  formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string
+): string {
   if (n == null) return "—";
-  return `$${Number(n).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  return formatMoney(n, { signed: false, digits: 2 });
 }
 
 function readStored(): Partial<LocalFilters> {
@@ -313,6 +314,7 @@ export function TradesLogPage() {
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
             {showJournalToggle && <NavCollapseButton variant="light" />}
+            <BackButton />
             <h1 className="truncate text-[20px] font-semibold tracking-tight text-[var(--color-text-primary)]">
               Trade View
             </h1>
@@ -598,10 +600,10 @@ export function TradesLogPage() {
                         {qtyLabel(trade)}
                       </td>
                       <td className="whitespace-nowrap border-b border-[var(--color-border-light)] px-2 py-3 font-mono text-xs text-[var(--color-text-primary)]">
-                        {moneyPrice(trade.entry_price)}
+                        {moneyPrice(trade.entry_price, formatMoney)}
                       </td>
                       <td className="whitespace-nowrap border-b border-[var(--color-border-light)] px-2 py-3 font-mono text-xs text-[var(--color-text-primary)]">
-                        {moneyPrice(trade.exit_price)}
+                        {moneyPrice(trade.exit_price, formatMoney)}
                       </td>
                       <td className="max-w-[140px] truncate border-b border-[var(--color-border-light)] px-2 py-3 text-xs text-[var(--color-text-secondary)]">
                         {trade.setup_tag || "—"}

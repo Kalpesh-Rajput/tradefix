@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { AppHeader } from "@/components/layout/AppHeader";
+import { AppNavigationProvider } from "@/components/layout/AppNavigation";
 import { HeaderActionsProvider } from "@/components/layout/HeaderActions";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { ProductRail } from "@/components/layout/ProductRail";
@@ -36,8 +37,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isTradesLog = pathname === "/trades";
   const isCalendar = pathname === "/calendar";
   const isDiary = pathname === "/diary";
+  const isMyDay = pathname === "/my-day" || pathname?.startsWith("/my-day/");
   const isNotebook = pathname === "/notebook";
   const isSettings = pathname?.startsWith("/settings");
+  const isReports = pathname === "/analytics" || pathname?.startsWith("/analytics/");
+  const isProgressTracker = pathname === "/progress-tracker" || pathname?.startsWith("/progress-tracker/");
+  const isPlaybooks = pathname === "/playbooks" || pathname?.startsWith("/playbooks/");
+  const isMarketSessions = pathname === "/market-sessions" || pathname?.startsWith("/market-sessions/");
   const showJournalNav = isJournalPath(pathname);
 
   useEffect(() => {
@@ -67,23 +73,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AccountProvider>
         <QuickLogProvider>
           <SidebarProvider>
-            <LiveAccountBridge />
-            <AppShell
-              showJournalNav={showJournalNav}
-              isDashboard={isDashboard}
-              isDayView={isDayView}
-              isHome={isHome}
-              isTradesLog={isTradesLog}
-              isCalendar={isCalendar}
-              isDiary={isDiary}
-              isNotebook={isNotebook}
-              isSettings={isSettings}
-            >
-              {children}
-            </AppShell>
-            <AddTradesFlow />
-            <AddTradeModal />
-            <MonthlyGoalPrompt />
+            <AppNavigationProvider>
+              <LiveAccountBridge />
+              <AppShell
+                showJournalNav={showJournalNav}
+                isDashboard={isDashboard}
+                isDayView={isDayView}
+                isHome={isHome}
+                isTradesLog={isTradesLog}
+                isCalendar={isCalendar}
+                isDiary={isDiary}
+                isMyDay={isMyDay}
+                isNotebook={isNotebook}
+                isSettings={isSettings}
+                isReports={isReports}
+                isProgressTracker={isProgressTracker}
+                isPlaybooks={isPlaybooks}
+                isMarketSessions={isMarketSessions}
+              >
+                {children}
+              </AppShell>
+              <AddTradesFlow />
+              <AddTradeModal />
+              <MonthlyGoalPrompt />
+            </AppNavigationProvider>
           </SidebarProvider>
         </QuickLogProvider>
       </AccountProvider>
@@ -100,8 +113,13 @@ function AppShell({
   isTradesLog,
   isCalendar,
   isDiary,
+  isMyDay,
   isNotebook,
   isSettings,
+  isReports,
+  isProgressTracker,
+  isPlaybooks,
+  isMarketSessions,
 }: {
   children: React.ReactNode;
   showJournalNav: boolean;
@@ -111,8 +129,13 @@ function AppShell({
   isTradesLog: boolean;
   isCalendar: boolean;
   isDiary: boolean;
+  isMyDay: boolean;
   isNotebook: boolean;
   isSettings: boolean;
+  isReports: boolean;
+  isProgressTracker: boolean;
+  isPlaybooks: boolean;
+  isMarketSessions: boolean;
 }) {
   const { collapsed, setCollapsed } = useSidebar();
 
@@ -137,7 +160,7 @@ function AppShell({
             {!isTradesLog && <AppHeader />}
             <main
               className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
-                isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isNotebook
+                isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions
                   ? ""
                   : "overflow-y-auto p-6 sm:p-8"
               } ${isSettings || isHome ? "overflow-y-auto" : ""}`}
