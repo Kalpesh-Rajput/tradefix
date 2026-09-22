@@ -293,6 +293,9 @@ def upsert_recap(
     )
     numbers = _recap_numbers(all_ids)
     computed = _compute_day_pnl(db, current_user.id, recap.account_id, recap.date)
+    from app.services.ai.rag.ingest import ingest_recap, safe_ingest
+
+    safe_ingest(db, lambda: ingest_recap(db, recap))
     return _to_response(recap, computed, numbers.get(recap.id, 1))
 
 
@@ -343,6 +346,9 @@ def update_recap(
     )
     numbers = _recap_numbers(all_ids)
     computed = _compute_day_pnl(db, current_user.id, recap.account_id, recap.date)
+    from app.services.ai.rag.ingest import ingest_recap, safe_ingest
+
+    safe_ingest(db, lambda: ingest_recap(db, recap))
     return _to_response(recap, computed, numbers.get(recap.id, 1))
 
 
@@ -360,6 +366,9 @@ def delete_recap(
         delete_local_upload(url)
 
     db.delete(recap)
+    from app.services.ai.rag.store import delete_document
+
+    delete_document(db, current_user.id, "daily_recap", recap_id)
     db.commit()
     logger.info("Deleted daily recap user=%s id=%s", current_user.id, recap_id)
     return None

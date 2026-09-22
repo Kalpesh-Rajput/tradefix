@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.routers import (
     accounts,
     agents,
+    ai,
     analytics,
     auth,
     calendar,
@@ -76,6 +77,7 @@ app.include_router(analytics.router)
 app.include_router(calendar.router)
 app.include_router(insights.router)
 app.include_router(agents.router)
+app.include_router(ai.router)
 app.include_router(watchlist.router)
 app.include_router(mood.router)
 app.include_router(recaps.router)

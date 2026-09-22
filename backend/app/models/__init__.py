@@ -1,5 +1,7 @@
 from app.models.account import Account
 from app.models.agent_run import AgentRun
+from app.models.ai_document import AiDocument
+from app.models.ai_usage import AiUsageLog
 from app.models.daily_checkin import DailyCheckin
 from app.models.daily_recap import DailyRecap
 from app.models.day_note import DayNote
@@ -47,6 +49,8 @@ __all__ = [
     "TradeComment",
     "Insight",
     "AgentRun",
+    "AiDocument",
+    "AiUsageLog",
     "ProgressTrackerSettings",
     "ProgressTrackerConfigVersion",
     "ProgressTrackerManualRule",

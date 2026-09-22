@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 import uuid
 
 from fastapi import HTTPException, status
@@ -12,6 +13,17 @@ from app.models.trade_master import MasterCategory
 from app.schemas.playbook import PlaybookCreate, PlaybookUpdate
 from app.services.masters_service import upsert_master
 from app.services.playbook_templates import SYSTEM_PLAYBOOK_TEMPLATES
+
+logger = logging.getLogger(__name__)
+
+
+def _ingest_playbook_safe(db: Session, row: Playbook) -> None:
+    try:
+        from app.services.ai.rag.ingest import ingest_playbook
+
+        ingest_playbook(db, row)
+    except Exception:
+        logger.exception("AI playbook ingest failed")
 
 
 def seed_system_templates(db: Session) -> None:
@@ -109,6 +121,7 @@ def create_playbook(db: Session, user_id: uuid.UUID, payload: PlaybookCreate) ->
     db.add(row)
     db.flush()
     _sync_strategy_master(db, user_id, row.name)
+    _ingest_playbook_safe(db, row)
     return row
 
 
@@ -142,6 +155,7 @@ def clone_from_template(db: Session, user_id: uuid.UUID, slug: str) -> Playbook:
     db.add(row)
     db.flush()
     _sync_strategy_master(db, user_id, row.name)
+    _ingest_playbook_safe(db, row)
     return row
 
 
@@ -155,10 +169,17 @@ def update_playbook(db: Session, user_id: uuid.UUID, playbook_id: uuid.UUID, pay
     db.flush()
     if "name" in data and row.name:
         _sync_strategy_master(db, user_id, row.name)
+    _ingest_playbook_safe(db, row)
     return row
 
 
 def archive_playbook(db: Session, user_id: uuid.UUID, playbook_id: uuid.UUID) -> None:
     row = get_playbook(db, user_id, playbook_id)
     row.is_archived = True
+    try:
+        from app.services.ai.rag.store import delete_document
+
+        delete_document(db, user_id, "playbook", playbook_id)
+    except Exception:
+        logger.exception("AI playbook document delete failed")
     db.flush()

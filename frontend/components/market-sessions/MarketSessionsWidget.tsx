@@ -13,7 +13,11 @@ export function MarketSessionsWidget() {
   if (!prefs.hydrated) {
     return (
       <ChartCard title="Market sessions">
-        <div className="h-[88px] animate-pulse rounded-md bg-[var(--color-surface-secondary)]" />
+        <div className="flex min-h-[120px] flex-1 flex-col gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-8 animate-pulse rounded-md bg-[var(--color-surface-secondary)]" />
+          ))}
+        </div>
       </ChartCard>
     );
   }
@@ -29,25 +33,38 @@ export function MarketSessionsWidget() {
       title="Market sessions"
       hint="Live open/closed state for the major FX cash sessions in your selected timezone."
       headerRight={
-        <Link href="/market-sessions" className="text-[11px] font-medium text-primary hover:underline">
+        <Link
+          href="/market-sessions"
+          className="shrink-0 text-[11px] font-medium text-primary hover:underline"
+        >
           View sessions
         </Link>
       }
     >
-      <ul className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
-        {snapshot.rows.map((row) => (
-          <li key={row.def.id} className="min-w-0">
-            <p className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-text-primary)]">
-              <SessionFlag sessionId={row.def.id} size="sm" />
-              {row.def.name}
-            </p>
-            <p className="pl-[22px] text-[11px] text-[var(--color-text-secondary)]">
-              {row.isOpen ? "Open" : "Closed"}
-            </p>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-3 text-[12px] text-[var(--color-text-tertiary)]">Next: {nextLabel}</p>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <ul className="flex min-h-0 flex-1 flex-col justify-center gap-2">
+          {snapshot.rows.map((row) => (
+            <li key={row.def.id} className="min-w-0">
+              <p className="flex items-center gap-2 text-[13px] font-medium leading-5 text-[var(--color-text-primary)]">
+                <SessionFlag sessionId={row.def.id} size="sm" />
+                <span className="truncate">{row.def.name}</span>
+              </p>
+              <p
+                className={
+                  row.isOpen
+                    ? "pl-[26px] text-[12px] font-medium text-primary"
+                    : "pl-[26px] text-[12px] text-[var(--color-text-secondary)]"
+                }
+              >
+                {row.isOpen ? "Open" : "Closed"}
+              </p>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[12px] leading-snug text-[var(--color-text-tertiary)]">
+          Next: {nextLabel}
+        </p>
+      </div>
     </ChartCard>
   );
 }

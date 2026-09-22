@@ -4,11 +4,8 @@ import { useMemo, useState } from "react";
 
 import { AccountBalanceChart } from "@/components/dashboard/zella/AccountBalanceChart";
 import { DASH_CALENDAR_H } from "@/components/dashboard/zella/ChartCard";
-import {
-  CumulativePnlChart,
-  DailyPnlChart,
-  ZellaScoreCard,
-} from "@/components/dashboard/zella/DashboardCharts";
+import { CumulativePnlChart, DailyPnlChart } from "@/components/dashboard/zella/DashboardCharts";
+import { TradeFixScoreCard } from "@/components/dashboard/tradefix-score/TradeFixScoreCard";
 import { DrawdownChart } from "@/components/dashboard/zella/DrawdownChart";
 import { MarketSessionsWidget } from "@/components/market-sessions/MarketSessionsWidget";
 import { MetricCards } from "@/components/dashboard/zella/MetricCards";
@@ -110,7 +107,6 @@ export default function TodayPage() {
   const profitFactor = overview?.profit_factor ?? 0;
   const avgWin = overview?.avg_win ?? 0;
   const avgLoss = Math.abs(overview?.avg_loss ?? 0);
-  const avgWinLoss = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? avgWin : 0;
   const expectancy = overview?.expectancy ?? null;
   const wins = overview?.win_count ?? 0;
   const losses = overview?.loss_count ?? 0;
@@ -297,11 +293,7 @@ export default function TodayPage() {
               <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3">
                 {widgets.score && (
                   <div className="min-w-0">
-                    <ZellaScoreCard
-                      winRate={winRate}
-                      profitFactor={profitFactor}
-                      avgWinLoss={avgWinLoss}
-                    />
+                    <TradeFixScoreCard score={overview?.tradefix_score} formatMoney={formatMoney} />
                   </div>
                 )}
                 {widgets.cumulative && (
@@ -413,10 +405,19 @@ export default function TodayPage() {
               </div>
             )}
 
-            {widgets.marketSessions && <MarketSessionsWidget />}
-
-            {widgets.progress && (
-              <ProgressTracker weeks={progress.weeks} monthLabels={progress.monthLabels} />
+            {(widgets.progress || widgets.marketSessions) && (
+              <div className="grid min-w-0 grid-cols-1 items-stretch gap-3 lg:grid-cols-3">
+                {widgets.progress && (
+                  <div className={`min-w-0 ${widgets.marketSessions ? "lg:col-span-2" : "lg:col-span-3"}`}>
+                    <ProgressTracker weeks={progress.weeks} monthLabels={progress.monthLabels} />
+                  </div>
+                )}
+                {widgets.marketSessions && (
+                  <div className={`min-w-0 ${widgets.progress ? "" : "lg:col-span-3"}`}>
+                    <MarketSessionsWidget />
+                  </div>
+                )}
+              </div>
             )}
             </div>
           </>

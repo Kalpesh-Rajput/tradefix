@@ -38,9 +38,25 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 10080  # 7 days
 
     openrouter_api_key: str = ""
-    # Auto-routes to whichever free model is currently available on OpenRouter.
+    # Model id is env-only so production can swap without code changes.
     openrouter_model: str = "openrouter/free"
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_embedding_model: str = ""
+
+    # groq | openrouter. Chat uses this provider; embeddings stay optional on OpenRouter.
+    ai_provider: str = "groq"
+    groq_api_key: str = ""
+    # Groq retired llama-3.1-8b-instant on 2026-08-16. Use a live catalog id.
+    groq_model: str = "qwen/qwen3.8-27b"
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+
+    ai_daily_limit: int = 50
+    ai_hourly_limit: int = 20
+    ai_max_context_documents: int = 8
+    ai_max_trade_results: int = 100
+    ai_max_tool_iterations: int = 3
+    ai_embedding_dim: int = 1536
+    ai_max_history_messages: int = 8
 
     # Comma-separated list is supported, e.g.
     # https://tradefix.vercel.app,https://tradefix-xxx-kalpesh-rajput.vercel.app
@@ -79,6 +95,35 @@ class Settings(BaseSettings):
             if local not in origins:
                 origins.append(local)
         return origins
+
+    @property
+    def active_ai_provider(self) -> str:
+        name = (self.ai_provider or "").strip().lower()
+        if name in {"groq", "openrouter"}:
+            return name
+        return "groq" if self.groq_api_key else "openrouter"
+
+    @property
+    def ai_api_key(self) -> str:
+        if self.active_ai_provider == "groq":
+            return self.groq_api_key
+        return self.openrouter_api_key
+
+    @property
+    def ai_model(self) -> str:
+        if self.active_ai_provider == "groq":
+            return self.groq_model
+        return self.openrouter_model
+
+    @property
+    def ai_base_url(self) -> str:
+        if self.active_ai_provider == "groq":
+            return self.groq_base_url
+        return self.openrouter_base_url
+
+    @property
+    def ai_key_name(self) -> str:
+        return "GROQ_API_KEY" if self.active_ai_provider == "groq" else "OPENROUTER_API_KEY"
 
 
 @lru_cache

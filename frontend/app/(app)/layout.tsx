@@ -44,6 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isProgressTracker = pathname === "/progress-tracker" || pathname?.startsWith("/progress-tracker/");
   const isPlaybooks = pathname === "/playbooks" || pathname?.startsWith("/playbooks/");
   const isMarketSessions = pathname === "/market-sessions" || pathname?.startsWith("/market-sessions/");
+  const isChat = pathname === "/chat" || pathname?.startsWith("/chat/");
   const showJournalNav = isJournalPath(pathname);
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 isProgressTracker={isProgressTracker}
                 isPlaybooks={isPlaybooks}
                 isMarketSessions={isMarketSessions}
+                isChat={isChat}
               >
                 {children}
               </AppShell>
@@ -120,6 +122,7 @@ function AppShell({
   isProgressTracker,
   isPlaybooks,
   isMarketSessions,
+  isChat,
 }: {
   children: React.ReactNode;
   showJournalNav: boolean;
@@ -136,6 +139,7 @@ function AppShell({
   isProgressTracker: boolean;
   isPlaybooks: boolean;
   isMarketSessions: boolean;
+  isChat: boolean;
 }) {
   const { collapsed, setCollapsed } = useSidebar();
 
@@ -160,7 +164,7 @@ function AppShell({
             {!isTradesLog && <AppHeader />}
             <main
               className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
-                isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions
+                isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions || isChat
                   ? ""
                   : "overflow-y-auto p-6 sm:p-8"
               } ${isSettings || isHome ? "overflow-y-auto" : ""}`}

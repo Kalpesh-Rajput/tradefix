@@ -53,78 +53,79 @@ export function ProgressTracker({
       title="Progress tracker"
       hint="Squares are trading days. Darker blue means more trades that day."
       headerRight={
-        <Link href="/calendar" className="text-[11px] font-medium text-primary hover:underline">
+        <Link href="/progress-tracker" className="text-[11px] font-medium text-primary hover:underline">
           View more
         </Link>
       }
     >
-      <div className="min-h-0 min-w-0 flex-1 overflow-x-auto">
-        <div className="min-w-[520px]">
-          <div
-            className="mb-1 grid gap-1 pl-7 text-[9px] text-[#8B8D96]"
-            style={{ gridTemplateColumns: `repeat(${weeks.length}, 12px)` }}
-          >
-            {weeks.map((_, i) => {
-              const label = monthLabels.find((m) => m.col === i);
-              return (
-                <span key={i} className="h-3 overflow-visible whitespace-nowrap">
-                  {label?.label ?? ""}
-                </span>
-              );
-            })}
-          </div>
-          <div className="flex gap-1">
-            <div className="flex w-6 shrink-0 flex-col justify-between py-0.5 text-[8px] text-[#8B8D96]">
-              {days.map((d, i) => (
-                <span key={d} className={i % 2 === 1 ? "invisible" : ""}>
-                  {d.slice(0, 3)}
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-1">
-              {weeks.map((col, wi) => (
-                <div key={wi} className="flex flex-col gap-1">
-                  {col.map((cell) => {
-                    const lv = level(cell.trades, peak);
-                    return (
-                      <div
-                        key={cell.iso}
-                        title={`${cell.iso}: ${cell.trades} trades`}
-                        className="h-3 w-3 rounded-[2px]"
-                        style={{ background: LEVELS[lv] }}
-                      />
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="mt-2 flex items-center justify-end gap-1 text-[9px] text-[#8B8D96]">
-            <span>Less</span>
-            {LEVELS.map((c) => (
-              <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div
+          className="mb-1 grid gap-0.5 pl-7 text-[9px] text-[#8B8D96]"
+          style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }}
+        >
+          {weeks.map((_, i) => {
+            const label = monthLabels.find((m) => m.col === i);
+            return (
+              <span key={i} className="h-3 overflow-visible whitespace-nowrap">
+                {label?.label ?? ""}
+              </span>
+            );
+          })}
+        </div>
+        <div className="flex min-h-0 flex-1 gap-0.5">
+          <div className="flex w-6 shrink-0 flex-col justify-between py-px text-[8px] leading-none text-[#8B8D96]">
+            {days.map((d, i) => (
+              <span key={d} className={i % 2 === 1 ? "invisible" : ""}>
+                {d.slice(0, 3)}
+              </span>
             ))}
-            <span>More</span>
           </div>
+          <div
+            className="grid min-h-0 min-w-0 flex-1 gap-0.5"
+            style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }}
+          >
+            {weeks.map((col, wi) => (
+              <div key={wi} className="flex min-h-0 min-w-0 flex-col gap-0.5">
+                {col.map((cell) => {
+                  const lv = level(cell.trades, peak);
+                  return (
+                    <div
+                      key={cell.iso}
+                      title={`${cell.iso}: ${cell.trades} trades`}
+                      className="min-h-[12px] max-h-[18px] w-full flex-1 rounded-[2px]"
+                      style={{ background: LEVELS[lv] }}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-1.5 flex items-center justify-end gap-1 text-[9px] text-[#8B8D96]">
+          <span>Less</span>
+          {LEVELS.map((c) => (
+            <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
+          ))}
+          <span>More</span>
         </div>
       </div>
 
-      <div className="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[#EEEFF2] pt-3">
-        <div className="min-w-[160px] flex-1">
-          <p className="text-[11px] text-[#6B6E78]">
+      <div className="mt-1.5 flex shrink-0 items-center gap-3 border-t border-[#EEEFF2] pt-1.5">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] leading-none text-[#6B6E78]">
             Today&apos;s score{" "}
             <span className="font-semibold text-[#1F2128]">
               {done}/{total}
             </span>
           </p>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#EEF1F6]">
+          <div className="mt-1 h-1 overflow-hidden rounded-full bg-[#EEF1F6]">
             <div className="h-full rounded-full bg-[#5B7AC8]" style={{ width: `${pct}%` }} />
           </div>
         </div>
         <Link
           href="/settings/goals"
           className={clsx(
-            "inline-flex h-8 items-center rounded-md border border-[#E4E5EA] bg-white px-3",
+            "inline-flex h-7 shrink-0 items-center rounded-md border border-[#E4E5EA] bg-white px-2.5",
             "text-[11px] font-medium text-[#4A4D57] hover:bg-[#F7F8FA]"
           )}
         >

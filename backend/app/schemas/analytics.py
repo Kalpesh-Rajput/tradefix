@@ -1,7 +1,49 @@
 from datetime import datetime
 import uuid
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class TradeFixScoreConfidence(BaseModel):
+    level: str
+    label: str
+    sample_size: int
+
+
+class TradeFixScoreInsight(BaseModel):
+    kind: str
+    text: str
+
+
+class TradeFixScoreMetric(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    key: str
+    actual: float | None = None
+    display: str = "—"
+    unit: str = ""
+    score: float = 0.0
+    weight: float = 0.0
+    contribution: float = 0.0
+    formula: str = ""
+    definition: str = ""
+    inputs: dict = Field(default_factory=dict)
+    undefined_reason: str | None = None
+
+
+class TradeFixScoreResult(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    overall_score: float | None = None
+    overall_score_raw: float | None = None
+    confidence: TradeFixScoreConfidence
+    sample_size: int = 0
+    closed_trades: int = 0
+    starting_equity: float | None = None
+    previous_score: float | None = None
+    previous_delta: float | None = None
+    metrics: dict[str, TradeFixScoreMetric] = Field(default_factory=dict)
+    insights: list[TradeFixScoreInsight] = Field(default_factory=list)
+    pnl_basis: str = "net"
+    pnl_note: str = ""
 
 
 class OverviewStats(BaseModel):
@@ -28,6 +70,11 @@ class OverviewStats(BaseModel):
     win_count: int = 0
     loss_count: int = 0
     breakeven_count: int = 0
+    gross_profit: float = 0.0
+    gross_loss: float = 0.0
+    avg_win_loss_ratio: float | None = None
+    recovery_factor: float | None = None
+    tradefix_score: TradeFixScoreResult | None = None
 
 
 class TimeBucketStat(BaseModel):

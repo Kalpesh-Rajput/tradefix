@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "npx --yes tsx scripts/test-market-sessions.ts && npx --yes tsx scripts/test-fx.ts",
+    "test": "npx --yes tsx scripts/test-market-sessions.ts && npx --yes tsx scripts/test-fx.ts && npx --yes tsx scripts/test-tradefix-score.ts",
     "test:market-sessions": "npx --yes tsx scripts/test-market-sessions.ts",
     "test:fx": "npx --yes tsx scripts/test-fx.ts",
+    "test:tradefix-score": "npx --yes tsx scripts/test-tradefix-score.ts",
     "test:forex-parity": "npx --yes tsx scripts/check-forex-parity.ts"
   },
   "dependencies": {

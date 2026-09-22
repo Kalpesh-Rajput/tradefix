@@ -39,6 +39,9 @@ def upsert_mood_checkin(
         existing.notes = payload.notes
         db.commit()
         db.refresh(existing)
+        from app.services.ai.rag.ingest import ingest_mood, safe_ingest
+
+        safe_ingest(db, lambda: ingest_mood(db, existing))
         return existing
 
     checkin = MoodCheckin(
@@ -50,4 +53,7 @@ def upsert_mood_checkin(
     db.add(checkin)
     db.commit()
     db.refresh(checkin)
+    from app.services.ai.rag.ingest import ingest_mood, safe_ingest
+
+    safe_ingest(db, lambda: ingest_mood(db, checkin))
     return checkin

@@ -252,6 +252,60 @@ export interface OverviewStats {
   win_count?: number;
   loss_count?: number;
   breakeven_count?: number;
+  gross_profit?: number;
+  gross_loss?: number;
+  avg_win_loss_ratio?: number | null;
+  recovery_factor?: number | null;
+  tradefix_score?: TradeFixScoreResult | null;
+}
+
+export type TradeFixScoreMetricKey =
+  | "win_rate"
+  | "profit_factor"
+  | "average_win_loss"
+  | "recovery_factor"
+  | "drawdown"
+  | "consistency";
+
+export interface TradeFixScoreConfidence {
+  level: "none" | "insufficient" | "low" | "moderate" | "high" | string;
+  label: string;
+  sample_size: number;
+}
+
+export interface TradeFixScoreInsight {
+  kind: string;
+  text: string;
+}
+
+export interface TradeFixScoreMetric {
+  key: TradeFixScoreMetricKey | string;
+  actual: number | null;
+  display: string;
+  unit: string;
+  score: number;
+  weight: number;
+  contribution: number;
+  formula: string;
+  definition: string;
+  inputs: Record<string, number | string | null>;
+  undefined_reason?: string | null;
+}
+
+export interface TradeFixScoreResult {
+  overall_score: number | null;
+  overall_score_raw?: number | null;
+  confidence: TradeFixScoreConfidence;
+  sample_size: number;
+  closed_trades: number;
+  starting_equity?: number | null;
+  previous_score?: number | null;
+  previous_delta?: number | null;
+  metrics: Partial<Record<TradeFixScoreMetricKey, TradeFixScoreMetric>> &
+    Record<string, TradeFixScoreMetric | undefined>;
+  insights: TradeFixScoreInsight[];
+  pnl_basis?: string;
+  pnl_note?: string;
 }
 
 export interface TimeBucketStat {
@@ -653,12 +707,27 @@ export interface CoachStatus {
   locked_reason: "upgrade" | "need_trades" | null;
 }
 
+export interface AiSource {
+  type: string;
+  id: string;
+  title: string;
+  date?: string | null;
+  url?: string | null;
+  snippet?: string | null;
+  publisher?: string | null;
+}
+
 export interface CoachAskResponse {
   answer: string;
   actions: string[];
   locked: boolean;
   progress: number;
   required: number;
+  sources?: AiSource[];
+  tools_used?: string[];
+  intent?: string;
+  request_id?: string | null;
+  warnings?: string[];
 }
 
 export interface CoachWeekly {

@@ -57,12 +57,16 @@ def win_rate(trades: list[Trade]) -> float:
 
 
 def profit_factor(trades: list[Trade]) -> float:
+    """Gross profit / abs(gross loss). 0 when undefined (no losses, or empty).
+
+    All-winning books used to return gross profit in dollars, which is not a
+    profit factor. The ratio is undefined in that case; callers that need a
+    capped score should use tradefix_score.profit_factor_ratio.
+    """
     wins = sum(float(t.pnl or 0) for t in trades if float(t.pnl or 0) > 0)
     losses = abs(sum(float(t.pnl or 0) for t in trades if float(t.pnl or 0) < 0))
     if losses > 0:
         return round(wins / losses, 2)
-    if wins > 0:
-        return round(wins, 2)
     return 0.0
 
 
@@ -97,12 +101,21 @@ def empty_overview() -> dict:
         "win_count": 0,
         "loss_count": 0,
         "breakeven_count": 0,
+        "gross_profit": 0.0,
+        "gross_loss": 0.0,
+        "avg_win_loss_ratio": None,
+        "recovery_factor": None,
+        "tradefix_score": None,
     }
 
 
-def overview_from_trades(trades: list[Trade]) -> dict:
+def overview_from_trades(trades: list[Trade], starting_equity: float = 0.0) -> dict:
     if not trades:
-        return empty_overview()
+        empty = empty_overview()
+        from app.services.tradefix_score import empty_score
+
+        empty["tradefix_score"] = empty_score()
+        return empty
 
     wins = [float(t.pnl) for t in trades if float(t.pnl) > 0]
     losses = [float(t.pnl) for t in trades if float(t.pnl) < 0]
@@ -128,7 +141,17 @@ def overview_from_trades(trades: list[Trade]) -> dict:
     daily_pnl = daily_pnl_map(trades)
     best_day = max(daily_pnl.values()) if daily_pnl else 0.0
     worst_day = min(daily_pnl.values()) if daily_pnl else 0.0
-    dd, dd_pct = max_drawdown_from_trades(trades)
+    dd, dd_pct = max_drawdown_from_trades(trades, starting_equity=starting_equity)
+    from app.services.tradefix_score import (
+        average_win_loss_ratio,
+        calculate_tradefix_score,
+        realized_totals,
+        recovery_factor_value,
+    )
+
+    totals = realized_totals(trades)
+    awl = average_win_loss_ratio(totals)
+    rf = recovery_factor_value(float(totals["net_pnl"]), dd)
 
     r_vals = []
     exec_scores = []
@@ -164,6 +187,11 @@ def overview_from_trades(trades: list[Trade]) -> dict:
         "win_count": len(wins),
         "loss_count": len(losses),
         "breakeven_count": len(breakevens),
+        "gross_profit": round(float(totals["gross_profit"]), 2),
+        "gross_loss": round(float(totals["gross_loss"]), 2),
+        "avg_win_loss_ratio": round(awl, 4) if awl is not None else None,
+        "recovery_factor": round(rf, 4) if rf is not None else None,
+        "tradefix_score": calculate_tradefix_score(trades, starting_equity=starting_equity),
     }
 
 
@@ -305,19 +333,19 @@ def mood_vs_pnl_stats(db: Session, user_id: uuid.UUID, trades: list[Trade]) -> l
     return result
 
 
-def max_drawdown_from_trades(trades: list[Trade]) -> tuple[float, float]:
-    curve = equity_curve(trades)
-    if not curve:
-        return 0.0, 0.0
-    peak = curve[0]["value"]
-    max_dd = 0.0
-    for pt in curve:
-        peak = max(peak, pt["value"])
-        dd = peak - pt["value"]
-        max_dd = max(max_dd, dd)
-    # pct relative to peak equity cushion (use abs peak or 1)
-    base = abs(peak) if abs(peak) > 1 else 1.0
-    return round(max_dd, 2), round((max_dd / base) * 100, 2)
+def max_drawdown_from_trades(
+    trades: list[Trade],
+    starting_equity: float = 0.0,
+) -> tuple[float, float]:
+    """Peak-to-trough on chronological realized equity.
+
+    starting_equity is the account initial balance when known; 0 means the
+    curve is cumulative P&L only.
+    """
+    from app.services.tradefix_score import max_drawdown as _max_dd
+
+    result = _max_dd(trades, starting_equity=starting_equity)
+    return round(float(result["amount"]), 2), round(float(result["pct"]), 2)
 
 
 def _session_for_hour(hour: int) -> str:
@@ -540,10 +568,39 @@ def full_analytics(
         symbol=symbol,
         session=session,
     )
+    starting_equity = 0.0
+    if account_id is not None:
+        from app.models.account import Account
+
+        account = db.get(Account, account_id)
+        if account is not None:
+            starting_equity = float(account.initial_balance or 0)
+    overview = overview_from_trades(trades, starting_equity=starting_equity)
+    score = overview.get("tradefix_score")
+    from app.services.tradefix_score import calculate_tradefix_score, previous_window
+
+    window = previous_window(date_from, date_to)
+    if window and score and score.get("sample_size", 0) >= 5:
+        prev_trades = filter_trades(
+            _closed_trades(db, user_id, account_id=account_id),
+            date_from=window[0],
+            date_to=window[1],
+            setup_tag=setup_tag,
+            emotion_tag=emotion_tag,
+            symbol=symbol,
+            session=session,
+        )
+        prev = calculate_tradefix_score(prev_trades, starting_equity=starting_equity)
+        if prev.get("sample_size", 0) >= 5 and prev.get("overall_score") is not None:
+            overview["tradefix_score"] = calculate_tradefix_score(
+                trades,
+                starting_equity=starting_equity,
+                previous_score=float(prev["overall_score"]),
+            )
     by_tag = expectancy_by_tag(trades, "setup")
     by_emotion = expectancy_by_tag(trades, "emotion")
     return {
-        "overview": overview_from_trades(trades),
+        "overview": overview,
         "by_hour": by_hour_stats(trades),
         "by_day_of_week": by_day_of_week_stats(trades),
         "by_setup": by_setup_stats(trades),

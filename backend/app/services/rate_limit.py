@@ -62,3 +62,35 @@ giphy_proxy_limiter = SlidingWindowRateLimiter(
     window_seconds=3600,
     detail="Too many media requests. Please wait and try again.",
 )
+
+
+_ai_hourly: SlidingWindowRateLimiter | None = None
+_ai_daily: SlidingWindowRateLimiter | None = None
+_ai_hourly_max: int | None = None
+_ai_daily_max: int | None = None
+
+
+def check_ai_rate_limit(user_id: str) -> None:
+    """Application-level AI quotas. Limits come from settings, not hardcoded callers."""
+    from app.core.config import settings
+
+    global _ai_hourly, _ai_daily, _ai_hourly_max, _ai_daily_max
+    hourly_max = int(settings.ai_hourly_limit)
+    daily_max = int(settings.ai_daily_limit)
+    if _ai_hourly is None or _ai_hourly_max != hourly_max:
+        _ai_hourly = SlidingWindowRateLimiter(
+            max_calls=hourly_max,
+            window_seconds=3600,
+            detail="AI hourly limit reached. Please try again later.",
+        )
+        _ai_hourly_max = hourly_max
+    if _ai_daily is None or _ai_daily_max != daily_max:
+        _ai_daily = SlidingWindowRateLimiter(
+            max_calls=daily_max,
+            window_seconds=86400,
+            detail="AI daily limit reached. Please try again tomorrow.",
+        )
+        _ai_daily_max = daily_max
+    _ai_hourly.check(f"ai-hour:{user_id}")
+    _ai_daily.check(f"ai-day:{user_id}")
+

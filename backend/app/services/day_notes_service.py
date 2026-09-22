@@ -81,6 +81,9 @@ def upsert_note(db: Session, user: User, payload: DayNoteUpsert) -> DayNote:
         db.commit()
         db.refresh(existing)
         logger.info("Updated day note %s for %s", existing.id, payload.date)
+        from app.services.ai.rag.ingest import ingest_day_note, safe_ingest
+
+        safe_ingest(db, lambda: ingest_day_note(db, existing))
         return existing
 
     note = DayNote(
@@ -97,6 +100,9 @@ def upsert_note(db: Session, user: User, payload: DayNoteUpsert) -> DayNote:
     db.commit()
     db.refresh(note)
     logger.info("Created day note %s for %s", note.id, payload.date)
+    from app.services.ai.rag.ingest import ingest_day_note, safe_ingest
+
+    safe_ingest(db, lambda: ingest_day_note(db, note))
     return note
 
 
@@ -109,6 +115,9 @@ def update_note(db: Session, user: User, note_id: uuid.UUID, payload: DayNoteUpd
         setattr(note, key, value)
     db.commit()
     db.refresh(note)
+    from app.services.ai.rag.ingest import ingest_day_note, safe_ingest
+
+    safe_ingest(db, lambda: ingest_day_note(db, note))
     return note
 
 
@@ -117,5 +126,8 @@ def delete_note(db: Session, user: User, note_id: uuid.UUID) -> None:
     for url in list(note.screenshot_urls or []):
         delete_local_upload(url)
     db.delete(note)
+    from app.services.ai.rag.store import delete_document
+
+    delete_document(db, user.id, "day_note", note_id)
     db.commit()
     logger.info("Deleted day note %s", note_id)

@@ -109,6 +109,9 @@ def upsert_checkin(
     touch_progress(db, current_user, payload.date)
     db.commit()
     db.refresh(row)
+    from app.services.ai.rag.ingest import ingest_checkin, safe_ingest
+
+    safe_ingest(db, lambda: ingest_checkin(db, row))
     return _to_response(row)
 
 

@@ -65,6 +65,7 @@ export function pageTitleKey(pathname: string | null | undefined): MessageKey {
   if (pathname === "/portfolio" || pathname.startsWith("/portfolio/")) return "nav.portfolio";
   if (pathname === "/backtest" || pathname.startsWith("/backtest/")) return "nav.backtesting";
   if (pathname === "/agents" || pathname.startsWith("/agents/")) return "nav.agents";
+  if (pathname === "/chat" || pathname.startsWith("/chat/")) return "nav.maxAi";
   if (pathname === "/coach" || pathname.startsWith("/coach/")) return "nav.mentor";
   if (pathname.startsWith("/settings/prop-firm")) return "nav.propFirmSync";
   if (pathname.startsWith("/settings/support")) return "nav.help";

@@ -315,6 +315,9 @@ def create_trade(
     touch_progress(db, current_user, trade.opened_at, trade.closed_at)
     db.commit()
     db.refresh(trade)
+    from app.services.ai.rag.ingest import ingest_trade, safe_ingest
+
+    safe_ingest(db, lambda: ingest_trade(db, trade))
     _notify(current_user.id, account.id, "trade_created")
     return _to_response(trade)
 
@@ -394,6 +397,9 @@ def update_trade(
     touch_progress(db, current_user, trade.opened_at, trade.closed_at)
     db.commit()
     db.refresh(trade)
+    from app.services.ai.rag.ingest import ingest_trade, safe_ingest
+
+    safe_ingest(db, lambda: ingest_trade(db, trade))
     _notify(current_user.id, trade.account_id, "trade_updated")
     return _to_response(trade)
 
@@ -410,6 +416,9 @@ def delete_trade(trade_id: uuid.UUID, db: Session = Depends(get_db), current_use
         delete_local_upload(url)
     delete_local_upload(trade.voice_url)
     db.delete(trade)
+    from app.services.ai.rag.store import delete_document
+
+    delete_document(db, current_user.id, "trade_note", trade_id)
     db.flush()
     touch_progress(db, current_user, opened_at, closed_at)
     db.commit()

@@ -7,10 +7,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  PolarAngleAxis,
-  PolarGrid,
-  Radar,
-  RadarChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -18,68 +14,8 @@ import {
 } from "recharts";
 
 import { CHART_BODY_H, ChartCard, EmptyChart, chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
-import { useAppearance } from "@/components/providers/AppearanceProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
-
-export function ZellaScoreCard({
-  winRate,
-  profitFactor,
-  avgWinLoss,
-}: {
-  winRate: number;
-  profitFactor: number;
-  avgWinLoss: number;
-}) {
-  const { t } = useLocale();
-  const { accentHex } = useAppearance();
-
-  const winScore = Math.min(100, winRate);
-  const pfScore = Math.min(100, (profitFactor / 3) * 100);
-  const ratioScore = Math.min(100, (avgWinLoss / 3) * 100);
-  const score = Number(((winScore + pfScore + ratioScore) / 3).toFixed(1));
-
-  const data = [
-    { metric: "Win %", value: winScore, full: 100 },
-    { metric: "Profit factor", value: pfScore, full: 100 },
-    { metric: "Avg win/loss", value: ratioScore, full: 100 },
-  ];
-
-  return (
-    <ChartCard
-      title={t("dashboard.zellaScore")}
-      headerRight={
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="text-[13px] font-semibold tabular-nums text-primary">{score.toFixed(1)}</span>
-          <span className="inline-flex h-[18px] items-center rounded-[9px] bg-[var(--color-warning-badge)] px-2 text-[9px] font-semibold uppercase tracking-wide text-[var(--color-warning-badge-text)]">
-            Beta
-          </span>
-        </div>
-      }
-    >
-      <div className="w-full shrink-0" style={{ height: CHART_BODY_H }}>
-        <ResponsiveContainer width="100%" height={CHART_BODY_H}>
-          <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
-            <PolarGrid stroke="#E5E4EC" strokeOpacity={0.9} />
-            <PolarAngleAxis
-              dataKey="metric"
-              tick={{ fill: "#555663", fontSize: 10, fontWeight: 400 }}
-            />
-            <Radar dataKey="full" stroke="transparent" fill={accentHex} fillOpacity={0.05} />
-            <Radar
-              dataKey="value"
-              stroke={accentHex}
-              fill={accentHex}
-              fillOpacity={0.22}
-              strokeWidth={1.75}
-              dot={{ r: 2.5, fill: accentHex, strokeWidth: 0 }}
-            />
-          </RadarChart>
-        </ResponsiveContainer>
-      </div>
-    </ChartCard>
-  );
-}
 
 export function CumulativePnlChart({
   series,

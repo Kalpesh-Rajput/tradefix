@@ -27,12 +27,24 @@ export function useCoachWeekly(accountId?: string | null, options?: { enabled?: 
   });
 }
 
+export type CoachHistoryMessage = { role: "user" | "assistant" | "coach"; content: string };
+
 export function useCoachAsk() {
   return useMutation({
-    mutationFn: (payload: { question: string; account_id?: string | null }) =>
-      api.post<CoachAskResponse>("/api/coach/ask", {
-        question: payload.question,
-        account_id: payload.account_id || undefined,
-      }),
+    mutationFn: (payload: {
+      question: string;
+      account_id?: string | null;
+      history?: CoachHistoryMessage[];
+      signal?: AbortSignal;
+    }) =>
+      api.post<CoachAskResponse>(
+        "/api/ai/chat",
+        {
+          question: payload.question,
+          account_id: payload.account_id || undefined,
+          history: payload.history || [],
+        },
+        { signal: payload.signal }
+      ),
   });
 }
