@@ -26,6 +26,7 @@ from app.models.progress_tracker import (
 from app.models.trade import Trade
 from app.models.user import User
 from app.schemas.progress_tracker import (
+    AppendManualRuleRequest,
     DailyProgressResponse,
     HeatmapCellResponse,
     ManualCompletionResponse,
@@ -345,6 +346,36 @@ def update_settings(db: Session, user: User, payload: ProgressTrackerSettingsUpd
     db.commit()
     db.refresh(settings)
     rules = list_manual_rules(db, user.id)
+    return settings_response(user, settings, rules)
+
+
+def append_manual_rule(db: Session, user: User, payload: AppendManualRuleRequest) -> ProgressTrackerSettingsResponse:
+    settings = get_or_create_settings(db, user)
+    rules = list_manual_rules(db, user.id)
+    item = ManualRuleInput(
+        name=payload.name,
+        schedule=payload.schedule or ["mon", "tue", "wed", "thu", "fri"],
+        sort_order=len(rules),
+        is_active=True,
+    )
+    row = ProgressTrackerManualRule(
+        user_id=user.id,
+        name=item.name,
+        schedule=item.schedule,
+        sort_order=len(rules),
+        is_active=True,
+    )
+    db.add(row)
+    db.flush()
+    rules = list_manual_rules(db, user.id)
+    _write_version(db, user, settings, rules)
+    today = today_in_tz(_tz(user))
+    _delete_results_from(db, user.id, today)
+    evaluate_day(db, user, today, persist=True)
+    db.commit()
+    db.refresh(settings)
+    rules = list_manual_rules(db, user.id)
+    logger.info("Appended Progress Tracker manual rule user=%s rule=%s", user.id, row.id)
     return settings_response(user, settings, rules)
 
 

@@ -34,6 +34,7 @@ export const en = {
   "common.loadingTrades": "Loading trades…",
 
   "nav.today": "Dashboard",
+  "nav.aiReview": "AI Review",
   "nav.dayView": "Day View",
   "nav.myDay": "My Day",
   "nav.tradeLog": "Trade View",

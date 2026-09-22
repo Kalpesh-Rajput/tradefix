@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { AppHeader } from "@/components/layout/AppHeader";
+import { JournalAiScope } from "@/components/ai/panel/JournalAiContext";
 import { AppNavigationProvider } from "@/components/layout/AppNavigation";
 import { HeaderActionsProvider } from "@/components/layout/HeaderActions";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -160,18 +161,20 @@ function AppShell({
           </div>
         )}
         <HeaderActionsProvider>
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
-            {!isTradesLog && <AppHeader />}
-            <main
-              className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
-                isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions || isChat
-                  ? ""
-                  : "overflow-y-auto p-6 sm:p-8"
-              } ${isSettings || isHome ? "overflow-y-auto" : ""}`}
-            >
-              {children}
-            </main>
-          </div>
+          <JournalAiScope active={isDiary}>
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
+              {!isTradesLog && <AppHeader />}
+              <main
+                className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
+                  isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions || isChat
+                    ? ""
+                    : "overflow-y-auto p-6 sm:p-8"
+                } ${isSettings || isHome ? "overflow-y-auto" : ""}`}
+              >
+                {children}
+              </main>
+            </div>
+          </JournalAiScope>
         </HeaderActionsProvider>
       </div>
     </div>

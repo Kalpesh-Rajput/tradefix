@@ -12,6 +12,7 @@ from app.api.deps import get_current_user
 from app.core.db import get_db
 from app.models.user import User
 from app.schemas.progress_tracker import (
+    AppendManualRuleRequest,
     DailyProgressResponse,
     ManualCompletionRequest,
     ManualCompletionResponse,
@@ -80,6 +81,15 @@ def set_completion(
     current_user: User = Depends(get_current_user),
 ):
     return svc.set_manual_completion(db, current_user, rule_id, payload.date, payload.completed)
+
+
+@router.post("/manual-rules", response_model=ProgressTrackerSettingsResponse)
+def append_manual_rule(
+    payload: AppendManualRuleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return svc.append_manual_rule(db, current_user, payload)
 
 
 @router.post("/reset", response_model=ResetProgressResponse)

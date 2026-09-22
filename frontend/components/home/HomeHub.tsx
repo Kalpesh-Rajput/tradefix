@@ -17,20 +17,46 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
+import { useCyclingPrompt } from "@/components/ai/useCyclingPrompt";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Logo } from "@/components/ui/Logo";
 import { firstName } from "@/lib/format";
 import type { MessageKey } from "@/lib/i18n";
 
+const HOME_ROTATING_PROMPTS = [
+  "Where am I losing money?",
+  "Summarize my last 30 days",
+  "Analyse my performance",
+  "Compare my strategies",
+  "Find my most profitable setup",
+] as const;
+
+const RESUME_DELAY_MS = 700;
+
 export function HomeHub() {
   const { user } = useAuth();
   const { t } = useLocale();
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [focused, setFocused] = useState(false);
+  const [resumeReady, setResumeReady] = useState(true);
   const name = firstName(user?.name, user?.email);
+
+  useEffect(() => {
+    if (focused || query.length > 0) {
+      setResumeReady(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setResumeReady(true), RESUME_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [focused, query]);
+
+  const cyclingPaused = focused || query.length > 0 || !resumeReady;
+  const cycling = useCyclingPrompt(HOME_ROTATING_PROMPTS, cyclingPaused);
+  const showCycle = !focused && query.length === 0 && cycling.active;
 
   const greetingKey = useMemo<MessageKey>(() => {
     const hour = new Date().getHours();
@@ -99,7 +125,7 @@ export function HomeHub() {
 
   function askCoach(e: FormEvent) {
     e.preventDefault();
-    const q = query.trim() || t("home.aiPlaceholder");
+    const q = query.trim() || cycling.text.trim() || t("home.aiPlaceholder");
     router.push(`/chat?q=${encodeURIComponent(q)}`);
   }
 
@@ -118,13 +144,26 @@ export function HomeHub() {
             <label className="sr-only" htmlFor="home-ai-query">
               {t("home.aiPlaceholder")}
             </label>
-            <input
-              id="home-ai-query"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("home.aiPlaceholder")}
-              className="h-12 min-w-0 flex-1 rounded-xl border-0 bg-transparent text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-muted)]"
-            />
+            <div className="relative min-w-0 flex-1">
+              {showCycle ? (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center overflow-hidden text-[15px] text-[var(--color-text-muted)]"
+                >
+                  <span className="min-w-0 truncate">{cycling.text}</span>
+                  {cycling.showCursor ? <span className="ai-prompt-caret shrink-0" /> : null}
+                </span>
+              ) : null}
+              <input
+                id="home-ai-query"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                placeholder={showCycle ? "" : t("home.aiPlaceholder")}
+                className="h-12 w-full min-w-0 rounded-xl border-0 bg-transparent text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-muted)]"
+              />
+            </div>
             <button
               type="submit"
               className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-[13px] font-semibold text-primary-foreground text-on-accent transition hover:bg-primary-hover"

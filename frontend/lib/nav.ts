@@ -10,6 +10,7 @@ export const JOURNAL_PREFIXES = [
   "/trades",
   "/analytics",
   "/progress-tracker",
+  "/ai-review",
   "/calendar",
   "/market-sessions",
   "/playbooks",
@@ -41,6 +42,7 @@ export function parentPath(pathname: string | null | undefined): string | null {
   if (parts.length === 0) return null;
   if (parts[0] === "settings") return APP_HOME;
   if (clean === "/my-day" || clean.startsWith("/my-day/")) return "/today";
+  if (clean === "/ai-review" || clean.startsWith("/ai-review/")) return "/today";
   if (parts.length === 1) return APP_HOME;
   return `/${parts.slice(0, -1).join("/")}`;
 }
@@ -49,6 +51,7 @@ export function pageTitleKey(pathname: string | null | undefined): MessageKey {
   if (!pathname) return "nav.today";
   if (pathname === "/home") return "nav.home";
   if (pathname === "/today" || pathname.startsWith("/today/")) return "nav.today";
+  if (pathname === "/ai-review" || pathname.startsWith("/ai-review/")) return "nav.aiReview";
   if (pathname === "/day" || pathname.startsWith("/day/")) return "nav.dayView";
   if (pathname === "/my-day" || pathname.startsWith("/my-day/")) return "nav.myDay";
   if (pathname === "/diary" || pathname.startsWith("/diary/")) return "nav.journal";

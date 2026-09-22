@@ -424,6 +424,107 @@ export interface Insight {
   dismissed_at: string | null;
 }
 
+export type AiInsightCategory =
+  | "leak"
+  | "behavior"
+  | "edge"
+  | "rule"
+  | "change"
+  | "overtrading"
+  | "news"
+  | "early";
+
+export type AiInsightConfidence = "high" | "medium" | "early";
+
+export interface AiInsightMetric {
+  label: string;
+  value: string;
+  tone?: "pos" | "neg" | "neutral" | null;
+}
+
+export interface AiInsightWhy {
+  sample_size: number;
+  matching_trades: number;
+  losses: number | null;
+  loss_share: number | null;
+  narrative: string;
+}
+
+export interface AiInsightTradeFilter {
+  ids?: string[] | null;
+  setup_tag?: string | null;
+  symbol?: string | null;
+  session?: string | null;
+  side?: string | null;
+  date_from?: string | null;
+  date_to?: string | null;
+  auto_flag?: string | null;
+  has_rules_broken?: boolean | null;
+}
+
+export interface AiInsightNewsItem {
+  title: string;
+  url: string;
+  publisher?: string | null;
+  published?: string | null;
+}
+
+export interface AiInsightCard {
+  id: string;
+  category: AiInsightCategory;
+  confidence: AiInsightConfidence;
+  title: string;
+  explanation: string;
+  metrics: AiInsightMetric[];
+  evidence: string;
+  why: AiInsightWhy;
+  trade_filter: AiInsightTradeFilter;
+  ask_question: string;
+  primary_action_label: string;
+  suggested_rule?: string | null;
+  news_items?: AiInsightNewsItem[] | null;
+}
+
+export interface AiInsightSummary {
+  text: string;
+  ask_question: string;
+  attention_count: number;
+}
+
+export interface AiInsightFocus {
+  title: string;
+  why: string;
+  suggested_action: string;
+  suggested_rule: string;
+  ask_question: string;
+  trade_filter?: AiInsightTradeFilter | null;
+}
+
+export interface AiInsightWeekly {
+  date_from: string;
+  date_to: string;
+  trades: number;
+  win_rate: number | null;
+  pnl: number;
+  performance_r: number | null;
+  best_setup: string | null;
+  biggest_leak: string | null;
+  best_session: string | null;
+  rule_adherence: number | null;
+  biggest_improvement: string | null;
+  main_focus: string | null;
+}
+
+export interface AiInsightsFeed {
+  generated_at: string;
+  trades_analysed: number;
+  enough_data: boolean;
+  summary: AiInsightSummary | null;
+  insights: AiInsightCard[];
+  focus: AiInsightFocus | null;
+  weekly: AiInsightWeekly | null;
+}
+
 export interface AgentRun {
   id: string;
   agent_name: string;

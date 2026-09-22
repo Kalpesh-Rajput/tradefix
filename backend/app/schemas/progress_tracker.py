@@ -100,6 +100,29 @@ class ManualRuleResponse(BaseModel):
         from_attributes = True
 
 
+class AppendManualRuleRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=160)
+    schedule: list[str] | None = None
+
+    @field_validator("name")
+    @classmethod
+    def _append_name(cls, v: str) -> str:
+        cleaned = " ".join((v or "").split())
+        if not cleaned:
+            raise ValueError("Rule name is required")
+        return cleaned[:160]
+
+    @field_validator("schedule")
+    @classmethod
+    def _append_schedule(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        days = _clean_days(v)
+        if not days:
+            raise ValueError("Select at least one day")
+        return days
+
+
 class ProgressTrackerSettingsUpdate(BaseModel):
     active_days: list[str] = Field(default_factory=lambda: list(WEEKDAYS[:5]))
     reminder_enabled: bool = False

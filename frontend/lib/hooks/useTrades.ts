@@ -14,6 +14,11 @@ export interface TradeFilters {
   date_from?: string;
   date_to?: string;
   has_journal?: boolean;
+  session?: string;
+  side?: string;
+  ids?: string;
+  auto_flag?: string;
+  has_rules_broken?: boolean;
   limit?: number;
 }
 
@@ -27,6 +32,11 @@ function buildQuery(filters: TradeFilters): string {
   if (filters.date_from) params.set("date_from", filters.date_from);
   if (filters.date_to) params.set("date_to", filters.date_to);
   if (filters.has_journal) params.set("has_journal", "true");
+  if (filters.session) params.set("session", filters.session);
+  if (filters.side) params.set("side", filters.side);
+  if (filters.ids) params.set("ids", filters.ids);
+  if (filters.auto_flag) params.set("auto_flag", filters.auto_flag);
+  if (filters.has_rules_broken) params.set("has_rules_broken", "true");
   if (filters.limit) params.set("limit", String(filters.limit));
   const qs = params.toString();
   return qs ? `?${qs}` : "";
@@ -57,6 +67,7 @@ export function useCreateTrade() {
       qc.invalidateQueries({ queryKey: ["analytics"] });
       qc.invalidateQueries({ queryKey: ["calendar"] });
       qc.invalidateQueries({ queryKey: ["progress-tracker"] });
+      qc.invalidateQueries({ queryKey: ["ai-insights"] });
     },
   });
 }
@@ -71,6 +82,7 @@ export function useUpdateTrade() {
       qc.invalidateQueries({ queryKey: ["analytics"] });
       qc.invalidateQueries({ queryKey: ["calendar"] });
       qc.invalidateQueries({ queryKey: ["progress-tracker"] });
+      qc.invalidateQueries({ queryKey: ["ai-insights"] });
     },
   });
 }
@@ -84,6 +96,7 @@ export function useDeleteTrade() {
       qc.invalidateQueries({ queryKey: ["analytics"] });
       qc.invalidateQueries({ queryKey: ["calendar"] });
       qc.invalidateQueries({ queryKey: ["progress-tracker"] });
+      qc.invalidateQueries({ queryKey: ["ai-insights"] });
     },
   });
 }
@@ -101,6 +114,7 @@ export function useDeleteTrades() {
       qc.invalidateQueries({ queryKey: ["analytics"] });
       qc.invalidateQueries({ queryKey: ["calendar"] });
       qc.invalidateQueries({ queryKey: ["progress-tracker"] });
+      qc.invalidateQueries({ queryKey: ["ai-insights"] });
     },
   });
 }
@@ -121,6 +135,7 @@ export function useImportCsv() {
       qc.invalidateQueries({ queryKey: ["analytics"] });
       qc.invalidateQueries({ queryKey: ["calendar"] });
       qc.invalidateQueries({ queryKey: ["progress-tracker"] });
+      qc.invalidateQueries({ queryKey: ["ai-insights"] });
     },
   });
 }

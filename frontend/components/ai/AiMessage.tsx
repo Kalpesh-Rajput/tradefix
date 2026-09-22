@@ -28,7 +28,15 @@ import { extractStats, shapeAnswer, sourceHref, sourceLabel, statKind, valueTone
 import type { ThreadMessage } from "@/components/ai/types";
 import type { AiSource } from "@/lib/types";
 
-export function UserMessage({ text, onEdit }: { text: string; onEdit?: () => void }) {
+export function UserMessage({
+  text,
+  onEdit,
+  appearance = "page",
+}: {
+  text: string;
+  onEdit?: () => void;
+  appearance?: "page" | "panel";
+}) {
   const reduce = useReducedMotion();
   return (
     <motion.div
@@ -48,7 +56,13 @@ export function UserMessage({ text, onEdit }: { text: string; onEdit?: () => voi
           <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
         </button>
       ) : null}
-      <div className="max-w-[min(100%,34rem)] rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-[14px] leading-5 text-white text-on-accent">
+      <div
+        className={
+          appearance === "panel"
+            ? "max-w-[min(100%,18rem)] rounded-2xl rounded-br-md bg-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-surface))] px-3 py-2 text-[13px] leading-5 text-[var(--color-text-primary)]"
+            : "max-w-[min(100%,34rem)] rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-[14px] leading-5 text-white text-on-accent"
+        }
+      >
         <p className="whitespace-pre-wrap">{text}</p>
       </div>
     </motion.div>
@@ -66,6 +80,7 @@ export function AssistantMessage({
   onReact,
   followUps,
   onFollowUp,
+  appearance = "page",
 }: {
   message: ThreadMessage;
   onRetry?: () => void;
@@ -74,6 +89,7 @@ export function AssistantMessage({
   onReact?: (reaction: "up" | "down") => void;
   followUps?: string[];
   onFollowUp?: (question: string) => void;
+  appearance?: "page" | "panel";
 }) {
   const reduce = useReducedMotion();
   const shaped = message.error ? null : shapeAnswer(message.text);
@@ -112,10 +128,16 @@ export function AssistantMessage({
         ) : (
           <>
             {stats.length > 0 ? <StatChips chips={stats} /> : null}
-            <div className="mt-1.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-3">
+            <div
+              className={
+                appearance === "panel"
+                  ? "mt-1"
+                  : "mt-1.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-3"
+              }
+            >
               {shaped?.kind === "briefing" ? <Briefing answer={shaped} /> : <AiMarkdown text={message.text} />}
             </div>
-            {shaped?.kind !== "briefing" && extraActions.length > 0 ? (
+            {appearance === "page" && shaped?.kind !== "briefing" && extraActions.length > 0 ? (
               <div className="mt-3">
                 <SectionLabel emoji="🎯" label="Next" />
                 <ul className="mt-2 space-y-1.5">

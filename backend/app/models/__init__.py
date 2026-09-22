@@ -1,6 +1,7 @@
 from app.models.account import Account
 from app.models.agent_run import AgentRun
 from app.models.ai_document import AiDocument
+from app.models.ai_insight_snapshot import AiInsightSnapshot
 from app.models.ai_usage import AiUsageLog
 from app.models.daily_checkin import DailyCheckin
 from app.models.daily_recap import DailyRecap
@@ -50,6 +51,7 @@ __all__ = [
     "Insight",
     "AgentRun",
     "AiDocument",
+    "AiInsightSnapshot",
     "AiUsageLog",
     "ProgressTrackerSettings",
     "ProgressTrackerConfigVersion",

@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
@@ -50,6 +50,11 @@ type LocalFilters = {
   asset_type: AssetType | "";
   side: TradeSide | "";
   setup_tag: string;
+  symbol: string;
+  session: string;
+  ids: string;
+  auto_flag: string;
+  has_rules_broken: boolean;
 };
 
 const FILTERS_STORAGE_KEY = "tradefix_trades_log_filters";
@@ -101,6 +106,38 @@ function moneyPrice(
   return formatMoney(n, { signed: false, digits: 2 });
 }
 
+function filtersFromSearch(search: URLSearchParams): Partial<LocalFilters> {
+  const status = search.get("status");
+  const side = search.get("side");
+  return {
+    search: search.get("q") ?? undefined,
+    dateFrom: search.get("date_from") ?? undefined,
+    dateTo: search.get("date_to") ?? undefined,
+    status: status === "open" || status === "closed" || status === "all" ? status : undefined,
+    side: side === "long" || side === "short" ? side : undefined,
+    setup_tag: search.get("setup_tag") ?? undefined,
+    symbol: search.get("symbol") ?? undefined,
+    session: search.get("session") ?? undefined,
+    ids: search.get("ids") ?? undefined,
+    auto_flag: search.get("auto_flag") ?? undefined,
+    has_rules_broken: search.get("has_rules_broken") === "true" ? true : undefined,
+  };
+}
+
+function hasUrlInsightFilters(params: URLSearchParams): boolean {
+  return [
+    "setup_tag",
+    "symbol",
+    "session",
+    "side",
+    "date_from",
+    "date_to",
+    "ids",
+    "auto_flag",
+    "has_rules_broken",
+  ].some((key) => Boolean(params.get(key)));
+}
+
 function readStored(): Partial<LocalFilters> {
   if (typeof window === "undefined") return {};
   try {
@@ -124,6 +161,7 @@ export function TradesLogPage() {
   const accountId = activeAccount?.id;
   const showJournalToggle = isJournalPath(pathname) && collapsed;
 
+  const searchParams = useSearchParams();
   const [filters, setFilters] = useState<LocalFilters>({
     search: "",
     dateFrom: "",
@@ -132,6 +170,11 @@ export function TradesLogPage() {
     asset_type: "",
     side: "",
     setup_tag: "",
+    symbol: "",
+    session: "",
+    ids: "",
+    auto_flag: "",
+    has_rules_broken: false,
   });
   const [hydrated, setHydrated] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -143,6 +186,25 @@ export function TradesLogPage() {
   const deleteTrades = useDeleteTrades();
 
   useEffect(() => {
+    const fromUrl = filtersFromSearch(searchParams);
+    if (hasUrlInsightFilters(searchParams)) {
+      setFilters((prev) => ({
+        ...prev,
+        search: fromUrl.search ?? "",
+        dateFrom: fromUrl.dateFrom ?? "",
+        dateTo: fromUrl.dateTo ?? "",
+        status: fromUrl.status ?? "closed",
+        side: fromUrl.side ?? "",
+        setup_tag: fromUrl.setup_tag ?? "",
+        symbol: fromUrl.symbol ?? "",
+        session: fromUrl.session ?? "",
+        ids: fromUrl.ids ?? "",
+        auto_flag: fromUrl.auto_flag ?? "",
+        has_rules_broken: fromUrl.has_rules_broken ?? false,
+      }));
+      setHydrated(true);
+      return;
+    }
     if (user?.save_filters) {
       const stored = readStored();
       setFilters((prev) => ({
@@ -154,10 +216,15 @@ export function TradesLogPage() {
         asset_type: stored.asset_type ?? "",
         side: stored.side ?? "",
         setup_tag: stored.setup_tag ?? "",
+        symbol: stored.symbol ?? "",
+        session: stored.session ?? "",
+        ids: stored.ids ?? "",
+        auto_flag: stored.auto_flag ?? "",
+        has_rules_broken: stored.has_rules_broken ?? false,
       }));
     }
     setHydrated(true);
-  }, [user?.save_filters]);
+  }, [user?.save_filters, searchParams]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -196,9 +263,26 @@ export function TradesLogPage() {
       date_from: filters.dateFrom ? `${filters.dateFrom}T00:00:00` : undefined,
       date_to: filters.dateTo ? `${filters.dateTo}T23:59:59` : undefined,
       setup_tag: filters.setup_tag || undefined,
+      symbol: filters.symbol || undefined,
+      session: filters.session || undefined,
+      side: filters.side || undefined,
+      ids: filters.ids || undefined,
+      auto_flag: filters.auto_flag || undefined,
+      has_rules_broken: filters.has_rules_broken || undefined,
       limit: 1000,
     }),
-    [accountId, filters.dateFrom, filters.dateTo, filters.setup_tag]
+    [
+      accountId,
+      filters.dateFrom,
+      filters.dateTo,
+      filters.setup_tag,
+      filters.symbol,
+      filters.session,
+      filters.side,
+      filters.ids,
+      filters.auto_flag,
+      filters.has_rules_broken,
+    ]
   );
 
   const { data: trades = [], isLoading, isError, refetch } = useTrades(apiFilters, {
@@ -384,7 +468,17 @@ export function TradesLogPage() {
                     type="button"
                     className="text-[11px] font-medium text-[var(--color-text-tertiary)] hover:text-primary"
                     onClick={() =>
-                      setFilters((f) => ({ ...f, asset_type: "", side: "", setup_tag: "" }))
+                      setFilters((f) => ({
+                        ...f,
+                        asset_type: "",
+                        side: "",
+                        setup_tag: "",
+                        symbol: "",
+                        session: "",
+                        ids: "",
+                        auto_flag: "",
+                        has_rules_broken: false,
+                      }))
                     }
                   >
                     Clear

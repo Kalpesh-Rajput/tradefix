@@ -15,7 +15,7 @@ from app.api.routers.accounts import get_default_account
 from app.core.config import settings
 from app.core.db import get_db
 from app.models.account import Account
-from app.models.trade import Trade, TradeStatus
+from app.models.trade import Trade, TradeSide, TradeStatus
 from app.models.user import User
 from app.schemas.trade import TradeCreate, TradeExecutionResponse, TradeResponse, TradeUpdate
 from app.services.behavior import apply_behavior_flags
@@ -23,6 +23,7 @@ from app.services.rate_limit import screenshot_upload_limiter
 from app.services.storage import delete_local_upload, save_trade_screenshot, save_trade_voice
 from app.services.trade_scores import execution_score, health_score, r_multiple
 from app.services.progress_tracker_service import touch_progress
+from app.services.stats_service import _session_for_hour
 from app.services.trade_service import apply_calc, apply_journal_fields, compute_for_payload, remember_trade_masters, replace_executions
 from app.services.ws_hub import hub
 
@@ -148,6 +149,35 @@ def _sync_setup_tag(trade: Trade) -> None:
     trade.setup_tag = tags[0] if tags else trade.setup_tag
 
 
+def _trade_session_label(trade: Trade) -> str | None:
+    if trade.session:
+        return str(trade.session)
+    if trade.opened_at is None:
+        return None
+    return _session_for_hour(trade.opened_at.hour)
+
+
+def _parse_ids(raw: str | None) -> list[uuid.UUID]:
+    if not raw:
+        return []
+    parsed: list[uuid.UUID] = []
+    for part in raw.split(","):
+        text = part.strip()
+        if not text:
+            continue
+        try:
+            parsed.append(uuid.UUID(text))
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid trade id filter")
+    return parsed
+
+
+def _touch_insights(db: Session, user_id: uuid.UUID, account_id: uuid.UUID | None = None) -> None:
+    from app.services.ai.insights.snapshot import touch_ai_insights
+
+    touch_ai_insights(db, user_id, account_id)
+
+
 def _notify(user_id: uuid.UUID, account_id: uuid.UUID, event: str) -> None:
     try:
         hub.publish_sync(
@@ -168,6 +198,11 @@ def list_trades(
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     has_journal: bool | None = None,
+    session: str | None = None,
+    side: TradeSide | None = None,
+    ids: str | None = None,
+    auto_flag: str | None = None,
+    has_rules_broken: bool | None = None,
     limit: int = Query(default=200, le=1000),
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -183,6 +218,9 @@ def list_trades(
         if not account or account.user_id != current_user.id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
         stmt = stmt.where(Trade.account_id == account_id)
+    id_list = _parse_ids(ids)
+    if id_list:
+        stmt = stmt.where(Trade.id.in_(id_list))
     if symbol:
         stmt = stmt.where(Trade.symbol.ilike(f"%{symbol}%"))
     if setup_tag:
@@ -193,6 +231,12 @@ def list_trades(
         stmt = stmt.where(Trade.opened_at >= date_from)
     if date_to:
         stmt = stmt.where(Trade.opened_at <= date_to)
+    if side:
+        stmt = stmt.where(Trade.side == side)
+    if auto_flag:
+        stmt = stmt.where(Trade.auto_flags.contains([auto_flag]))
+    if has_rules_broken:
+        stmt = stmt.where(func.coalesce(func.cardinality(Trade.rules_broken), 0) > 0)
     if has_journal:
         stmt = stmt.where(
             or_(
@@ -205,6 +249,14 @@ def list_trades(
     trades = list(db.scalars(stmt).all())
     if emotion_tag:
         trades = [t for t in trades if emotion_tag in (t.emotion_tags or [])]
+    if session:
+        wanted = session.strip().lower()
+        trades = [
+            t
+            for t in trades
+            if (t.session and t.session.strip().lower() == wanted)
+            or (_trade_session_label(t) or "").strip().lower() == wanted
+        ]
     return [_to_response(t) for t in trades]
 
 
@@ -313,6 +365,7 @@ def create_trade(
     remember_trade_masters(db, current_user.id, trade)
     apply_behavior_flags(db, current_user.id, trade)
     touch_progress(db, current_user, trade.opened_at, trade.closed_at)
+    _touch_insights(db, current_user.id, trade.account_id)
     db.commit()
     db.refresh(trade)
     from app.services.ai.rag.ingest import ingest_trade, safe_ingest
@@ -395,6 +448,7 @@ def update_trade(
     remember_trade_masters(db, current_user.id, trade)
     apply_behavior_flags(db, current_user.id, trade)
     touch_progress(db, current_user, trade.opened_at, trade.closed_at)
+    _touch_insights(db, current_user.id, trade.account_id)
     db.commit()
     db.refresh(trade)
     from app.services.ai.rag.ingest import ingest_trade, safe_ingest
@@ -421,6 +475,7 @@ def delete_trade(trade_id: uuid.UUID, db: Session = Depends(get_db), current_use
     delete_document(db, current_user.id, "trade_note", trade_id)
     db.flush()
     touch_progress(db, current_user, opened_at, closed_at)
+    _touch_insights(db, current_user.id, account_id)
     db.commit()
     _notify(current_user.id, account_id, "trade_deleted")
     return None

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { AiInsightsSection } from "@/components/dashboard/ai-insights/AiInsightsSection";
 import { AccountBalanceChart } from "@/components/dashboard/zella/AccountBalanceChart";
 import { DASH_CALENDAR_H } from "@/components/dashboard/zella/ChartCard";
 import { CumulativePnlChart, DailyPnlChart } from "@/components/dashboard/zella/DashboardCharts";
@@ -288,6 +289,8 @@ export default function TodayPage() {
                 formatMoney={formatMoney}
               />
             )}
+
+            <AiInsightsSection accountId={accountId} formatMoney={formatMoney} />
 
             {(widgets.score || widgets.cumulative || widgets.daily) && (
               <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3">

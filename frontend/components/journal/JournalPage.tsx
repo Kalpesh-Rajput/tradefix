@@ -5,7 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { JournalEmptyState } from "@/components/journal/JournalEmptyState";
 import { JournalSidebar, type JournalListItem } from "@/components/journal/JournalSidebar";
 import { RecapForm, type RecapFormValues } from "@/components/journal/RecapForm";
+import { TradeFixAIPanel } from "@/components/ai/panel/TradeFixAIPanel";
+import { TradeFixAITrigger } from "@/components/ai/panel/TradeFixAITrigger";
 import { GamePlanCard } from "@/components/progress/GamePlanCard";
+import { HeaderActions } from "@/components/layout/HeaderActions";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -159,9 +162,12 @@ export function JournalPage() {
   };
 
   const loading = accountsLoading || (!!accountId && recapsLoading);
+  const aiTrigger = useMemo(() => <TradeFixAITrigger />, []);
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col md:flex-row">
+    <>
+      <HeaderActions>{aiTrigger}</HeaderActions>
+      <div className="flex h-full min-h-0 flex-1 flex-col md:flex-row">
       <JournalSidebar
         items={items}
         selectedDate={activeDate}
@@ -217,6 +223,8 @@ export function JournalPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+      <TradeFixAIPanel />
+    </>
   );
 }

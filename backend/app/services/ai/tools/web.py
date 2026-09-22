@@ -77,6 +77,14 @@ def search_web(ctx: ToolContext, args: dict) -> dict:
     return {"query": query, "results": results}
 
 
+def fetch_news_items(query: str, limit: int = 5) -> list[dict]:
+    cleaned = _clean_query(query)
+    if not cleaned:
+        return []
+    xml_text = _fetch_rss(cleaned)
+    return parse_news_rss(xml_text)[:limit]
+
+
 def _fetch_rss(query: str) -> str:
     response = httpx.get(
         _NEWS_RSS,
