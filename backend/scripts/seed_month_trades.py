@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 import random
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import select
 
@@ -207,6 +207,8 @@ def build_trade(
         status=TradeStatus.closed,
         screenshot_urls=[],
         auto_flags=[],
+        year=opened_at.year,
+        month=opened_at.month,
         extra={"seeded": True, "seed_batch": SEED_BATCH},
     )
 
@@ -222,6 +224,8 @@ def main() -> None:
         help="Spread trades across the last N days (default 180)",
     )
     parser.add_argument("--seed", type=int, default=42, help="RNG seed for reproducibility")
+    parser.add_argument("--start", default=None, help="First day, YYYY-MM-DD (overrides --days)")
+    parser.add_argument("--end", default=None, help="Last day, YYYY-MM-DD (overrides --days)")
     parser.add_argument(
         "--min-per-day",
         type=int,
@@ -264,7 +268,17 @@ def main() -> None:
             raise SystemExit("No account found for user.")
 
         now = datetime.now(timezone.utc)
-        start, end = _range_bounds(now, args.days)
+        if (args.start is None) != (args.end is None):
+            raise SystemExit("Provide both --start and --end, or neither.")
+        if args.start and args.end:
+            start_day = date.fromisoformat(args.start)
+            end_day = date.fromisoformat(args.end)
+            if end_day < start_day:
+                raise SystemExit("--end must be on or after --start.")
+            start = datetime(start_day.year, start_day.month, start_day.day, tzinfo=timezone.utc)
+            end = datetime(end_day.year, end_day.month, end_day.day, 23, 59, tzinfo=timezone.utc)
+        else:
+            start, end = _range_bounds(now, args.days)
 
         if args.replace:
             existing = db.scalars(
