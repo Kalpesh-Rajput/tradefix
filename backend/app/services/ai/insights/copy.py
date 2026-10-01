@@ -136,21 +136,40 @@ def rule_copy(violations: int, related_losses: int, avg_r: float | None, after_s
     }
 
 
-def change_copy(prev_r: float | None, curr_r: float | None, improved: bool, n_prev: int, n_curr: int) -> dict:
+def period_phrase(days: int) -> str:
+    labels = {
+        7: "the last 7 days",
+        30: "the last 30 days",
+        90: "the last 90 days",
+        182: "the last 6 months",
+        365: "the last year",
+    }
+    return labels.get(days, f"the last {days} days")
+
+
+def change_copy(
+    prev_r: float | None,
+    curr_r: float | None,
+    improved: bool,
+    n_prev: int,
+    n_curr: int,
+    window_days: int = 30,
+) -> dict:
+    phrase = period_phrase(window_days)
     if improved:
-        explanation = "Your average losing trade has decreased over the last 30 days."
+        explanation = f"Your average losing trade has decreased over {phrase}."
         evidence = "Your risk management appears to be tightening versus the prior period."
         title = "Performance changed"
         ask = "How has my risk management improved recently?"
         action = "See Improvement"
     else:
-        explanation = "Your average losing trade has increased over the last 30 days."
+        explanation = f"Your average losing trade has increased over {phrase}."
         evidence = "Loss size is expanding versus the prior period."
         title = "Performance changed"
         ask = "Why have my losing trades gotten larger?"
         action = "See Change"
     why = (
-        f"TradeFix compared {n_curr} trades in the last 30 days with {n_prev} in the prior 30 days. "
+        f"TradeFix compared {n_curr} trades in {phrase} with {n_prev} in the prior period of the same length. "
         f"Average losing trade moved from {fmt_r(prev_r)} to {fmt_r(curr_r)}."
     )
     return {

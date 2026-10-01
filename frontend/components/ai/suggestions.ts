@@ -18,6 +18,14 @@ export type PromptCard = {
   icon: LucideIcon;
 };
 
+export const AGENT_STARTERS = [
+  "Where am I losing money?",
+  "Analyze my last 30 days",
+  "What's my strongest setup?",
+  "Why am I breaking my rules?",
+  "What should I focus on?",
+] as const;
+
 export const BASE_PROMPTS: PromptCard[] = [
   {
     id: "performance",

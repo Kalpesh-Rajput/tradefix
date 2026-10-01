@@ -43,6 +43,7 @@ def get_by_day(db: Session, user: User, account_id: uuid.UUID, day: date_type) -
             DayNote.user_id == user.id,
             DayNote.account_id == account_id,
             DayNote.date == day,
+            DayNote.kind == "journal",
         )
     )
 

@@ -11,6 +11,7 @@ import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { usePublishAssistantScope } from "@/lib/ai/assistant-scope";
 import { localIso, parseLocalIso, startOfWeekSunday } from "@/lib/dateLocal";
 import { useCalendar } from "@/lib/hooks/useAnalytics";
 import { useTrades } from "@/lib/hooks/useTrades";
@@ -98,6 +99,7 @@ export function DayViewPage() {
   }, [focusDate]);
   const [dateFrom, setDateFrom] = useState(initial.from);
   const [dateTo, setDateTo] = useState(initial.to);
+  usePublishAssistantScope({ dateFrom, dateTo });
   const [mode, setMode] = useState<"day" | "week">("day");
   const [noteRow, setNoteRow] = useState<DayViewRow | null>(null);
 
@@ -236,6 +238,7 @@ export function DayViewPage() {
                   <DayCard
                     key={row.id}
                     row={row}
+                    accountId={accountId}
                     formatMoney={formatMoney}
                     defaultTradesOpen={mode === "day" && row.id === focusDate}
                     trades={

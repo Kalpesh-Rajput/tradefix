@@ -4,6 +4,7 @@ export const APP_HOME = "/home";
 
 export const JOURNAL_PREFIXES = [
   "/today",
+  "/tradefiz-ai",
   "/day",
   "/my-day",
   "/diary",
@@ -32,6 +33,25 @@ function normalizePath(pathname: string): string {
   return clean || "/";
 }
 
+/** Routes that belong to a sidebar item but live outside its href prefix. */
+const SIDEBAR_ALIASES: Record<string, readonly string[]> = {
+  "/tradefiz-ai": ["/ai-review", "/chat"],
+  "/playbooks": ["/trading-plan"],
+};
+
+function pathMatches(path: string, href: string): boolean {
+  return path === href || path.startsWith(`${href}/`);
+}
+
+/** True when this sidebar href is the single item for the current route, including nested pages. */
+export function isSidebarNavActive(pathname: string | null | undefined, href: string): boolean {
+  if (!pathname) return false;
+  const path = normalizePath(pathname);
+  const target = normalizePath(href);
+  if (pathMatches(path, target)) return true;
+  return (SIDEBAR_ALIASES[target] ?? []).some((alias) => pathMatches(path, alias));
+}
+
 /** Logical parent for a route when in-app history is empty (refresh, deep link). */
 export function parentPath(pathname: string | null | undefined): string | null {
   if (!pathname) return null;
@@ -42,7 +62,10 @@ export function parentPath(pathname: string | null | undefined): string | null {
   if (parts.length === 0) return null;
   if (parts[0] === "settings") return APP_HOME;
   if (clean === "/my-day" || clean.startsWith("/my-day/")) return "/today";
-  if (clean === "/ai-review" || clean.startsWith("/ai-review/")) return "/today";
+  if (clean === "/ai-review" || clean.startsWith("/ai-review/")) return "/tradefiz-ai";
+  if (clean === "/chat" || clean.startsWith("/chat/")) return "/tradefiz-ai";
+  if (clean.startsWith("/tradefiz-ai/chat")) return "/tradefiz-ai";
+  if (clean === "/tradefiz-ai" || clean.startsWith("/tradefiz-ai/")) return "/today";
   if (parts.length === 1) return APP_HOME;
   return `/${parts.slice(0, -1).join("/")}`;
 }
@@ -51,7 +74,8 @@ export function pageTitleKey(pathname: string | null | undefined): MessageKey {
   if (!pathname) return "nav.today";
   if (pathname === "/home") return "nav.home";
   if (pathname === "/today" || pathname.startsWith("/today/")) return "nav.today";
-  if (pathname === "/ai-review" || pathname.startsWith("/ai-review/")) return "nav.aiReview";
+  if (pathname === "/tradefiz-ai" || pathname.startsWith("/tradefiz-ai/")) return "nav.tradefizAi";
+  if (pathname === "/ai-review" || pathname.startsWith("/ai-review/")) return "nav.tradefizAi";
   if (pathname === "/day" || pathname.startsWith("/day/")) return "nav.dayView";
   if (pathname === "/my-day" || pathname.startsWith("/my-day/")) return "nav.myDay";
   if (pathname === "/diary" || pathname.startsWith("/diary/")) return "nav.journal";
@@ -68,7 +92,7 @@ export function pageTitleKey(pathname: string | null | undefined): MessageKey {
   if (pathname === "/portfolio" || pathname.startsWith("/portfolio/")) return "nav.portfolio";
   if (pathname === "/backtest" || pathname.startsWith("/backtest/")) return "nav.backtesting";
   if (pathname === "/agents" || pathname.startsWith("/agents/")) return "nav.agents";
-  if (pathname === "/chat" || pathname.startsWith("/chat/")) return "nav.maxAi";
+  if (pathname === "/chat" || pathname.startsWith("/chat/")) return "nav.tradefizAi";
   if (pathname === "/coach" || pathname.startsWith("/coach/")) return "nav.mentor";
   if (pathname.startsWith("/settings/prop-firm")) return "nav.propFirmSync";
   if (pathname.startsWith("/settings/support")) return "nav.help";

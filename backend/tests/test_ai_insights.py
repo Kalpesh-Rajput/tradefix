@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from uuid import uuid4
 
-from app.services.ai.insights.detectors import detect_all, detect_behavior, detect_combos
+from app.services.ai.insights.detectors import detect_all, detect_behavior, detect_change, detect_combos
 from app.services.ai.insights.feed import build_feed
 from app.services.ai.insights.rank import rank_candidates
 from app.services.ai.insights.types import MIN_TRADES_OVERALL
@@ -154,3 +154,18 @@ def test_ranking_prefers_financial_impact_over_trivia():
     ranked = rank_candidates(detect_all(trades), len(trades))
     assert ranked
     assert "LeakSetup" in (ranked[0].combo_label or ranked[0].explanation)
+
+
+def test_change_respects_requested_window():
+    now = datetime(2026, 6, 30, 12, tzinfo=timezone.utc)
+    trades = []
+    for i in range(8):
+        trades.append(_trade(pnl=-10, opened_at=now - timedelta(days=8 + i)))
+    for i in range(8):
+        trades.append(_trade(pnl=-80, opened_at=now - timedelta(days=i)))
+    for i in range(8):
+        trades.append(_trade(pnl=-200, setup_tag="OldLeak", opened_at=now - timedelta(days=40 + i)))
+    found = detect_change(trades, now=now, window_days=7)
+    assert found
+    assert "7 days" in found[0].why_narrative
+    assert "OldLeak" not in found[0].explanation

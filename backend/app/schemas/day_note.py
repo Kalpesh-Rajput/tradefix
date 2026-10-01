@@ -55,6 +55,8 @@ class DayNoteResponse(BaseModel):
     account_id: uuid.UUID
     date: date_type
     template_id: str
+    kind: str = "journal"
+    agent_run_id: uuid.UUID | None = None
     content: str
     screenshot_urls: list[str] = Field(default_factory=list)
     is_favorite: bool

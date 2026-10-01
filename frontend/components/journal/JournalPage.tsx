@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { JournalEmptyState } from "@/components/journal/JournalEmptyState";
 import { JournalSidebar, type JournalListItem } from "@/components/journal/JournalSidebar";
 import { RecapForm, type RecapFormValues } from "@/components/journal/RecapForm";
-import { TradeFixAIPanel } from "@/components/ai/panel/TradeFixAIPanel";
 import { TradeFixAITrigger } from "@/components/ai/panel/TradeFixAITrigger";
 import { GamePlanCard } from "@/components/progress/GamePlanCard";
 import { HeaderActions } from "@/components/layout/HeaderActions";
@@ -224,7 +223,6 @@ export function JournalPage() {
         )}
       </div>
       </div>
-      <TradeFixAIPanel />
     </>
   );
 }

@@ -21,10 +21,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Fragment } from "react";
+import { Fragment, useRef } from "react";
 
 import { AiMark } from "@/components/ai/AiMark";
 import { extractStats, shapeAnswer, sourceHref, sourceLabel, statKind, valueTone, type StatKind } from "@/components/ai/format";
+import { isLiveTranscript, prepareStreamingMarkdown, useLiveTranscript } from "@/components/ai/liveTranscript";
 import type { ThreadMessage } from "@/components/ai/types";
 import type { AiSource } from "@/lib/types";
 
@@ -89,24 +90,33 @@ export function AssistantMessage({
   onReact?: (reaction: "up" | "down") => void;
   followUps?: string[];
   onFollowUp?: (question: string) => void;
-  appearance?: "page" | "panel";
+  appearance?: "page" | "panel" | "agent";
 }) {
   const reduce = useReducedMotion();
-  const shaped = message.error ? null : shapeAnswer(message.text);
-  const stats = message.error || shaped?.kind === "briefing" ? [] : extractStats(message.text);
+  const plain = appearance === "panel" || appearance === "agent";
+  const live = !message.error && isLiveTranscript(message.id);
+  const wasLive = useRef(live);
+  if (live) wasLive.current = true;
+  const transcript = useLiveTranscript(message.id, message.text, live);
+  const streaming = transcript.streaming;
+  const settled = message.error || transcript.settled;
+  const shaped = settled && !message.error && !wasLive.current ? shapeAnswer(message.text) : null;
+  const stats = !settled || message.error || wasLive.current || shaped?.kind === "briefing" ? [] : extractStats(message.text);
   const reflectionInBody = new Set((shaped?.reflection ?? []).map((item) => item.toLowerCase()));
   const body = message.text.toLowerCase();
   const extraActions = (message.actions ?? []).filter((action) => {
     const key = action.toLowerCase();
     return !reflectionInBody.has(key) && !body.includes(key);
   });
+  const markdown = streaming ? prepareStreamingMarkdown(transcript.visible) : message.text;
 
   return (
     <motion.article
       initial={reduce ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex gap-2.5"
+      aria-busy={streaming || undefined}
+      className="flex select-text gap-2.5"
     >
       <AiMark size={28} className="mt-0.5" />
       <div className="min-w-0 flex-1">
@@ -128,16 +138,10 @@ export function AssistantMessage({
         ) : (
           <>
             {stats.length > 0 ? <StatChips chips={stats} /> : null}
-            <div
-              className={
-                appearance === "panel"
-                  ? "mt-1"
-                  : "mt-1.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-3"
-              }
-            >
-              {shaped?.kind === "briefing" ? <Briefing answer={shaped} /> : <AiMarkdown text={message.text} />}
+            <div className={plain ? "mt-1" : "mt-1.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-3"}>
+              {shaped?.kind === "briefing" ? <Briefing answer={shaped} /> : <AiMarkdown text={markdown} caret={streaming} />}
             </div>
-            {appearance === "page" && shaped?.kind !== "briefing" && extraActions.length > 0 ? (
+            {settled && appearance !== "panel" && shaped?.kind !== "briefing" && extraActions.length > 0 ? (
               <div className="mt-3">
                 <SectionLabel emoji="🎯" label="Next" />
                 <ul className="mt-2 space-y-1.5">
@@ -150,7 +154,8 @@ export function AssistantMessage({
                 </ul>
               </div>
             ) : null}
-            {message.sources && message.sources.length > 0 ? <SourceList sources={message.sources} /> : null}
+            {settled && message.sources && message.sources.length > 0 ? <SourceList sources={message.sources} /> : null}
+            {settled ? (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               {onCopy ? (
                 <button type="button" onClick={onCopy} aria-label="Copy answer" title="Copy" className={actionBtn}>
@@ -187,7 +192,8 @@ export function AssistantMessage({
                 </>
               ) : null}
             </div>
-            {followUps && followUps.length > 0 && onFollowUp ? (
+            ) : null}
+            {settled && followUps && followUps.length > 0 && onFollowUp ? (
               <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {followUps.map((question) => (
                   <button
@@ -404,13 +410,18 @@ function LocalSources({ sources }: { sources: AiSource[] }) {
   );
 }
 
-export function AiMarkdown({ text }: { text: string }) {
+function Caret() {
+  return <span className="ai-stream-caret" aria-hidden />;
+}
+
+export function AiMarkdown({ text, caret = false }: { text: string; caret?: boolean }) {
   const blocks = parseBlocks(text);
   return (
-    <div className="space-y-2.5 text-[14px] leading-6 text-[var(--color-text-secondary)]">
+    <div className="select-text space-y-2.5 text-[14px] leading-6 text-[var(--color-text-secondary)]">
       {blocks.map((block, i) => (
-        <Fragment key={i}>{renderBlock(block)}</Fragment>
+        <Fragment key={i}>{renderBlock(block, caret && i === blocks.length - 1)}</Fragment>
       ))}
+      {caret && blocks.length === 0 ? <Caret /> : null}
     </div>
   );
 }
@@ -420,7 +431,8 @@ type Block =
   | { type: "paragraph"; text: string }
   | { type: "ul"; items: string[] }
   | { type: "ol"; items: string[] }
-  | { type: "table"; headers: string[]; rows: string[][] };
+  | { type: "table"; headers: string[]; rows: string[][] }
+  | { type: "code"; text: string };
 
 function parseBlocks(text: string): Block[] {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
@@ -436,6 +448,17 @@ function parseBlocks(text: string): Block[] {
     if (/^#{1,3}\s+/.test(line)) {
       blocks.push({ type: "heading", text: line.replace(/^#{1,3}\s+/, "").trim() });
       i += 1;
+      continue;
+    }
+    if (line.trim().startsWith("```")) {
+      const code: string[] = [];
+      i += 1;
+      while (i < lines.length && !lines[i].trim().startsWith("```")) {
+        code.push(lines[i]);
+        i += 1;
+      }
+      if (i < lines.length) i += 1;
+      blocks.push({ type: "code", text: code.join("\n") });
       continue;
     }
     if (line.trim().startsWith("|") && lines[i + 1]?.trim().startsWith("|")) {
@@ -468,7 +491,7 @@ function parseBlocks(text: string): Block[] {
     }
     const para: string[] = [line];
     i += 1;
-    while (i < lines.length && lines[i].trim() && !/^#{1,3}\s+/.test(lines[i]) && !(/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\*\*/.test(lines[i])) && !/^\s*\d+[.)]\s+/.test(lines[i]) && !lines[i].trim().startsWith("|")) {
+    while (i < lines.length && lines[i].trim() && !/^#{1,3}\s+/.test(lines[i]) && !lines[i].trim().startsWith("```") && !(/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\*\*/.test(lines[i])) && !/^\s*\d+[.)]\s+/.test(lines[i]) && !lines[i].trim().startsWith("|")) {
       para.push(lines[i]);
       i += 1;
     }
@@ -493,12 +516,16 @@ function parseTable(lines: string[]): Block | null {
   return { type: "table", headers: cells[0], rows: cells.slice(1) };
 }
 
-function renderBlock(block: Block): ReactNode {
+function renderBlock(block: Block, showCaret = false): ReactNode {
+  const caret = showCaret ? <Caret /> : null;
   if (block.type === "heading") {
     return (
       <h3 className="flex items-center gap-1.5 pt-1 text-[13px] font-semibold tracking-tight text-[var(--color-text-primary)]">
         <Lightbulb className="h-3.5 w-3.5 text-primary" strokeWidth={2} />
-        {inline(block.text)}
+        <span>
+          {inline(block.text)}
+          {caret}
+        </span>
       </h3>
     );
   }
@@ -508,7 +535,10 @@ function renderBlock(block: Block): ReactNode {
         {block.items.map((item, i) => (
           <li key={i} className="flex gap-2">
             <ArrowUpRight className="mt-1 h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={2} />
-            <span>{inline(item)}</span>
+            <span>
+              {inline(item)}
+              {showCaret && i === block.items.length - 1 ? <Caret /> : null}
+            </span>
           </li>
         ))}
       </ul>
@@ -518,9 +548,22 @@ function renderBlock(block: Block): ReactNode {
     return (
       <ol className="list-decimal space-y-1 pl-4">
         {block.items.map((item, i) => (
-          <li key={i}>{inline(item)}</li>
+          <li key={i}>
+            {inline(item)}
+            {showCaret && i === block.items.length - 1 ? <Caret /> : null}
+          </li>
         ))}
       </ol>
+    );
+  }
+  if (block.type === "code") {
+    return (
+      <pre className="overflow-x-auto rounded-lg bg-[var(--color-background)] px-3 py-2 text-[12.5px] leading-5 text-[var(--color-text-primary)]">
+        <code className="font-mono">
+          {block.text}
+          {caret}
+        </code>
+      </pre>
     );
   }
   if (block.type === "table") {
@@ -542,6 +585,7 @@ function renderBlock(block: Block): ReactNode {
                 {row.map((cell, ci) => (
                   <td key={`${ri}-${ci}`} className="border-b border-[var(--color-border-subtle)] px-2 py-1.5 tabular-nums">
                     {inline(cell)}
+                    {showCaret && ri === block.rows.length - 1 && ci === row.length - 1 ? <Caret /> : null}
                   </td>
                 ))}
               </tr>
@@ -551,11 +595,16 @@ function renderBlock(block: Block): ReactNode {
       </div>
     );
   }
-  return <p className="whitespace-pre-wrap">{inline(block.text)}</p>;
+  return (
+    <p className="whitespace-pre-wrap">
+      {inline(block.text)}
+      {caret}
+    </p>
+  );
 }
 
 function inline(text: string): ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
   return parts.map((part, i) => {
     const bold = part.match(/^\*\*(.+)\*\*$/);
     if (bold) {
@@ -563,6 +612,14 @@ function inline(text: string): ReactNode {
         <strong key={i} className="font-semibold text-[var(--color-text-primary)]">
           {bold[1]}
         </strong>
+      );
+    }
+    const code = part.match(/^`([^`]+)`$/);
+    if (code) {
+      return (
+        <code key={i} className="rounded bg-[var(--color-background)] px-1 py-0.5 font-mono text-[0.92em] text-[var(--color-text-primary)]">
+          {code[1]}
+        </code>
       );
     }
     return <Fragment key={i}>{part.replace(/\*\*/g, "")}</Fragment>;

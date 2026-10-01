@@ -29,6 +29,7 @@ import {
 import { filterReportTrades } from "@/lib/reports/filter";
 import { displayPnlForMode } from "@/lib/reports/pnlMode";
 import type { ReportPnlMode } from "@/lib/reports/types";
+import { usePublishAssistantScope } from "@/lib/ai/assistant-scope";
 import { TRADE_LIST_LIMIT } from "@/lib/trades/limits";
 import { useAnalytics } from "@/lib/hooks/useAnalytics";
 import { useTrades } from "@/lib/hooks/useTrades";
@@ -58,10 +59,16 @@ function AnalyticsReports() {
   const useExit = searchParams.get("time") === "exit";
 
   const [pnlMode, setPnlMode] = useState<ReportPnlMode>("net");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState(() => searchParams.get("from") ?? "");
+  const [dateTo, setDateTo] = useState(() => searchParams.get("to") ?? "");
   const [session, setSession] = useState("");
   const [symbol, setSymbol] = useState("");
+  const scopeDetail = [symbol && `Symbol ${symbol}`, session && `Session ${session}`].filter(Boolean).join(", ");
+  usePublishAssistantScope({
+    dateFrom,
+    dateTo,
+    detail: scopeDetail ? `Filters: ${scopeDetail}` : null,
+  });
 
   const replaceParams = useCallback(
     (patch: Record<string, string | null>) => {

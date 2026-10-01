@@ -1,5 +1,7 @@
 from app.models.account import Account
 from app.models.agent_run import AgentRun
+from app.models.user_agent import UserAgent
+from app.models.user_notification import UserNotification
 from app.models.ai_document import AiDocument
 from app.models.ai_insight_snapshot import AiInsightSnapshot
 from app.models.ai_usage import AiUsageLog
@@ -50,6 +52,8 @@ __all__ = [
     "TradeComment",
     "Insight",
     "AgentRun",
+    "UserAgent",
+    "UserNotification",
     "AiDocument",
     "AiInsightSnapshot",
     "AiUsageLog",

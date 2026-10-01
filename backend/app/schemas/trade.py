@@ -245,6 +245,7 @@ class TradeResponse(BaseModel):
     risk_amount: float | None = None
     setup_tag: str | None
     setup_tags: list[str] = Field(default_factory=list)
+    ai_tag_suggestions: list[dict] = Field(default_factory=list)
     emotion_tags: list[str] = Field(default_factory=list)
     plan_compliance: int | None = None
     mood: str | None

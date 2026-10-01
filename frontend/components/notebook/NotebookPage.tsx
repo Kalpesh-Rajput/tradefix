@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -66,6 +67,8 @@ export function NotebookPage() {
       /* ignore */
     }
   }, []);
+
+  const [aiNoteId, setAiNoteId] = useState<string | null>(null);
 
   function toggleFolders() {
     setFoldersCollapsed((prev) => {
@@ -180,6 +183,12 @@ export function NotebookPage() {
   }
 
   function selectItem(item: NotebookListItem) {
+    if (item.kind === "day" && item.noteKind?.startsWith("ai_")) {
+      setAiNoteId(item.id);
+      selectDate(item.date, folder === "all" ? "all" : folder);
+      return;
+    }
+    setAiNoteId(null);
     if (item.kind === "trade") selectTrade(item.id, folder === "all" ? "all" : "trades");
     else selectDate(item.date, item.kind === "recap" ? "recaps" : folder === "all" ? "all" : folder);
   }
@@ -209,12 +218,19 @@ export function NotebookPage() {
         kind: "day" as const,
         id: note.id,
         date: note.date.slice(0, 10),
-        title: formatNoteTitle(note.date.slice(0, 10), locale),
+        title:
+          note.kind === "ai_market_briefing"
+            ? `AI Market Briefing — ${formatNoteTitle(note.date.slice(0, 10), locale)}`
+            : note.kind === "ai_session_review"
+              ? `AI Session Review — ${formatNoteTitle(note.date.slice(0, 10), locale)}`
+              : formatNoteTitle(note.date.slice(0, 10), locale),
         numericDate: formatNumericDate(note.date.slice(0, 10)),
         favorite: note.is_favorite,
         shots: note.screenshot_urls?.length ?? 0,
         folderId: note.folder_id ?? null,
         searchText: stripHtml(note.content),
+        noteKind: note.kind,
+        agentRunId: note.agent_run_id,
       })),
     [notes, locale]
   );
@@ -349,6 +365,7 @@ export function NotebookPage() {
             items={listItems}
             selectedDate={showingTrade ? null : selectedDate}
             selectedTradeId={showingTrade ? selectedTradeId : null}
+            selectedAiNoteId={aiNoteId}
             onSelectItem={selectItem}
             onLogDay={logDay}
             onOpenFolders={() => setMobilePane("folders")}
@@ -415,6 +432,8 @@ export function NotebookPage() {
               onDirtyChange={setDirty}
               onToggleFolders={toggleFolders}
             />
+          ) : aiNoteId && notes.find((note) => note.id === aiNoteId) ? (
+            <AiNoteView note={notes.find((note) => note.id === aiNoteId)!} />
           ) : showDayEditor ? (
             <DayNoteEditor
               key={`${selectedDate}-${folder}`}
@@ -439,6 +458,22 @@ export function NotebookPage() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function AiNoteView({ note }: { note: { kind?: string; date: string; content: string; agent_run_id?: string | null } }) {
+  const title =
+    note.kind === "ai_market_briefing" ? "AI Market Briefing" : note.kind === "ai_session_review" ? "AI Session Review" : "AI note";
+  return (
+    <div className="flex-1 overflow-y-auto p-6">
+      <p className="text-[12px] font-medium uppercase tracking-wide text-primary">{title}</p>
+      <div className="prose prose-sm mt-3 max-w-none text-[14px] leading-6 text-[var(--color-text-primary)]" dangerouslySetInnerHTML={{ __html: note.content }} />
+      {note.agent_run_id ? (
+        <Link href={`/agents?run=${note.agent_run_id}`} className="mt-4 inline-flex text-[13px] font-semibold text-primary">
+          Open agent run
+        </Link>
+      ) : null}
     </div>
   );
 }

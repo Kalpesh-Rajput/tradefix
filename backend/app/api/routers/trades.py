@@ -82,6 +82,7 @@ def _to_response(trade: Trade) -> TradeResponse:
         risk_amount=float(trade.risk_amount) if trade.risk_amount is not None else None,
         setup_tag=trade.setup_tag,
         setup_tags=list(trade.setup_tags or []),
+        ai_tag_suggestions=list(trade.ai_tag_suggestions or []),
         emotion_tags=list(trade.emotion_tags or []),
         plan_compliance=trade.plan_compliance,
         mood=trade.mood,

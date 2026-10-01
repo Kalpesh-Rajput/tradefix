@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 
-import { AiInsightsSection } from "@/components/dashboard/ai-insights/AiInsightsSection";
 import { AccountBalanceChart } from "@/components/dashboard/zella/AccountBalanceChart";
 import { DASH_CALENDAR_H } from "@/components/dashboard/zella/ChartCard";
 import { CumulativePnlChart, DailyPnlChart } from "@/components/dashboard/zella/DashboardCharts";
@@ -32,6 +31,7 @@ import {
   tradeTimePoints,
 } from "@/lib/dashboardSeries";
 import { rangeForPreset } from "@/components/dashboard/DateRangePicker";
+import { usePublishAssistantScope } from "@/lib/ai/assistant-scope";
 import { localIso } from "@/lib/dateLocal";
 import { TRADE_LIST_LIMIT } from "@/lib/trades/limits";
 import { useAnalytics, useCalendar } from "@/lib/hooks/useAnalytics";
@@ -50,6 +50,7 @@ export default function TodayPage() {
   const initial = useMemo(() => rangeForPreset("30d"), []);
   const [dateFrom, setDateFrom] = useState(initial.from);
   const [dateTo, setDateTo] = useState(initial.to);
+  usePublishAssistantScope({ dateFrom, dateTo });
 
   const monthBounds = useMemo(() => {
     const d = new Date();
@@ -289,8 +290,6 @@ export default function TodayPage() {
                 formatMoney={formatMoney}
               />
             )}
-
-            <AiInsightsSection accountId={accountId} formatMoney={formatMoney} />
 
             {(widgets.score || widgets.cumulative || widgets.daily) && (
               <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3">

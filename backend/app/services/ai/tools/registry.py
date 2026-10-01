@@ -4,6 +4,7 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
+from app.services.ai.tools import agents as agent_tools
 from app.services.ai.tools import analytics, search, web
 from app.services.ai.tools.context import ToolContext
 from app.services.ai.tools.filters import sanitize_tool_args
@@ -80,6 +81,24 @@ TOOL_SCHEMAS: list[dict] = [
         {"query": {"type": "string", "description": "Short news search, such as 'Fed rates' or 'Nasdaq'."}},
         ["query"],
     ),
+    _tool(
+        "list_user_agents",
+        "List the user's TradeFix agents, whether each is active or paused, and when it last ran.",
+        {},
+    ),
+    _tool(
+        "get_agent_activity",
+        "Recent agent runs, including status, summary, and a link to the run. Use for questions about what agents found or why a tagger did not run.",
+        {"limit": {"type": "integer", "minimum": 1, "maximum": 20}},
+    ),
+    _tool(
+        "get_agent_run",
+        "One agent run. Pass run_id, or query text such as session review, auto-tagger, or market briefing to fetch the latest matching run.",
+        {
+            "run_id": {"type": "string"},
+            "query": {"type": "string", "description": "session review, auto-tagger, or market briefing"},
+        },
+    ),
 ]
 
 HANDLERS: dict[str, Handler] = {
@@ -94,6 +113,9 @@ HANDLERS: dict[str, Handler] = {
     "search_user_trade_notes": search.search_user_trade_notes,
     "get_playbook_context": search.get_playbook_context,
     "search_web": web.search_web,
+    "list_user_agents": agent_tools.list_user_agents,
+    "get_agent_activity": agent_tools.get_agent_activity,
+    "get_agent_run": agent_tools.get_agent_run,
 }
 
 ANALYTICS_TOOLS = {
@@ -115,6 +137,16 @@ def resolve_tool_call(name: str, raw_args: dict | None) -> tuple[str, dict]:
     metric = str(args.pop("metric", "") or "").lower().replace("-", " ").replace("_", " ")
     key = (name or "").strip().lower().replace("-", "_")
     blob = f"{key.replace('_', ' ')} {metric}"
+    if key in HANDLERS:
+        return key, args
+    if "agent" in blob or "auto-tag" in blob or "auto tag" in blob or "briefing" in blob or "session review" in blob:
+        if args.get("run_id"):
+            return "get_agent_run", args
+        if any(token in blob for token in ("which agent", "agents are", "active agent", "what agents")):
+            return "list_user_agents", args
+        return "get_agent_run" if "review" in blob or "tagger" in blob or "briefing" in blob else "get_agent_activity", {
+            "query": args.get("query") or name,
+        }
     if any(token in blob for token in ("time of day", "best time", "session", "which hour", "what time")):
         return "get_session_statistics", args
     if "setup" in blob or "strategy" in blob:
@@ -128,8 +160,6 @@ def resolve_tool_call(name: str, raw_args: dict | None) -> tuple[str, dict]:
         return "search_web", {"query": query}
     if "journal" in blob or "note" in blob:
         return "search_user_journal", {"query": str(args.get("query") or metric or "journal")}
-    if key in HANDLERS:
-        return key, args
     return "get_trade_statistics", args
 
 

@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ThinkingIndicator } from "@/components/ai/ThinkingIndicator";
 import { answerPlainText } from "@/components/ai/format";
 import { followUpQuestions } from "@/components/ai/thinking";
+import { holdTranscriptScroll, isTranscriptScroll, useTranscriptFollow, useTranscriptSettled } from "@/components/ai/liveTranscript";
 import { useJournalAi } from "@/components/ai/panel/JournalAiContext";
 import { TradeFixAIActionButtons } from "@/components/ai/panel/TradeFixAIActionButtons";
 import { TradeFixAIMessage } from "@/components/ai/panel/TradeFixAIMessage";
@@ -47,6 +48,9 @@ export function TradeFixAIChat() {
   const stickRef = useRef(true);
   const [away, setAway] = useState(false);
   const empty = thread.length === 0 && !pending;
+  const latestAssistantId = [...thread].reverse().find((item) => item.role === "assistant" && !item.error)?.id;
+  const transcriptSettled = useTranscriptSettled(latestAssistantId);
+  useTranscriptFollow(scrollerRef, stickRef);
 
   useEffect(() => {
     if (pending) stickRef.current = true;
@@ -55,10 +59,13 @@ export function TradeFixAIChat() {
   useEffect(() => {
     const root = scrollerRef.current;
     if (!root || !stickRef.current) return;
-    root.scrollTo({ top: root.scrollHeight, behavior: reduce ? "auto" : "smooth" });
-  }, [thread, pending, reduce]);
+    holdTranscriptScroll(() => {
+      root.scrollTop = root.scrollHeight;
+    });
+  }, [thread, pending]);
 
   function onScroll() {
+    if (isTranscriptScroll()) return;
     const root = scrollerRef.current;
     if (!root) return;
     const gap = root.scrollHeight - root.scrollTop - root.clientHeight;
@@ -76,15 +83,13 @@ export function TradeFixAIChat() {
     }
   }
 
-  const latestAssistantId = [...thread].reverse().find((item) => item.role === "assistant" && !item.error)?.id;
-
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col">
-      <div ref={scrollerRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto px-3.5 py-4">
+      <div ref={scrollerRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto px-3.5 py-4 [overflow-anchor:none]">
         {empty ? (
           <TradeFixAIWelcome />
         ) : (
-          <div className="flex flex-col gap-4" aria-live="polite">
+          <div className="flex flex-col gap-4">
             {thread.map((message) => {
               const isLatest = message.id === latestAssistantId;
               const actions = isLatest ? suggestionActions(message) : [];
@@ -104,7 +109,7 @@ export function TradeFixAIChat() {
                     followUps={!message.error && isLatest && !pending ? followUpQuestions(lastQuestion || "") : undefined}
                     onFollowUp={(q) => ask(q)}
                   />
-                  {actions.length > 0 ? (
+                  {actions.length > 0 && transcriptSettled ? (
                     <div className="mt-3 pl-9">
                       <TradeFixAIActionButtons actions={actions} />
                     </div>

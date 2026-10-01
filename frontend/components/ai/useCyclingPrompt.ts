@@ -3,12 +3,12 @@
 import { useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-const TYPE_MS_MIN = 45;
-const TYPE_MS_MAX = 65;
-const DELETE_MS_MIN = 25;
-const DELETE_MS_MAX = 40;
-const HOLD_MS = 2000;
-const GAP_MS = 400;
+const TYPE_MS_MIN = 35;
+const TYPE_MS_MAX = 50;
+const DELETE_MS_MIN = 20;
+const DELETE_MS_MAX = 30;
+const HOLD_MS = 1500;
+const GAP_MS = 280;
 const START_DELAY_MS = 280;
 
 function stepMs(min: number, max: number, index: number) {

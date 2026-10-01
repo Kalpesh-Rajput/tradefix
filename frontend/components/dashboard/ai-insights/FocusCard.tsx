@@ -1,10 +1,9 @@
 "use client";
 
 import { Target } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 
-import { chatHref } from "@/lib/ai-insights/links";
+import { AskTradeFixAI } from "@/components/tradefix-ai/assistant/AskTradeFixAI";
 import type { AiInsightFocus } from "@/lib/types";
 
 import { AddRuleModal } from "./AddRuleModal";
@@ -35,12 +34,12 @@ export function FocusCard({ focus }: { focus: AiInsightFocus }) {
         >
           Add as Rule
         </button>
-        <Link
-          href={chatHref(focus.ask_question)}
+        <AskTradeFixAI
+          question={focus.ask_question}
           className="inline-flex h-8 items-center rounded-md bg-primary px-2.5 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
         >
           Ask TradeFix AI
-        </Link>
+        </AskTradeFixAI>
       </div>
       {open ? <AddRuleModal ruleName={focus.suggested_rule} onClose={() => setOpen(false)} /> : null}
     </section>

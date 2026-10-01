@@ -169,8 +169,16 @@ def _polish_summary(text: str) -> str:
         return text
 
 
-def build_feed(trades: list, *, include_news: bool = False, max_loss: float | None = None) -> AiInsightsFeed:
-    now = datetime.now(timezone.utc)
+def build_feed(
+    trades: list,
+    *,
+    include_news: bool = False,
+    max_loss: float | None = None,
+    window_days: int | None = None,
+    history: list | None = None,
+    now: datetime | None = None,
+) -> AiInsightsFeed:
+    now = now or datetime.now(timezone.utc)
     analysed = len(trades)
     if analysed < MIN_TRADES_OVERALL:
         return AiInsightsFeed(
@@ -190,7 +198,13 @@ def build_feed(trades: list, *, include_news: bool = False, max_loss: float | No
             weekly=_weekly(trades, [], None),
         )
 
-    candidates = detect_all(trades, max_loss=max_loss)
+    candidates = detect_all(
+        trades,
+        max_loss=max_loss,
+        now=now,
+        window_days=window_days,
+        history=history,
+    )
     if include_news:
         try:
             candidates.extend(detect_news(trades))

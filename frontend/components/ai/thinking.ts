@@ -35,12 +35,21 @@ export function thinkingStages(question: string): ThinkingStage[] {
   return stages;
 }
 
+export function agentThinkingStages(question: string): ThinkingStage[] {
+  if (isSmallTalk(question)) {
+    return [{ icon: "sparkle", label: "TradeFix AI is thinking..." }];
+  }
+  return [
+    { icon: "chart", label: "Analyzing trades" },
+    { icon: "search", label: "Analyzing performance" },
+    { icon: "brain", label: "Checking patterns" },
+    { icon: "sparkle", label: "Generating insight" },
+  ];
+}
+
 export function pendingStatusLabel(question: string): string {
-  if (isSmallTalk(question)) return "Replying";
-  const text = question.toLowerCase();
-  if (NEWS_RE.test(text)) return "Checking headlines";
-  if (DATA_RE.test(text) || JOURNAL_RE.test(text)) return "Analyzing your trading data";
-  return "Thinking";
+  if (isSmallTalk(question)) return "TradeFiz AI is thinking...";
+  return "TradeFiz AI is analyzing your trading...";
 }
 
 export function followUpQuestions(question: string): string[] {

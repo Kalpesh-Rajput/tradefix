@@ -55,7 +55,7 @@ def import_trades_from_csv(
     try:
         df = pd.read_csv(io.BytesIO(file_bytes))
     except Exception as exc:  # noqa: BLE001
-        return 0, 0, [f"Could not parse CSV: {exc}"]
+        return 0, 0, [f"Could not parse CSV: {exc}"], []
 
     columns = list(df.columns)
     col_map = {key: _find_column(columns, aliases) for key, aliases in COLUMN_ALIASES.items()}
@@ -63,7 +63,7 @@ def import_trades_from_csv(
     if not col_map["symbol"] or not col_map["opened_at"] or not col_map["entry_price"] or not col_map["quantity"]:
         return 0, 0, [
             "CSV is missing required columns. Need at least: symbol, quantity, entry price, and opened date."
-        ]
+        ], []
 
     existing_fingerprints = {
         f"{t.symbol}|{t.opened_at}|{float(t.entry_price)}|{float(t.quantity)}"
@@ -72,6 +72,7 @@ def import_trades_from_csv(
 
     imported = 0
     skipped_duplicates = 0
+    created_ids: list = []
 
     for idx, raw_row in df.iterrows():
         try:
@@ -139,9 +140,11 @@ def import_trades_from_csv(
             apply_calc(trade, calc)
             replace_executions(trade, calc.fills, opened_at)
             db.add(trade)
+            db.flush()
+            created_ids.append(trade.id)
             imported += 1
         except Exception as exc:  # noqa: BLE001
             errors.append(f"Row {idx + 2}: {exc}")
 
     db.commit()
-    return imported, skipped_duplicates, errors
+    return imported, skipped_duplicates, errors, created_ids

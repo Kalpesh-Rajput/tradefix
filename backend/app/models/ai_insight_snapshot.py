@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -12,15 +12,17 @@ class AiInsightSnapshot(Base):
     __tablename__ = "ai_insight_snapshots"
     __table_args__ = (
         Index(
-            "uq_ai_insight_snapshots_user_all",
+            "uq_ai_insight_snapshots_user_window",
             "user_id",
+            "window_key",
             unique=True,
             postgresql_where=text("account_id IS NULL"),
         ),
         Index(
-            "uq_ai_insight_snapshots_user_account",
+            "uq_ai_insight_snapshots_user_account_window",
             "user_id",
             "account_id",
+            "window_key",
             unique=True,
             postgresql_where=text("account_id IS NOT NULL"),
         ),
@@ -34,6 +36,7 @@ class AiInsightSnapshot(Base):
     account_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=True
     )
+    window_key: Mapped[str] = mapped_column(String(8), nullable=False, default="30d", server_default="30d")
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     trades_analysed: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     latest_trade_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

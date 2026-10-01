@@ -12,6 +12,7 @@ import { ProgressTrackerHeader } from "@/components/progress/ProgressTrackerHead
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { useToast } from "@/components/ui/Toast";
 import { ApiError } from "@/lib/api";
+import { usePublishAssistantScope } from "@/lib/ai/assistant-scope";
 import { localIso } from "@/lib/dateLocal";
 import {
   useManualRuleCompletion,
@@ -33,6 +34,7 @@ export function ProgressTrackerWorkspace() {
   const initial = useMemo(() => defaultRange(), []);
   const [dateFrom, setDateFrom] = useState(initial.from);
   const [dateTo, setDateTo] = useState(initial.to);
+  usePublishAssistantScope({ dateFrom, dateTo });
   const [accountId, setAccountId] = useState<string | null>(null);
   const [focusDate, setFocusDate] = useState<string>(() => localIso(new Date()));
   const [editOpen, setEditOpen] = useState(false);

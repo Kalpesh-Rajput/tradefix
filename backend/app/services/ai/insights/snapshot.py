@@ -29,9 +29,15 @@ def latest_closed_trade_at(
 
 
 def get_snapshot(
-    db: Session, user_id: uuid.UUID, account_id: uuid.UUID | None
+    db: Session,
+    user_id: uuid.UUID,
+    account_id: uuid.UUID | None,
+    window_key: str = "30d",
 ) -> AiInsightSnapshot | None:
-    stmt = select(AiInsightSnapshot).where(AiInsightSnapshot.user_id == user_id)
+    stmt = select(AiInsightSnapshot).where(
+        AiInsightSnapshot.user_id == user_id,
+        AiInsightSnapshot.window_key == window_key,
+    )
     if account_id is None:
         stmt = stmt.where(AiInsightSnapshot.account_id.is_(None))
     else:
@@ -66,13 +72,15 @@ def upsert_snapshot(
     payload: dict,
     trades_analysed: int,
     latest_trade_at: datetime | None,
+    window_key: str = "30d",
 ) -> AiInsightSnapshot:
-    row = get_snapshot(db, user_id, account_id)
+    row = get_snapshot(db, user_id, account_id, window_key)
     now = datetime.now(timezone.utc)
     if row is None:
         row = AiInsightSnapshot(
             user_id=user_id,
             account_id=account_id,
+            window_key=window_key,
             generated_at=now,
             trades_analysed=trades_analysed,
             latest_trade_at=latest_trade_at,

@@ -7,16 +7,6 @@ export const JOURNAL_QUICK_ACTIONS = [
   { id: "summary", label: "Summarize my recent performance", question: "Summarize my recent performance" },
 ] as const;
 
-export const JOURNAL_ROTATING_PROMPTS = [
-  "Where am I losing money?",
-  "Analyse my recent trades",
-  "Find my most profitable setup",
-  "Compare my strategies",
-  "What is hurting my performance?",
-  "Find my worst trading pattern",
-  "Check my rule violations",
-] as const;
-
 export type JournalTakeAction = {
   id: string;
   label: string;

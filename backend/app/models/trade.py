@@ -57,6 +57,7 @@ class Trade(Base):
 
     setup_tag: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     setup_tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
+    ai_tag_suggestions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     emotion_tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     plan_compliance: Mapped[int | None] = mapped_column(Integer, nullable=True)
     mood: Mapped[str | None] = mapped_column(String(50), nullable=True)

@@ -1,13 +1,13 @@
 "use client";
 
 import clsx from "clsx";
-import { Bell, Menu, X } from "lucide-react";
-import Link from "next/link";
+import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { BackButton } from "@/components/layout/AppNavigation";
 import { useHeaderActionsSlot } from "@/components/layout/HeaderActions";
 import { NavCollapseButton } from "@/components/layout/NavCollapseButton";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { useSidebar } from "@/components/providers/SidebarProvider";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -57,14 +57,7 @@ export function AppHeader() {
 
       <div className="flex shrink-0 items-center justify-end gap-2">
         {actions}
-        <Link
-          href="/settings/notifications"
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-[var(--color-text-primary)]"
-          aria-label={t("common.notifications")}
-          title={t("common.notifications")}
-        >
-          <Bell className="h-3.5 w-3.5" strokeWidth={1.75} />
-        </Link>
+        <NotificationBell />
         <ThemeToggle />
       </div>
     </header>

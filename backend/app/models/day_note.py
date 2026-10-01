@@ -11,7 +11,9 @@ from app.core.db import Base
 
 class DayNote(Base):
     __tablename__ = "day_notes"
-    __table_args__ = (UniqueConstraint("user_id", "account_id", "date", name="uq_day_notes_user_account_date"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "account_id", "date", "kind", name="uq_day_notes_user_account_date_kind"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -22,6 +24,10 @@ class DayNote(Base):
     )
     date: Mapped[date_type] = mapped_column(Date, nullable=False, index=True)
     template_id: Mapped[str] = mapped_column(String(64), nullable=False, default="day-journal")
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, default="journal", server_default="journal")
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("agent_runs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     content: Mapped[str] = mapped_column(Text, nullable=False, default="")
     screenshot_urls: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     is_favorite: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")

@@ -348,14 +348,15 @@ def detect_rules(trades: list, max_loss: float | None = None) -> list[Candidate]
     ]
 
 
-def detect_change(trades: list, now=None) -> list[Candidate]:
+def detect_change(trades: list, now=None, window_days: int = 30) -> list[Candidate]:
     stamps = [opened_at(t) for t in trades]
     stamps = [s for s in stamps if s is not None]
     if not stamps:
         return []
     latest = now or max(stamps)
-    current_start = latest - timedelta(days=30)
-    prior_start = latest - timedelta(days=60)
+    span = max(int(window_days), 1)
+    current_start = latest - timedelta(days=span)
+    prior_start = latest - timedelta(days=span * 2)
     current = [t for t in trades if opened_at(t) and opened_at(t) >= current_start]
     prior = [t for t in trades if opened_at(t) and prior_start <= opened_at(t) < current_start]
     if len(current) < MIN_EARLY or len(prior) < MIN_EARLY:
@@ -379,7 +380,7 @@ def detect_change(trades: list, now=None) -> list[Candidate]:
     if abs(delta) < 0.15:
         return []
     improved = curr_r > prev_r
-    text = templates.change_copy(prev_r, curr_r, improved, len(prior), len(current))
+    text = templates.change_copy(prev_r, curr_r, improved, len(prior), len(current), window_days=span)
     n = len(current)
     conf = confidence_for(n, abs(delta))
     category = "change"
@@ -504,11 +505,22 @@ def detect_overtrading(trades: list, now=None) -> list[Candidate]:
     ]
 
 
-def detect_all(trades: list, *, max_loss: float | None = None, now=None) -> list[Candidate]:
+def detect_all(
+    trades: list,
+    *,
+    max_loss: float | None = None,
+    now=None,
+    window_days: int | None = None,
+    history: list | None = None,
+) -> list[Candidate]:
     found: list[Candidate] = []
     found.extend(detect_combos(trades))
     found.extend(detect_behavior(trades))
     found.extend(detect_rules(trades, max_loss=max_loss))
-    found.extend(detect_change(trades, now=now))
+    change_source = history if history is not None else trades
+    if window_days is None:
+        found.extend(detect_change(change_source, now=now))
+    else:
+        found.extend(detect_change(change_source, now=now, window_days=window_days))
     found.extend(detect_overtrading(trades, now=now))
     return found

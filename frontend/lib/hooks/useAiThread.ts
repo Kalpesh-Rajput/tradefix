@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { ThreadMessage } from "@/components/ai/types";
+import { closeLiveTranscript, markLiveTranscript, settleTranscript } from "@/components/ai/liveTranscript";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { ApiError } from "@/lib/api";
 import { useCoachAsk } from "@/lib/hooks/useCoach";
@@ -14,12 +15,21 @@ function messageId(prefix: string) {
   return `${prefix}-${Date.now()}`;
 }
 
-export function useAiThread() {
+function questionForApi(question: string, viewContext: string | null | undefined) {
+  const note = viewContext?.trim();
+  if (!note) return question;
+  const withNote = `${question}\n\nView context (use only if it helps the answer; do not repeat it):\n${note}`;
+  return withNote.length <= 2000 ? withNote : question;
+}
+
+export function useAiThread(options?: { viewContext?: () => string | null }) {
   const { activeAccount } = useAccountPrefs();
   const accountId = activeAccount?.id;
   const ask = useCoachAsk();
   const askRef = useRef(ask.mutateAsync);
   askRef.current = ask.mutateAsync;
+  const viewContextRef = useRef(options?.viewContext);
+  viewContextRef.current = options?.viewContext;
 
   const [question, setQuestion] = useState("");
   const [thread, setThread] = useState<ThreadMessage[]>([]);
@@ -29,6 +39,7 @@ export function useAiThread() {
   const [stopped, setStopped] = useState(false);
   const [focusTick, setFocusTick] = useState(0);
   const [conversationId, setConversationId] = useState(() => messageId("c"));
+  const conversationIdRef = useRef(conversationId);
 
   const sending = useRef(false);
   const requestSeq = useRef(0);
@@ -71,18 +82,21 @@ export function useAiThread() {
         content: item.text,
       }));
 
+      let assistantId: string | null = null;
       try {
         const res = await askRef.current({
-          question: q,
+          question: questionForApi(q, viewContextRef.current?.()),
           account_id: accountId,
           history: history.slice(0, -1),
           signal: controller.signal,
         });
         if (requestSeq.current !== id) return;
+        assistantId = messageId("a");
+        markLiveTranscript(assistantId);
         setThread((current) => [
           ...current,
           {
-            id: messageId("a"),
+            id: assistantId as string,
             role: "assistant",
             text: res.answer,
             actions: res.actions,
@@ -108,6 +122,7 @@ export function useAiThread() {
         ]);
       } finally {
         window.clearTimeout(timer);
+        if (assistantId) closeLiveTranscript(assistantId);
         if (requestSeq.current === id) {
           sending.current = false;
           setPending(false);
@@ -156,19 +171,59 @@ export function useAiThread() {
     );
   }, []);
 
-  const reset = useCallback(() => {
+  const beginFresh = useCallback((draft = "") => {
     stopKind.current = "user";
     requestSeq.current += 1;
     abortRef.current?.abort();
     sending.current = false;
+    const id = messageId("c");
+    conversationIdRef.current = id;
+    threadRef.current = [];
     setPending(false);
     setStopped(false);
     setThread([]);
     setLastQuestion(null);
-    setQuestion("");
     setActiveId(null);
-    setConversationId(messageId("c"));
+    setConversationId(id);
+    setQuestion(draft);
+    setFocusTick((value) => value + 1);
+    return id;
   }, []);
+
+  const reset = useCallback(() => {
+    beginFresh("");
+  }, [beginFresh]);
+
+  const hydrate = useCallback((id: string, messages: ThreadMessage[]) => {
+    stopKind.current = "user";
+    requestSeq.current += 1;
+    abortRef.current?.abort();
+    sending.current = false;
+    conversationIdRef.current = id;
+    threadRef.current = messages;
+    for (const message of messages) settleTranscript(message.id);
+    setPending(false);
+    setStopped(false);
+    setThread(messages);
+    setConversationId(id);
+    setQuestion("");
+    const lastUser = [...messages].reverse().find((item) => item.role === "user");
+    setLastQuestion(lastUser?.text ?? null);
+    setActiveId(messages.at(-1)?.id ?? null);
+    setFocusTick((value) => value + 1);
+  }, []);
+
+  const askFresh = useCallback(
+    (raw: string) => {
+      const text = raw.trim();
+      const id = beginFresh("");
+      if (text) void submitQuestion(text, []);
+      return id;
+    },
+    [beginFresh, submitQuestion]
+  );
+
+  const currentConversationId = useCallback(() => conversationIdRef.current, []);
 
   return useMemo(
     () => ({
@@ -188,6 +243,10 @@ export function useAiThread() {
       editMessage,
       reactTo,
       reset,
+      beginFresh,
+      hydrate,
+      askFresh,
+      currentConversationId,
     }),
     [
       question,
@@ -204,6 +263,10 @@ export function useAiThread() {
       editMessage,
       reactTo,
       reset,
+      beginFresh,
+      hydrate,
+      askFresh,
+      currentConversationId,
     ]
   );
 }

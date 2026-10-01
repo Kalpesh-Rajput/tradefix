@@ -84,6 +84,19 @@ class InsightFocus(BaseModel):
     trade_filter: InsightTradeFilter | None = None
 
 
+class InsightPlaybookFacet(BaseModel):
+    id: uuid.UUID
+    name: str
+
+
+class InsightFacets(BaseModel):
+    setups: list[str] = Field(default_factory=list)
+    symbols: list[str] = Field(default_factory=list)
+    sessions: list[str] = Field(default_factory=list)
+    sides: list[str] = Field(default_factory=list)
+    playbooks: list[InsightPlaybookFacet] = Field(default_factory=list)
+
+
 class InsightWeekly(BaseModel):
     date_from: str
     date_to: str
@@ -107,3 +120,4 @@ class AiInsightsFeed(BaseModel):
     insights: list[InsightCard] = Field(default_factory=list)
     focus: InsightFocus | None = None
     weekly: InsightWeekly | None = None
+    facets: InsightFacets | None = None

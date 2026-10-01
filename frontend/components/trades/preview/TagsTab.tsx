@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/ui/Toast";
 import { resolveEmotionCatalog } from "@/lib/emotions";
+import { useDecideAiTag } from "@/lib/hooks/useAgents";
 import { useMasters } from "@/lib/hooks/useMasters";
 import { useUpdateTrade } from "@/lib/hooks/useTrades";
 import { resolveMistakeCatalog } from "@/lib/tradingDefaults";
@@ -16,6 +17,7 @@ export function TagsTab({ trade }: { trade: Trade }) {
   const { user } = useAuth();
   const toast = useToast();
   const update = useUpdateTrade();
+  const decide = useDecideAiTag();
   const { data: timeframes = [] } = useMasters("timeframe");
 
   const mistakes = useMemo(() => resolveMistakeCatalog(user), [user]);
@@ -78,6 +80,41 @@ export function TagsTab({ trade }: { trade: Trade }) {
         disabled={update.isPending}
         onChange={(v) => patch({ entry_timeframe: v || null })}
       />
+
+      {(trade.ai_tag_suggestions ?? []).length > 0 ? (
+        <div className="mt-4 rounded-xl border border-[var(--color-border)] px-3 py-3">
+          <h4 className="text-[13px] font-medium text-[var(--color-text-primary)]">AI suggested</h4>
+          <ul className="mt-2 space-y-3">
+            {(trade.ai_tag_suggestions ?? []).map((suggestion) => (
+              <li key={suggestion.tag}>
+                <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{suggestion.tag}</p>
+                <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                  Confidence: {suggestion.confidence}
+                </p>
+                <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-secondary)]">{suggestion.reason}</p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    disabled={decide.isPending}
+                    onClick={() => void decide.mutateAsync({ tradeId: trade.id, tag: suggestion.tag, accept: true })}
+                    className="h-7 rounded-md bg-primary px-2.5 text-[11px] font-semibold text-primary-foreground text-on-accent"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    disabled={decide.isPending}
+                    onClick={() => void decide.mutateAsync({ tradeId: trade.id, tag: suggestion.tag, accept: false })}
+                    className="h-7 rounded-md border border-[var(--color-border)] px-2.5 text-[11px]"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="mt-4 flex items-center justify-between">
         <Link

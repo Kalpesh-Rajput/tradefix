@@ -30,7 +30,8 @@ assert.equal(sourceLabel({ type: "playbook", id: "p1", title: "Breakout Playbook
 assert.equal(isSmallTalk("hello"), true);
 assert.equal(isSmallTalk("What is my win rate?"), false);
 assert.equal(thinkingStages("hello")[0].label, "Replying...");
-assert.equal(pendingStatusLabel("hello"), "Replying");
+assert.equal(pendingStatusLabel("hello"), "TradeFiz AI is thinking...");
+assert.equal(pendingStatusLabel("How am I performing this month?"), "TradeFiz AI is analyzing your trading...");
 assert.ok(thinkingStages("How am I performing this month?").some((s) => s.label.includes("trades")));
 assert.ok(!thinkingStages("hello").some((s) => /analyzing your trading data/i.test(s.label)));
 const sample = [

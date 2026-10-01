@@ -12,6 +12,7 @@ import { ConversationHistory } from "@/components/ai/ConversationHistory";
 import { ThinkingIndicator } from "@/components/ai/ThinkingIndicator";
 import { answerPlainText } from "@/components/ai/format";
 import { followUpQuestions, pendingStatusLabel } from "@/components/ai/thinking";
+import { holdTranscriptScroll, isTranscriptScroll, useTranscriptFollow } from "@/components/ai/liveTranscript";
 import { BASE_PROMPTS, personalizedPrompts } from "@/components/ai/suggestions";
 import { WeeklyInsightCard } from "@/components/ai/WeeklyInsightCard";
 import { WelcomeState } from "@/components/ai/WelcomeState";
@@ -22,7 +23,13 @@ import { useToast } from "@/components/ui/Toast";
 import { useCoachStatus, useCoachWeekly } from "@/lib/hooks/useCoach";
 import { useAiThread } from "@/lib/hooks/useAiThread";
 
-export function ChatWorkspace() {
+export function ChatWorkspace({
+  embedded = false,
+  onAskReady,
+}: {
+  embedded?: boolean;
+  onAskReady?: (ask: (question: string) => void) => void;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
@@ -50,7 +57,7 @@ export function ChatWorkspace() {
   } = useAiThread();
 
   const [awayFromBottom, setAwayFromBottom] = useState(false);
-  const autoAsked = useRef(false);
+  const autoAsked = useRef<string | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
   const reduceMotion = useReducedMotion();
@@ -66,20 +73,29 @@ export function ChatWorkspace() {
   }, [pending]);
 
   useEffect(() => {
-    if (autoAsked.current) return;
+    onAskReady?.(submitQuestion);
+  }, [onAskReady, submitQuestion]);
+
+  useEffect(() => {
     const q = searchParams.get("q")?.trim();
-    if (!q) return;
-    autoAsked.current = true;
+    if (!q || autoAsked.current === q) return;
+    autoAsked.current = q;
     void submitQuestion(q);
-  }, [searchParams, submitQuestion]);
+    router.replace("/tradefiz-ai", { scroll: false });
+  }, [searchParams, submitQuestion, router]);
+
+  useTranscriptFollow(scrollerRef, stickRef);
 
   useEffect(() => {
     const root = scrollerRef.current;
     if (!root || !stickRef.current) return;
-    root.scrollTo({ top: root.scrollHeight, behavior: reduceMotion ? "auto" : "smooth" });
-  }, [thread, pending, reduceMotion]);
+    holdTranscriptScroll(() => {
+      root.scrollTop = root.scrollHeight;
+    });
+  }, [thread, pending]);
 
   function onScroll() {
+    if (isTranscriptScroll()) return;
     const root = scrollerRef.current;
     if (!root) return;
     const gap = root.scrollHeight - root.scrollTop - root.clientHeight;
@@ -108,7 +124,8 @@ export function ChatWorkspace() {
 
   const newConversation = useCallback(() => {
     reset();
-    if (searchParams.get("q")) router.replace("/chat");
+    autoAsked.current = null;
+    if (searchParams.get("q")) router.replace("/tradefiz-ai", { scroll: false });
   }, [reset, router, searchParams]);
 
   function scrollToMessage(id: string) {
@@ -142,21 +159,36 @@ export function ChatWorkspace() {
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--color-background)]">
       <HeaderActions subtitle="Your Personal Trading Intelligence">{headerActions}</HeaderActions>
-      <div className="flex min-h-0 flex-1">
-        {thread.length > 0 ? (
-          <ConversationHistory messages={thread} activeId={activeId} onSelect={scrollToMessage} />
+      <div className="flex min-h-0 flex-1 flex-col">
+        {embedded ? (
+          <ConversationHistory
+            variant="strip"
+            showEmpty
+            messages={thread}
+            activeId={activeId}
+            onSelect={scrollToMessage}
+          />
+        ) : null}
+        <div className="flex min-h-0 flex-1">
+        {embedded || thread.length > 0 ? (
+          <ConversationHistory
+            showEmpty={embedded}
+            messages={thread}
+            activeId={activeId}
+            onSelect={scrollToMessage}
+          />
         ) : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="relative min-h-0 flex-1">
-          <div ref={scrollerRef} onScroll={onScroll} className="h-full overflow-y-auto px-4 sm:px-6">
+          <div ref={scrollerRef} onScroll={onScroll} className="h-full overflow-y-auto px-4 [overflow-anchor:none] sm:px-6">
             <div className="mx-auto flex min-h-full max-w-3xl flex-col py-5">
               <AiHeader
-                compact={!empty}
+                compact={embedded || !empty}
                 pending={pending}
                 pendingLabel={pendingStatusLabel(lastQuestion || question)}
               />
-              <div className={empty ? "mb-5" : "mb-4"}>
-                <WeeklyInsightCard weekly={weekly} loading={weeklyLoading} compact={!empty} />
+              <div className={empty && !embedded ? "mb-5" : "mb-4"}>
+                <WeeklyInsightCard weekly={weekly} loading={weeklyLoading} compact={embedded || !empty} />
               </div>
               {empty ? (
                 <WelcomeState
@@ -223,6 +255,7 @@ export function ChatWorkspace() {
             prompts={prompts}
             focusTick={focusTick}
           />
+        </div>
         </div>
       </div>
     </div>

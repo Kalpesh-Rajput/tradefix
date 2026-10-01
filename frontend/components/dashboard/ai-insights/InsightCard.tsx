@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 
-import { chatHref, tradesHref } from "@/lib/ai-insights/links";
+import { AskTradeFixAI } from "@/components/tradefix-ai/assistant/AskTradeFixAI";
+import { tradesHref } from "@/lib/ai-insights/links";
 import type { AiInsightCard } from "@/lib/types";
 
 import { categoryMeta } from "./category";
@@ -75,12 +76,12 @@ export function InsightCard({ card }: { card: AiInsightCard }) {
         >
           {card.primary_action_label}
         </Link>
-        <Link
-          href={chatHref(card.ask_question)}
+        <AskTradeFixAI
+          question={card.ask_question}
           className="inline-flex h-8 items-center rounded-md bg-primary px-2.5 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
         >
           Ask TradeFix AI
-        </Link>
+        </AskTradeFixAI>
       </div>
     </article>
   );

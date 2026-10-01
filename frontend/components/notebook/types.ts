@@ -16,6 +16,8 @@ export type DayListItem = {
   shots: number;
   folderId: string | null;
   searchText?: string;
+  noteKind?: string;
+  agentRunId?: string | null;
 };
 
 export type TradeListItem = {

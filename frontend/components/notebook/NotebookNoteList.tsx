@@ -13,6 +13,7 @@ export function NotebookNoteList({
   items,
   selectedDate,
   selectedTradeId,
+  selectedAiNoteId,
   onSelectItem,
   onLogDay,
   onOpenFolders,
@@ -29,6 +30,7 @@ export function NotebookNoteList({
   items: NotebookListItem[];
   selectedDate: string | null;
   selectedTradeId: string | null;
+  selectedAiNoteId?: string | null;
   onSelectItem: (item: NotebookListItem) => void;
   onLogDay: (date: string) => void;
   onOpenFolders?: () => void;
@@ -83,7 +85,11 @@ export function NotebookNoteList({
         ) : (
           items.map((item) => {
             const active =
-              item.kind === "trade" ? item.id === selectedTradeId : item.date === selectedDate;
+              item.kind === "trade"
+                ? item.id === selectedTradeId
+                : item.kind === "day" && item.noteKind?.startsWith("ai_")
+                  ? item.id === selectedAiNoteId
+                  : item.date === selectedDate && !selectedAiNoteId;
             return (
               <button
                 key={`${item.kind}-${item.id}`}

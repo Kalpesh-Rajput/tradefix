@@ -5,6 +5,7 @@ import { RecapForm, type RecapFormValues } from "@/components/journal/RecapForm"
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useDayPlan } from "@/lib/hooks/useDayPlan";
+import { useRunAgent, useUserAgents } from "@/lib/hooks/useAgents";
 import { ApiError } from "@/lib/api";
 import {
   useDayPnl,
@@ -33,6 +34,9 @@ export function MyDayReviewPanel({
   const uploadShot = useUploadRecapScreenshot();
   const deleteShot = useDeleteRecapScreenshot();
   const existing = recaps.find((r) => r.date.slice(0, 10) === date) ?? null;
+  const agents = useUserAgents();
+  const runAgent = useRunAgent();
+  const sessionAgent = (agents.data ?? []).find((item) => item.template_key === "session_review" && item.status === "active");
   const recapNumber = existing?.recap_number ?? recaps.reduce((m, r) => Math.max(m, r.recap_number), 0) + 1;
 
   async function handleSave(values: RecapFormValues, pendingShots: File[]) {
@@ -72,6 +76,24 @@ export function MyDayReviewPanel({
     <div className="mx-auto w-full max-w-3xl">
       <DayPlanGamePlan plan={planQuery.data} accountId={accountId} date={date} loading={planQuery.isLoading} />
       <div className="mt-3">
+        {sessionAgent ? (
+          <button
+            type="button"
+            disabled={runAgent.isPending}
+            onClick={() =>
+              void runAgent
+                .mutateAsync({ id: sessionAgent.id, trigger: "after_session", account_id: accountId, date })
+                .then((result) => {
+                  if (result.status === "failed") toast.error(result.error || "Session review failed");
+                  else toast.success(result.message || "Session review saved");
+                })
+                .catch((err) => toast.error(err instanceof ApiError ? err.message : "Session review failed"))
+            }
+            className="mb-3 inline-flex h-8 items-center rounded-md border border-[var(--color-border)] px-3 text-[12px] font-medium hover:bg-[var(--color-primary-very-light)] disabled:opacity-60"
+          >
+            {runAgent.isPending ? "Checking rule adherence…" : "Run session review"}
+          </button>
+        ) : null}
         <RecapForm
           key={`${date}-${existing?.id ?? "draft"}`}
           dateLabel={dateLabel}

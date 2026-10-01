@@ -4,7 +4,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { AppHeader } from "@/components/layout/AppHeader";
-import { JournalAiScope } from "@/components/ai/panel/JournalAiContext";
 import { AppNavigationProvider } from "@/components/layout/AppNavigation";
 import { HeaderActionsProvider } from "@/components/layout/HeaderActions";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -16,6 +15,8 @@ import { ConnectorsProvider } from "@/components/providers/ConnectorsProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { QuickLogProvider } from "@/components/providers/QuickLogProvider";
 import { SidebarProvider, useSidebar } from "@/components/providers/SidebarProvider";
+import { TradeFixAIWidget } from "@/components/tradefix-ai/assistant/TradeFixAIWidget";
+import { TradeFixAssistantProvider } from "@/components/tradefix-ai/assistant/TradeFixAssistantProvider";
 import { AddTradesFlow } from "@/components/add-trades/AddTradesFlow";
 import { AddTradeModal } from "@/components/trade/AddTradeModal";
 import { MonthlyGoalPrompt } from "@/components/goals/MonthlyGoalPrompt";
@@ -46,6 +47,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isPlaybooks = pathname === "/playbooks" || pathname?.startsWith("/playbooks/");
   const isMarketSessions = pathname === "/market-sessions" || pathname?.startsWith("/market-sessions/");
   const isChat = pathname === "/chat" || pathname?.startsWith("/chat/");
+  const isTradeFiz = pathname === "/tradefiz-ai" || pathname?.startsWith("/tradefiz-ai/");
+  const isTradeFizAgent = pathname === "/tradefiz-ai/chat" || pathname?.startsWith("/tradefiz-ai/chat/");
   const showJournalNav = isJournalPath(pathname);
 
   useEffect(() => {
@@ -76,6 +79,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <QuickLogProvider>
           <SidebarProvider>
             <AppNavigationProvider>
+              <TradeFixAssistantProvider>
               <LiveAccountBridge />
               <AppShell
                 showJournalNav={showJournalNav}
@@ -93,12 +97,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 isPlaybooks={isPlaybooks}
                 isMarketSessions={isMarketSessions}
                 isChat={isChat}
+                isTradeFiz={isTradeFiz}
+                isTradeFizAgent={isTradeFizAgent}
               >
                 {children}
               </AppShell>
               <AddTradesFlow />
               <AddTradeModal />
               <MonthlyGoalPrompt />
+              </TradeFixAssistantProvider>
             </AppNavigationProvider>
           </SidebarProvider>
         </QuickLogProvider>
@@ -124,6 +131,8 @@ function AppShell({
   isPlaybooks,
   isMarketSessions,
   isChat,
+  isTradeFiz,
+  isTradeFizAgent,
 }: {
   children: React.ReactNode;
   showJournalNav: boolean;
@@ -141,6 +150,8 @@ function AppShell({
   isPlaybooks: boolean;
   isMarketSessions: boolean;
   isChat: boolean;
+  isTradeFiz: boolean;
+  isTradeFizAgent: boolean;
 }) {
   const { collapsed, setCollapsed } = useSidebar();
 
@@ -150,31 +161,32 @@ function AppShell({
 
   return (
     <div className="flex h-screen [height:100dvh] overflow-hidden bg-sidebar text-foreground">
-      <div className="relative z-50 hidden h-full md:flex">
-        <ProductRail />
-      </div>
+      {!isTradeFizAgent && (
+        <div className="relative z-50 hidden h-full md:flex">
+          <ProductRail />
+        </div>
+      )}
       <MobileNav />
       <div className="relative z-0 flex min-h-0 min-w-0 flex-1 overflow-hidden">
-        {!collapsed && showJournalNav && (
+        {!collapsed && showJournalNav && !isTradeFizAgent && (
           <div className="hidden h-full md:flex">
             <Sidebar />
           </div>
         )}
         <HeaderActionsProvider>
-          <JournalAiScope active={isDiary}>
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
-              {!isTradesLog && <AppHeader />}
+              {!isTradesLog && !isTradeFizAgent && <AppHeader />}
               <main
                 className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
-                  isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions || isChat
+                  isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions || isChat || isTradeFiz
                     ? ""
                     : "overflow-y-auto p-6 sm:p-8"
                 } ${isSettings || isHome ? "overflow-y-auto" : ""}`}
               >
                 {children}
               </main>
+              <TradeFixAIWidget />
             </div>
-          </JournalAiScope>
         </HeaderActionsProvider>
       </div>
     </div>

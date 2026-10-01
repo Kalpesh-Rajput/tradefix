@@ -17,5 +17,20 @@ export function tradesHref(filter?: AiInsightTradeFilter | null): string {
 }
 
 export function chatHref(question: string): string {
-  return `/chat?q=${encodeURIComponent(question)}`;
+  return `/tradefiz-ai/chat?q=${encodeURIComponent(question)}`;
+}
+
+export function insightActionHref(card: {
+  category: string;
+  trade_filter?: AiInsightTradeFilter | null;
+}): string {
+  if (card.category === "change") {
+    const from = card.trade_filter?.date_from?.slice(0, 10);
+    const to = card.trade_filter?.date_to?.slice(0, 10);
+    if (from && to) {
+      const params = new URLSearchParams({ from, to });
+      return `/analytics?${params.toString()}`;
+    }
+  }
+  return tradesHref(card.trade_filter);
 }

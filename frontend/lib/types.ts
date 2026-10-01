@@ -58,6 +58,7 @@ export interface Trade {
   risk_amount: number | null;
   setup_tag: string | null;
   setup_tags: string[];
+  ai_tag_suggestions?: AiTagSuggestion[];
   emotion_tags: string[];
   plan_compliance: number | null;
   mood: string | null;
@@ -500,6 +501,19 @@ export interface AiInsightFocus {
   trade_filter?: AiInsightTradeFilter | null;
 }
 
+export interface AiInsightPlaybookFacet {
+  id: string;
+  name: string;
+}
+
+export interface AiInsightFacets {
+  setups: string[];
+  symbols: string[];
+  sessions: string[];
+  sides: string[];
+  playbooks: AiInsightPlaybookFacet[];
+}
+
 export interface AiInsightWeekly {
   date_from: string;
   date_to: string;
@@ -523,15 +537,107 @@ export interface AiInsightsFeed {
   insights: AiInsightCard[];
   focus: AiInsightFocus | null;
   weekly: AiInsightWeekly | null;
+  facets?: AiInsightFacets | null;
+}
+
+export interface AiTagSuggestion {
+  tag: string;
+  confidence: "high" | "medium" | "low" | string;
+  reason: string;
+}
+
+export interface AgentMetric {
+  label: string;
+  value: string;
+  sample_size?: number | null;
+  period?: string | null;
+}
+
+export interface AgentFinding {
+  text: string;
+  evidence: string[];
+  impact?: string | null;
+  trade_ids?: string[];
+  confidence?: string | null;
+  actions?: AgentAction[];
+}
+
+export interface AgentAction {
+  label: string;
+  target: string;
+  href: string;
+}
+
+export interface AgentOutput {
+  title?: string;
+  summary?: string;
+  metrics?: AgentMetric[];
+  findings?: AgentFinding[];
+  actions?: AgentAction[];
+  warnings?: string[];
+  changes?: string[];
+}
+
+export interface AgentTemplate {
+  key: string;
+  name: string;
+  description: string;
+  category: string;
+  triggers: string[];
+  reads: string[];
+  writes: string[];
+  implemented: boolean;
+  coming_soon: boolean;
+}
+
+export interface UserAgent {
+  id: string;
+  template_key: string;
+  name: string;
+  description: string;
+  category: string;
+  status: "active" | "paused";
+  trigger_types: string[];
+  configuration: {
+    symbols?: string[];
+    include_news?: boolean;
+    include_events?: boolean;
+    include_performance?: boolean;
+    mode?: "suggest" | "apply";
+  };
+  instructions: string;
+  last_run_at: string | null;
+  last_summary: string | null;
+  last_status: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AgentRun {
   id: string;
   agent_name: string;
-  status: "success" | "skipped" | "failed";
+  user_agent_id?: string | null;
+  status: "success" | "skipped" | "failed" | "running" | "completed" | "partial";
+  trigger?: string | null;
   message: string | null;
-  insight_id: string | null;
+  insight_id?: string | null;
+  error?: string | null;
+  input_context?: Record<string, unknown>;
+  output?: AgentOutput;
+  details?: Record<string, unknown>;
+  started_at?: string | null;
+  completed_at?: string | null;
   run_at: string;
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  body: string;
+  href: string;
+  read_at: string | null;
+  agent_run_id: string | null;
+  created_at: string;
 }
 
 export interface AgentTriggerResponse {
@@ -861,6 +967,8 @@ export interface DayNote {
   account_id: string;
   date: string;
   template_id: string;
+  kind?: string;
+  agent_run_id?: string | null;
   content: string;
   screenshot_urls: string[];
   is_favorite: boolean;

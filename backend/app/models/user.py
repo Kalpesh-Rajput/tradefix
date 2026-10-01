@@ -83,6 +83,8 @@ class User(Base):
     prop_settings: Mapped[list["PropSettings"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     insights: Mapped[list["Insight"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     agent_runs: Mapped[list["AgentRun"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    user_agents: Mapped[list["UserAgent"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    notifications: Mapped[list["UserNotification"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     trade_masters: Mapped[list["TradeMaster"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     precheck_lists: Mapped[list["PrecheckList"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     playbooks: Mapped[list["Playbook"]] = relationship(back_populates="user", cascade="all, delete-orphan")

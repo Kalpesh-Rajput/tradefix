@@ -13,6 +13,7 @@ import {
   ListChecks,
   Newspaper,
   Plus,
+  Sparkles,
   Sun,
   Target,
 } from "lucide-react";
@@ -24,8 +25,11 @@ import { useLocale } from "@/components/providers/LocaleProvider";
 import { useSidebar } from "@/components/providers/SidebarProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import type { MessageKey } from "@/lib/i18n";
+import { isSidebarNavActive } from "@/lib/nav";
 
 const NAV_WIDTH = "w-[188px]";
+
+const ACTIVE_ICON = "#A78BFA";
 
 const NAV: {
   href: string;
@@ -35,6 +39,13 @@ const NAV: {
   iconColor: string;
 }[] = [
   { href: "/today", labelKey: "nav.today", icon: LayoutDashboard, testId: "nav-today", iconColor: "#7C5CBF" },
+  {
+    href: "/tradefiz-ai",
+    labelKey: "nav.tradefizAi",
+    icon: Sparkles,
+    testId: "nav-tradefiz-ai",
+    iconColor: "#A78BFA",
+  },
   { href: "/day", labelKey: "nav.dayView", icon: Sun, testId: "nav-dayView", iconColor: "#F59E0B" },
   { href: "/trades", labelKey: "nav.tradeLog", icon: ClipboardList, testId: "nav-tradeLog", iconColor: "#EC4899" },
   { href: "/notebook", labelKey: "nav.notebook", icon: BookOpen, testId: "nav-notebook", iconColor: "#8B5CF6" },
@@ -101,9 +112,7 @@ export function Sidebar({
         {NAV.map((item) => {
           const Icon = item.icon;
           const label = t(item.labelKey);
-          const active =
-            pathname === item.href ||
-            (item.href !== "/today" && Boolean(pathname?.startsWith(item.href + "/")));
+          const active = isSidebarNavActive(pathname, item.href);
 
           return (
             <Link
@@ -114,15 +123,15 @@ export function Sidebar({
               aria-current={active ? "page" : undefined}
               onClick={() => setMobileOpen(false)}
               className={clsx(
-                "relative flex w-full items-center gap-2 rounded-md px-2 py-[6px] text-left text-[13px] font-medium transition-colors duration-150",
+                "relative flex w-full items-center gap-2 rounded-md px-2 py-[6px] text-left text-[13px] font-medium transition-[color,background-color,box-shadow] duration-200 ease-out",
                 active
-                  ? "bg-white/10 font-semibold text-white"
+                  ? "bg-[#7C5CBF]/25 font-semibold text-white shadow-[inset_2px_0_0_#A78BFA]"
                   : "text-[#b8b4d4] hover:bg-white/[0.06] hover:text-white"
               )}
             >
               <Icon
-                className="h-[17px] w-[17px] shrink-0"
-                style={{ color: item.iconColor }}
+                className="h-[17px] w-[17px] shrink-0 transition-colors duration-200 ease-out"
+                style={{ color: active ? ACTIVE_ICON : item.iconColor }}
                 strokeWidth={active ? 2 : 1.75}
                 aria-hidden
               />

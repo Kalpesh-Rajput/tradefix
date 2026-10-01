@@ -32,6 +32,7 @@ import { TradeViewKpis } from "@/components/trades/TradeViewKpis";
 import { TradePreviewDrawer } from "@/components/trades/preview/TradePreviewDrawer";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
+import { usePublishAssistantScope } from "@/lib/ai/assistant-scope";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 import { useDeleteTrade, useDeleteTrades, useTrades } from "@/lib/hooks/useTrades";
 import { isJournalPath } from "@/lib/nav";
@@ -175,6 +176,19 @@ export function TradesLogPage() {
     ids: "",
     auto_flag: "",
     has_rules_broken: false,
+  });
+  const tradeScopeDetail = [
+    filters.symbol && `Symbol ${filters.symbol}`,
+    filters.setup_tag && `Setup ${filters.setup_tag}`,
+    filters.session && `Session ${filters.session}`,
+    filters.side && `Side ${filters.side}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  usePublishAssistantScope({
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    detail: tradeScopeDetail ? `Filters: ${tradeScopeDetail}` : null,
   });
   const [hydrated, setHydrated] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
