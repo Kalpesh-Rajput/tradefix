@@ -31,7 +31,7 @@ export function PositionsTradesWidget({
     <div className="dash-card flex h-full min-h-0 flex-col overflow-hidden">
       <div
         className={clsx(
-          "flex shrink-0 items-center border-b border-[var(--color-divider)] px-2",
+          "flex shrink-0 items-center overflow-x-auto border-b border-[var(--color-divider)] px-2",
           compact ? "h-9" : "h-11"
         )}
       >
@@ -144,7 +144,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={clsx(
-        "px-3 text-[10px] font-medium uppercase tracking-wider transition-colors duration-150",
+        "shrink-0 whitespace-nowrap px-3 text-[12px] font-bold uppercase tracking-wider transition-colors duration-150",
         compact ? "h-9" : "h-11",
         active
           ? "border-b-2 border-primary text-primary"

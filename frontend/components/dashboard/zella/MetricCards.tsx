@@ -30,7 +30,7 @@ function KpiShell({
 
 function LabelRow({ label, hint }: { label: string; hint?: string }) {
   return (
-    <div className="mb-1.5 flex h-4 items-center gap-1 text-[11px] font-medium leading-4 text-[var(--color-text-label)]">
+    <div className="mb-1.5 flex h-5 items-center gap-1 text-[14px] font-bold leading-5 text-[var(--color-text-label)]">
       <span className="truncate">{label}</span>
       <span title={hint} className="inline-flex shrink-0">
         <Info className="h-3 w-3 text-[#777881]" strokeWidth={1.75} aria-hidden />
@@ -227,7 +227,7 @@ export function MetricCards({
   const winBar = (Math.abs(avgWin) / barTotal) * 100;
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+    <div className="dash-metrics">
       <KpiShell className="relative justify-start">
         <div className="min-w-0">
           <LabelRow label={t("dashboard.netPnl")} />

@@ -357,6 +357,109 @@ html.dark ::-webkit-scrollbar-thumb {
     box-shadow: var(--shadow-sm);
   }
 
+  .dash-board {
+    container-type: inline-size;
+    container-name: dashboard;
+  }
+
+  .chart-card {
+    container-type: inline-size;
+    container-name: chartcard;
+  }
+
+  .chart-legend {
+    display: none;
+  }
+
+  .score-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    min-height: 0;
+  }
+
+  .dash-metrics,
+  .dash-charts,
+  .dash-split {
+    display: grid;
+    gap: 0.75rem;
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-split-side {
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+    gap: 0.75rem;
+    grid-template-rows: minmax(200px, auto) minmax(200px, auto);
+  }
+
+  .dash-split-side.is-single {
+    display: flex;
+    flex-direction: column;
+    min-height: 240px;
+  }
+
+  .dash-calendar-slot {
+    min-width: 0;
+    min-height: 400px;
+  }
+
+  @container chartcard (min-width: 380px) {
+    .chart-legend {
+      display: flex;
+    }
+  }
+
+  @container dashboard (min-width: 480px) {
+    .dash-metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @container dashboard (min-width: 980px) {
+    .dash-metrics {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .dash-charts,
+    .dash-split {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .dash-split {
+      height: var(--dash-cal-h);
+    }
+
+    .dash-split-side,
+    .dash-split-side.is-single,
+    .dash-calendar-slot {
+      height: 100%;
+      min-height: 0;
+    }
+
+    .dash-split-side {
+      grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .dash-calendar-slot,
+    .dash-span-2 {
+      grid-column: span 2;
+    }
+
+    .dash-calendar-slot.is-full,
+    .dash-span-3 {
+      grid-column: span 3;
+    }
+  }
+
+  @container dashboard (min-width: 1500px) {
+    .dash-metrics {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
   .tf-overlay-scrim {
     background: color-mix(in srgb, rgb(255 255 255 / 0.58) 88%, var(--color-primary));
     backdrop-filter: blur(20px) saturate(1.08);

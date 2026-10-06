@@ -83,7 +83,7 @@ export function PortfolioSwitcher({
           id={listId}
           role="listbox"
           aria-label="Select portfolio"
-          className="absolute right-0 z-50 mt-1.5 w-[240px] overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] shadow-dropdown"
+          className="absolute right-0 z-50 mt-1.5 w-[min(240px,calc(100vw-1.5rem))] overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] shadow-dropdown max-sm:fixed max-sm:inset-x-3 max-sm:top-16 max-sm:w-auto"
         >
           <ul className="max-h-64 overflow-y-auto py-1">
             {accounts.map((account) => {

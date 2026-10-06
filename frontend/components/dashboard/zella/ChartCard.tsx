@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 export const CHART_BODY_H = 200;
 export const CHART_BODY_COMPACT = 168;
 export const DASH_GAP_PX = 12;
-export const CHART_CARD_H = 14 * 2 + 24 + 8 + CHART_BODY_H;
+export const CHART_CARD_H = 14 * 2 + 28 + 8 + CHART_BODY_H;
 export const DASH_CALENDAR_H = CHART_CARD_H * 2 + DASH_GAP_PX;
 
 export const chartTooltipStyle = {
@@ -33,10 +33,10 @@ export function ChartCard({
   hint?: string;
 }) {
   return (
-    <div className={`dash-card flex h-full min-h-0 flex-col p-3.5 ${className}`}>
-      <div className="mb-2 flex h-6 shrink-0 items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1">
-          <h3 className="truncate text-[12px] font-medium leading-4 text-[var(--color-text-primary)]">
+    <div className={`chart-card dash-card flex h-full min-h-0 flex-col p-3.5 ${className}`}>
+      <div className="mb-2 flex h-7 shrink-0 items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-1">
+          <h3 className="truncate text-[15px] font-bold leading-5 text-[var(--color-text-primary)]">
             {title}
           </h3>
           {hint && (

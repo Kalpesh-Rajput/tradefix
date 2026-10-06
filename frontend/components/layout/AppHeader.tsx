@@ -23,11 +23,11 @@ export function AppHeader() {
   return (
     <header
       className={clsx(
-        "relative z-10 flex shrink-0 items-center justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-[var(--color-text-primary)] sm:px-4",
-        subtitle ? "h-[52px]" : "h-12"
+        "relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text-primary)] sm:px-4",
+        subtitle ? "min-h-[52px]" : "min-h-12"
       )}
     >
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-[10.5rem] max-w-full flex-1 items-center gap-2">
         <button
           type="button"
           className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--color-text-secondary)] transition-colors hover:bg-black/[0.05] hover:text-[var(--color-text-primary)] md:hidden"
@@ -55,7 +55,7 @@ export function AppHeader() {
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center justify-end gap-2">
+      <div className="flex w-full min-w-0 basis-full flex-wrap items-center gap-2 lg:ml-auto lg:w-auto lg:max-w-full lg:basis-auto lg:justify-end">
         {actions}
         <NotificationBell />
         <ThemeToggle />

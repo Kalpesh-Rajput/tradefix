@@ -205,15 +205,15 @@ export function PnlCalendarHeatmap({
     >
       <div
         className={clsx(
-          "flex shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-[#EEEFF2]",
-          page ? "h-12 px-4" : "h-11 px-3"
+          "flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b border-[#EEEFF2]",
+          page ? "min-h-12 px-4 py-1.5" : "min-h-11 px-3 py-1.5"
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <h3
             className={clsx(
-              "font-semibold tracking-tight text-[#1F2128]",
-              page ? "text-[15px]" : "text-[13px]"
+              "font-bold tracking-tight text-[#1F2128]",
+              page ? "text-[17px]" : "text-[16px]"
             )}
           >
             {monthLabel(cursor)}
@@ -244,7 +244,7 @@ export function PnlCalendarHeatmap({
             This month
           </button>
         </div>
-        <div className="flex shrink-0 flex-nowrap items-center gap-2 text-[11px] text-[#6B6E78]">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-[11px] text-[#6B6E78]">
           <span>Monthly stats:</span>
           <span
             className={clsx(
@@ -283,7 +283,7 @@ export function PnlCalendarHeatmap({
             "grid h-full gap-1",
             page
               ? "min-w-[760px] grid-cols-[1fr_96px] p-3"
-              : "min-w-[640px] grid-cols-[1fr_72px] p-2"
+              : "min-w-0 grid-cols-1 p-2 sm:grid-cols-[minmax(0,1fr)_72px]"
           )}
         >
           <div className="flex min-h-0 flex-col">
@@ -392,7 +392,7 @@ export function PnlCalendarHeatmap({
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-col">
+          <div className={clsx("min-h-0 flex-col", page ? "flex" : "hidden sm:flex")}>
             <div className="mb-1 h-[22px] shrink-0" />
             <div className="grid min-h-0 flex-1 grid-rows-6 gap-1">
               {weeks.map((week) => (

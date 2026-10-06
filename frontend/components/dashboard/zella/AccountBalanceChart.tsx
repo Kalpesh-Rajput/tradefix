@@ -26,7 +26,7 @@ export function AccountBalanceChart({
       title="Account balance"
       hint="Starting balance plus cumulative closed P&L. The coral line is starting capital (no deposit/withdrawal ledger yet)."
       headerRight={
-        <div className="flex items-center gap-2.5 text-[9px] text-[#6B6E78]">
+        <div className="chart-legend max-w-[55%] items-center gap-2 truncate text-[9px] text-[#6B6E78]">
           <span className="inline-flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: CHART_LINE_HEX }} />
             Account Balance

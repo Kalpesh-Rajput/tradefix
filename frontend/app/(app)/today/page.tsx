@@ -223,7 +223,7 @@ export default function TodayPage() {
         onImport={() => openFlow()}
       />
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pt-3 pb-3.5 sm:px-5">
+      <div className="dash-board min-h-0 flex-1 space-y-3 overflow-x-hidden overflow-y-auto px-3 pt-3 pb-3.5 sm:px-4 lg:px-5">
         {editing && (
           <div className="dash-card flex flex-wrap gap-2 p-4">
             {(Object.keys(labels) as Array<keyof typeof labels>).map((id) => (
@@ -245,12 +245,12 @@ export default function TodayPage() {
 
         {loading ? (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+            <div className="dash-metrics">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-[96px] rounded-[10px]" />
               ))}
             </div>
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <div className="dash-charts">
               <Skeleton className="h-[260px] rounded-[10px]" />
               <Skeleton className="h-[260px] rounded-[10px]" />
               <Skeleton className="h-[260px] rounded-[10px]" />
@@ -292,7 +292,7 @@ export default function TodayPage() {
             )}
 
             {(widgets.score || widgets.cumulative || widgets.daily) && (
-              <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3">
+              <div className="dash-charts">
                 {widgets.score && (
                   <div className="min-w-0">
                     <TradeFixScoreCard score={overview?.tradefix_score} formatMoney={formatMoney} />
@@ -322,15 +322,15 @@ export default function TodayPage() {
 
             {(widgets.positions || widgets.accountBalance || widgets.calendar) && (
               <div
-                className="grid grid-cols-1 items-stretch gap-3 lg:h-[var(--dash-cal-h)] lg:grid-cols-3"
+                className="dash-split"
                 style={{ ["--dash-cal-h" as string]: `${DASH_CALENDAR_H}px` }}
               >
                 {(widgets.positions || widgets.accountBalance) && (
                   <div
                     className={
                       widgets.positions && widgets.accountBalance
-                        ? "grid h-[420px] min-h-0 grid-rows-2 gap-3 overflow-hidden lg:h-full"
-                        : "flex h-[420px] min-h-0 flex-col overflow-hidden lg:h-full"
+                        ? "dash-split-side"
+                        : "dash-split-side is-single"
                     }
                   >
                     {widgets.positions && (
@@ -349,7 +349,13 @@ export default function TodayPage() {
                   </div>
                 )}
                 {widgets.calendar && (
-                  <div className="h-[360px] min-w-0 lg:col-span-2 lg:h-full">
+                  <div
+                    className={
+                      widgets.positions || widgets.accountBalance
+                        ? "dash-calendar-slot"
+                        : "dash-calendar-slot is-full"
+                    }
+                  >
                     <ShareablePnlCalendar
                       className="h-full min-h-0 min-w-0"
                       days={calendar?.days ?? []}
@@ -366,7 +372,7 @@ export default function TodayPage() {
             )}
 
             {(widgets.drawdown || widgets.tradeTime || widgets.tradeDuration) && (
-              <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3">
+              <div className="dash-charts">
                 {widgets.drawdown && (
                   <div className="min-w-0">
                     <DrawdownChart series={ddSeries} formatMoney={formatMoney} />
@@ -408,14 +414,14 @@ export default function TodayPage() {
             )}
 
             {(widgets.progress || widgets.marketSessions) && (
-              <div className="grid min-w-0 grid-cols-1 items-stretch gap-3 lg:grid-cols-3">
+              <div className="dash-charts">
                 {widgets.progress && (
-                  <div className={`min-w-0 ${widgets.marketSessions ? "lg:col-span-2" : "lg:col-span-3"}`}>
+                  <div className={`min-w-0 ${widgets.marketSessions ? "dash-span-2" : "dash-span-3"}`}>
                     <ProgressTracker weeks={progress.weeks} monthLabels={progress.monthLabels} />
                   </div>
                 )}
                 {widgets.marketSessions && (
-                  <div className={`min-w-0 ${widgets.progress ? "" : "lg:col-span-3"}`}>
+                  <div className={`min-w-0 ${widgets.progress ? "" : "dash-span-3"}`}>
                     <MarketSessionsWidget />
                   </div>
                 )}

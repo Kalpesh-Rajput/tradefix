@@ -33,7 +33,7 @@ export function ZellaDashboardHeader({
   const { activeAccount, currencySymbol } = useAccountPrefs();
   const toolbar = useMemo(
     () => (
-      <div className="flex items-center gap-2">
+      <div className="contents lg:flex lg:w-auto lg:flex-wrap lg:items-center lg:justify-end lg:gap-2">
         <ViewMyDayControl accountId={activeAccount?.id} />
         <span
           className="inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-md bg-primary px-1.5 text-[12px] font-semibold text-primary-foreground text-on-accent"
@@ -42,8 +42,14 @@ export function ZellaDashboardHeader({
         >
           {currencySymbol.trim() || "$"}
         </span>
-        <DateRangePicker dateFrom={dateFrom} dateTo={dateTo} onChange={onRangeChange} />
-        <PortfolioSwitcher className="[&_button]:h-8 [&_button]:rounded-md [&_button]:border-[var(--color-border)] [&_button]:bg-[var(--color-surface)] [&_button]:shadow-none [&_button]:text-[11px]" />
+        <DateRangePicker
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onChange={onRangeChange}
+          className="order-2 w-full min-w-0 lg:order-none lg:w-auto"
+          triggerClassName="h-8 w-full min-w-0 rounded-md lg:w-auto lg:min-w-[9.5rem] lg:max-w-[15rem]"
+        />
+        <PortfolioSwitcher className="order-3 w-full min-w-0 lg:order-none lg:w-[11.5rem] [&_button]:h-8 [&_button]:w-full [&_button]:min-w-0 [&_button]:max-w-full [&_button]:rounded-md [&_button]:border-[var(--color-border)] [&_button]:bg-[var(--color-surface)] [&_button]:px-2.5 [&_button]:shadow-none [&_button]:text-[11px]" />
         <button
           type="button"
           onClick={onToggleEdit}

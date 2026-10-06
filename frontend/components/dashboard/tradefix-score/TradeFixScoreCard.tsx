@@ -177,7 +177,7 @@ export function TradeFixScoreCard({
             </p>
           </div>
         ) : (
-          <div className="grid h-full min-h-0 grid-cols-2 gap-3">
+          <div className="score-body h-full min-h-0 gap-3">
             <div className="flex min-w-0 flex-col">
               <p className="text-[26px] font-semibold leading-none tabular-nums tracking-tight text-[var(--color-text-primary)]">
                 {(animated ?? overall).toFixed(1)}
@@ -231,8 +231,8 @@ export function TradeFixScoreCard({
                   data={radarData}
                   cx="50%"
                   cy="50%"
-                  outerRadius="68%"
-                  margin={{ top: 22, right: 22, bottom: 22, left: 22 }}
+                  outerRadius="62%"
+                  margin={{ top: 16, right: 28, bottom: 16, left: 28 }}
                 >
                   <PolarGrid stroke="var(--color-border)" />
                   <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
