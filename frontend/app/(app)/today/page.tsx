@@ -381,8 +381,8 @@ export default function TodayPage() {
                 {widgets.tradeTime && (
                   <div className="min-w-0">
                     <TradeScatterChart
-                      title="Trade time performance"
-                      hint="Each point is a closed trade plotted by entry time of day versus P&L."
+                      title={t("dashboard.tradeTime")}
+                      hint={t("dashboard.hint.tradeTime")}
                       series={timePoints}
                       formatMoney={formatMoney}
                       xMode="clock"
@@ -397,8 +397,8 @@ export default function TodayPage() {
                 {widgets.tradeDuration && (
                   <div className="min-w-0">
                     <TradeScatterChart
-                      title="Trade duration performance"
-                      hint="Each point is a closed trade plotted by hold time versus P&L."
+                      title={t("dashboard.tradeDuration")}
+                      hint={t("dashboard.hint.tradeDuration")}
                       series={durationPoints}
                       formatMoney={formatMoney}
                       xMode="duration"

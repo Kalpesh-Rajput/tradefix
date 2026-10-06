@@ -24,7 +24,16 @@ from app.services.storage import delete_local_upload, save_trade_screenshot, sav
 from app.services.trade_scores import execution_score, health_score, r_multiple
 from app.services.progress_tracker_service import touch_progress
 from app.services.stats_service import _session_for_hour
-from app.services.trade_service import apply_calc, apply_journal_fields, compute_for_payload, remember_trade_masters, replace_executions
+from app.services.masters_service import pack_moods, parse_went_well
+from app.services.trade_service import (
+    apply_calc,
+    apply_journal_fields,
+    assert_trade_master_labels,
+    compute_for_payload,
+    remember_trade_masters,
+    replace_executions,
+    saved_mood_labels,
+)
 from app.services.ws_hub import hub
 
 logger = logging.getLogger(__name__)
@@ -283,6 +292,25 @@ def create_trade(
     if payload.strategy_name and payload.strategy_name not in setup_tags:
         setup_tags.insert(0, payload.strategy_name)
 
+    extra = dict(payload.extra or {})
+    check_went_well = "went_well" in extra
+    if check_went_well:
+        extra["went_well"] = parse_went_well(extra.get("went_well"))
+    extra, mood_value, mood_labels = pack_moods(extra, payload.mood, from_list="moods" in extra)
+    assert_trade_master_labels(
+        db,
+        current_user.id,
+        moods=mood_labels,
+        check_mood=bool(mood_labels),
+        mistakes=list(payload.rules_broken or []),
+        check_mistakes=True,
+        strategies=setup_tags,
+        check_strategies=True,
+        went_well=list(extra.get("went_well") or []),
+        check_went_well=check_went_well,
+        playbook_id=payload.playbook_id,
+    )
+
     default_lev = float(current_user.default_forex_leverage) if current_user.default_forex_leverage else None
     calc = compute_for_payload(
         asset_type=payload.asset_type,
@@ -297,8 +325,6 @@ def create_trade(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Quantity and entry price are required")
     if calc.sell_quantity - calc.quantity > 1e-8:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exit quantity cannot exceed entry quantity")
-
-    extra = dict(payload.extra or {})
 
     trade = Trade(
         user_id=current_user.id,
@@ -317,7 +343,7 @@ def create_trade(
         setup_tags=setup_tags,
         emotion_tags=payload.emotion_tags,
         plan_compliance=payload.plan_compliance,
-        mood=payload.mood,
+        mood=mood_value,
         notes=payload.notes,
         rules_broken=payload.rules_broken,
         score_preparation=payload.score_preparation,
@@ -394,6 +420,53 @@ def update_trade(
     trade = db.get(Trade, trade_id)
     if not trade or trade.user_id != current_user.id or trade.is_deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trade not found")
+
+    if payload.extra is not None and "went_well" in payload.extra:
+        payload.extra["went_well"] = parse_went_well(payload.extra.get("went_well"))
+    incoming_extra = payload.extra if "extra" in payload.model_fields_set and payload.extra is not None else None
+    has_mood_list = incoming_extra is not None and "moods" in incoming_extra
+    if has_mood_list or "mood" in payload.model_fields_set:
+        base_extra = dict(incoming_extra if incoming_extra is not None else (trade.extra or {}))
+        packed_extra, mood_value, mood_labels = pack_moods(
+            base_extra,
+            payload.mood if "mood" in payload.model_fields_set else None,
+            from_list=has_mood_list,
+        )
+        payload.extra = packed_extra
+        payload.mood = mood_value
+    else:
+        mood_labels = []
+
+    fields = payload.model_fields_set
+
+    strategy_labels: list[str] = []
+    check_strategies = any(key in fields for key in ("setup_tags", "setup_tag", "strategy_name"))
+    if check_strategies:
+        strategy_labels = list(payload.setup_tags or []) if "setup_tags" in fields else list(trade.setup_tags or [])
+        if "setup_tag" in fields and payload.setup_tag:
+            strategy_labels.append(payload.setup_tag)
+        if "strategy_name" in fields and payload.strategy_name:
+            strategy_labels.append(payload.strategy_name)
+    prior_strategies = [*(trade.setup_tags or []), trade.setup_tag or "", trade.strategy_name or ""]
+    playbook_id = payload.playbook_id if "playbook_id" in fields else trade.playbook_id
+    went_well = parse_went_well(payload.extra.get("went_well")) if payload.extra else []
+    assert_trade_master_labels(
+        db,
+        current_user.id,
+        moods=mood_labels,
+        check_mood=("mood" in fields or has_mood_list) and bool(mood_labels),
+        mistakes=list(payload.rules_broken or []),
+        check_mistakes="rules_broken" in fields,
+        strategies=strategy_labels,
+        check_strategies=check_strategies,
+        went_well=went_well,
+        check_went_well="extra" in fields and payload.extra is not None and "went_well" in payload.extra,
+        playbook_id=playbook_id,
+        prior_moods=saved_mood_labels(trade),
+        prior_mistakes=list(trade.rules_broken or []),
+        prior_strategies=prior_strategies,
+        prior_went_well=parse_went_well((trade.extra or {}).get("went_well")),
+    )
 
     update_data = payload.model_dump(exclude_unset=True)
     executions = update_data.pop("executions", None)

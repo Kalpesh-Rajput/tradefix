@@ -3,6 +3,8 @@
 import Link from "next/link";
 
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { progressPercent, type GoalProgressItem } from "@/lib/goals";
 
 export function GoalsProgressCard({
@@ -15,13 +17,17 @@ export function GoalsProgressCard({
   emptyHint?: boolean;
 }) {
   const { formatMoney } = useAccountPrefs();
+  const { t } = useLocale();
 
   if (!items.length) {
     if (!emptyHint) return null;
     return (
       <section className="dash-card p-3.5">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-[12px] font-medium text-[var(--color-text-primary)]">{title}</h3>
+          <div className="flex min-w-0 items-center gap-1">
+            <h3 className="truncate text-[12px] font-medium text-[var(--color-text-primary)]">{title}</h3>
+            <InfoTooltip content={t("dashboard.hint.goals")} label={title} />
+          </div>
           <Link href="/settings/goals" className="text-[11px] text-primary hover:underline">
             Set goals
           </Link>
@@ -36,7 +42,10 @@ export function GoalsProgressCard({
   return (
     <section className="dash-card p-3.5">
       <div className="mb-3 flex h-6 items-center justify-between gap-3">
-        <h3 className="text-[12px] font-medium text-[var(--color-text-primary)]">{title}</h3>
+        <div className="flex min-w-0 items-center gap-1">
+          <h3 className="truncate text-[12px] font-medium text-[var(--color-text-primary)]">{title}</h3>
+          <InfoTooltip content={t("dashboard.hint.goals")} label={title} />
+        </div>
         <Link
           href="/settings/goals"
           className="text-[11px] text-[var(--color-text-muted)] transition hover:text-primary"

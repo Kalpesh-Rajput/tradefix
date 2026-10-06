@@ -205,7 +205,9 @@ export type MasterCategory =
   | "session"
   | "trade_type"
   | "mood"
-  | "strategy";
+  | "strategy"
+  | "mistake"
+  | "went_well";
 
 export interface TradeMaster {
   id: string;
@@ -213,6 +215,7 @@ export interface TradeMaster {
   name: string;
   sort_order: number;
   is_builtin: boolean;
+  is_active: boolean;
   created_at: string;
 }
 

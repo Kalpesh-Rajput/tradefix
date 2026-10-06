@@ -7,13 +7,14 @@ import { FieldLabel, SegmentedControl } from "@/components/trade/ui";
 
 export function DirectionSelector({ control }: { control: Control<AddTradeFormValues> }) {
   return (
-    <div>
+    <div data-field="side">
       <FieldLabel>Direction</FieldLabel>
       <Controller
         control={control}
         name="side"
         render={({ field }) => (
           <SegmentedControl
+            ariaLabel="Direction"
             layoutId="direction-seg"
             value={field.value}
             onChange={field.onChange}
@@ -37,7 +38,9 @@ export function TradeStatusSelector({ control }: { control: Control<AddTradeForm
         name="status"
         render={({ field }) => (
           <SegmentedControl
+            ariaLabel="Trade Status"
             layoutId="status-seg"
+            tone="neutral"
             value={field.value}
             onChange={field.onChange}
             options={[

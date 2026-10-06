@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { useState } from "react";
 
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import type { Trade } from "@/lib/types";
 
@@ -41,6 +42,7 @@ export function PositionsTradesWidget({
         <TabButton compact={compact} active={tab === "recent"} onClick={() => setTab("recent")}>
           {t("dashboard.recentTrades")}
         </TabButton>
+        <InfoTooltip content={t("dashboard.hint.positions")} label={t("dashboard.recentTrades")} />
       </div>
 
       <div className={clsx("min-h-0 flex-1 overflow-auto", compact ? "min-h-0" : "min-h-[240px] lg:min-h-0")}>

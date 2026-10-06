@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { Award, Flame, TrendingDown, TrendingUp } from "lucide-react";
 
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+
 import type { GroupBucket, GroupSummary } from "@/lib/reports/group";
 import type { ReportCardCopy } from "@/lib/reports/catalog";
 import { formatMetricValue } from "@/lib/reports/format";
@@ -28,6 +30,7 @@ export function ReportSummaryCards({
       <SummaryCard
         icon={<TrendingUp className="h-3.5 w-3.5" style={{ color: "#2F9E6A" }} />}
         title={copy.best}
+        hint="The group with the highest net P&L in this report."
         bucket={summary.best}
         formatMoney={formatMoney}
         showPnl
@@ -35,6 +38,7 @@ export function ReportSummaryCards({
       <SummaryCard
         icon={<TrendingDown className="h-3.5 w-3.5" style={{ color: "#D64545" }} />}
         title={copy.least}
+        hint="The group with the lowest net P&L in this report."
         bucket={summary.least}
         formatMoney={formatMoney}
         showPnl
@@ -42,12 +46,14 @@ export function ReportSummaryCards({
       <SummaryCard
         icon={<Flame className="h-3.5 w-3.5 text-amber-500" />}
         title={copy.mostActive}
+        hint="The group with the most trades in this report."
         bucket={summary.mostActive}
         formatMoney={formatMoney}
       />
       <SummaryCard
         icon={<Award className="h-3.5 w-3.5" style={{ color: "#2F9E6A" }} />}
         title={copy.bestWinRate}
+        hint="The group with the highest share of winning trades. A high win rate is not the same as the highest profit."
         bucket={summary.bestWinRate}
         formatMoney={formatMoney}
         winRate
@@ -60,6 +66,7 @@ export function ReportSummaryCards({
 function SummaryCard({
   icon,
   title,
+  hint,
   bucket,
   formatMoney,
   showPnl = false,
@@ -68,6 +75,7 @@ function SummaryCard({
 }: {
   icon: ReactNode;
   title: string;
+  hint: string;
   bucket: GroupBucket | null;
   formatMoney: MoneyFormatter;
   showPnl?: boolean;
@@ -89,6 +97,7 @@ function SummaryCard({
       <div className="flex h-5 items-center gap-1.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
         {icon}
         <span className="truncate">{title}</span>
+        <InfoTooltip content={hint} label={title} />
       </div>
       <p className="mt-2 truncate text-[18px] font-semibold tracking-tight text-[var(--color-text-primary)]">
         {empty ? "—" : winRate && winRateAsPrimary ? `${bucket.winRate.toFixed(bucket.winRate % 1 ? 2 : 0)}%` : bucket.fullLabel}

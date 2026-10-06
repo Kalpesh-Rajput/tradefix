@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { Check, Circle, Minus } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import type { DailyProgress, RuleResult, RuleStatus } from "@/lib/progress-tracker/types";
 
 function StatusIcon({ status, kind }: { status: RuleStatus; kind: RuleResult["kind"] }) {
@@ -73,7 +74,13 @@ export function DailyChecklist({
   return (
     <section className={clsx("dash-card flex h-full flex-col p-4", !compact && "min-h-[220px]")}>
       <div className={clsx("mb-3 flex shrink-0 items-center justify-between gap-2", compact ? "h-8" : "h-11")}>
-        <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)]">{title}</h2>
+        <div className="flex min-w-0 items-center gap-1">
+          <h2 className="truncate text-[13px] font-semibold text-[var(--color-text-primary)]">{title}</h2>
+          <InfoTooltip
+            content="Shows whether you followed each rule for this day. Passed rules count toward your discipline score."
+            label={title}
+          />
+        </div>
       </div>
       {loading ? (
         <div className="space-y-2">

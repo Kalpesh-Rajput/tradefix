@@ -1,7 +1,8 @@
 "use client";
 
-import { Info } from "lucide-react";
 import type { ReactNode } from "react";
+
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 
 export const CHART_BODY_H = 200;
 export const CHART_BODY_COMPACT = 168;
@@ -39,11 +40,7 @@ export function ChartCard({
           <h3 className="truncate text-[15px] font-bold leading-5 text-[var(--color-text-primary)]">
             {title}
           </h3>
-          {hint && (
-            <span title={hint} className="shrink-0 text-[#8B8D96]">
-              <Info className="h-3 w-3" strokeWidth={1.75} />
-            </span>
-          )}
+          {hint ? <InfoTooltip content={hint} label={title} /> : null}
         </div>
         {headerRight}
       </div>

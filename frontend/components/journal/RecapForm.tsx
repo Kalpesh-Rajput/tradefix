@@ -2,16 +2,16 @@
 
 import clsx from "clsx";
 import { Loader2, Trash2, Trophy } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import { ScreenshotGrid } from "@/components/media/ScreenshotGrid";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
-import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { resolveMistakeCatalog } from "@/lib/tradingDefaults";
+import { useMasters } from "@/lib/hooks/useMasters";
+import { masterNames } from "@/lib/masters";
 import type { DailyRecap, DayMood, DayPnlSummary } from "@/lib/types";
 
 const MOODS: { id: DayMood; emoji: string; label: string }[] = [
@@ -67,9 +67,8 @@ export function RecapForm({
   onDeleteScreenshot?: (url: string) => Promise<void>;
 }) {
   const toast = useToast();
-  const { user } = useAuth();
   const { formatMoney } = useAccountPrefs();
-  const tags = resolveMistakeCatalog(user);
+  const { data: mistakeMasters = [] } = useMasters("mistake");
 
   const computedGross = dayPnl?.gross_pnl ?? existing?.computed_gross_pnl ?? 0;
   const computedFees = dayPnl?.fees ?? existing?.computed_fees ?? 0;
@@ -77,6 +76,7 @@ export function RecapForm({
 
   const [dayMood, setDayMood] = useState<DayMood | null>(existing?.day_mood ?? null);
   const [workOn, setWorkOn] = useState<string[]>(existing?.work_on ?? []);
+  const tags = useMemo(() => masterNames(mistakeMasters, workOn), [mistakeMasters, workOn]);
   const [bestDecision, setBestDecision] = useState(existing?.best_decision ?? "");
   const [reflection, setReflection] = useState(existing?.reflection ?? "");
   const [pnlOverride, setPnlOverride] = useState(existing?.pnl_override ?? false);

@@ -13,6 +13,8 @@ import {
 } from "recharts";
 
 import { CHART_BODY_H, ChartCard } from "@/components/dashboard/zella/ChartCard";
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { HoverTip } from "@/components/ui/InfoTooltip";
 import {
   TradeFixScoreDetails,
   TradeFixScoreInfo,
@@ -125,6 +127,7 @@ export function TradeFixScoreCard({
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
 }) {
   const { accentHex } = useAppearance();
+  const { t } = useLocale();
   const titleId = useId();
   const [infoOpen, setInfoOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -157,14 +160,16 @@ export function TradeFixScoreCard({
     <ChartCard
       title="TradeFix Score"
       headerRight={
-        <button
-          type="button"
-          onClick={() => setInfoOpen(true)}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-background)] hover:text-[var(--color-text-primary)]"
-          aria-label="How TradeFix Score works"
-        >
-          <Info className="h-3.5 w-3.5" strokeWidth={1.75} />
-        </button>
+        <HoverTip content={t("dashboard.hint.tradeFixScore")} side="top">
+          <button
+            type="button"
+            onClick={() => setInfoOpen(true)}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-muted)] outline-none hover:bg-[var(--color-background)] hover:text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-primary/30"
+            aria-label="How TradeFix Score works"
+          >
+            <Info className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </button>
+        </HoverTip>
       }
     >
       <div className="flex min-h-0 w-full min-w-0 flex-col" style={{ height: CHART_BODY_H }} id={titleId}>

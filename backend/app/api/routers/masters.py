@@ -29,7 +29,9 @@ def get_masters(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return list_masters(db, current_user.id, category)
+    rows = list_masters(db, current_user.id, category)
+    db.commit()
+    return rows
 
 
 @router.post("", response_model=TradeMasterResponse, status_code=status.HTTP_201_CREATED)
@@ -39,12 +41,12 @@ def create_master(
     current_user: User = Depends(get_current_user),
 ):
     name = payload.name.upper() if payload.category == MasterCategory.symbol else payload.name
-    row = upsert_master(db, current_user.id, payload.category, name)
+    row = upsert_master(db, current_user.id, payload.category, name, reactivate=True)
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
-        row = upsert_master(db, current_user.id, payload.category, name)
+        row = upsert_master(db, current_user.id, payload.category, name, reactivate=True)
         db.commit()
     db.refresh(row)
     return row
@@ -84,8 +86,6 @@ def delete_master(
     row = db.get(TradeMaster, master_id)
     if not row or row.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Master not found")
-    if row.is_builtin:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Built-in values cannot be deleted")
-    db.delete(row)
+    row.is_active = False
     db.commit()
     return None

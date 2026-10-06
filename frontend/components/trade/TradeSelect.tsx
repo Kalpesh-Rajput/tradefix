@@ -12,37 +12,27 @@ import {
   dropdownTriggerIdleClass,
   dropdownTriggerOpenClass,
 } from "@/components/trade/dropdownStyles";
-import { MasterCreateRow } from "@/components/trade/MasterCreateRow";
 import { FieldLabel } from "@/components/trade/ui";
-import { useEnsureMaster, useMasters } from "@/lib/hooks/useMasters";
-import { masterNames } from "@/lib/masters";
-import type { MasterCategory } from "@/lib/types";
 
-export function MasterCombobox({
-  category,
+export function TradeSelect({
+  label,
   value,
   onChange,
-  label,
-  error,
+  options,
   placeholder = "Select",
-  allowCreate = true,
-  uppercase = false,
+  error,
   disabled,
-  suggestions,
+  clearable = false,
 }: {
-  category: MasterCategory;
+  label: string;
   value: string;
   onChange: (next: string) => void;
-  label: string;
-  error?: string;
+  options: { value: string; label: string }[];
   placeholder?: string;
-  allowCreate?: boolean;
-  uppercase?: boolean;
+  error?: string;
   disabled?: boolean;
-  suggestions?: string[];
+  clearable?: boolean;
 }) {
-  const { data = [], isLoading } = useMasters(category);
-  const { ensure, pending: creating } = useEnsureMaster(category);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
@@ -51,22 +41,12 @@ export function MasterCombobox({
   const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const names = useMemo(() => {
-    const master = masterNames(data, value ? [value] : []);
-    if (!suggestions?.length) return master;
-    const allowed = new Set(suggestions.map((item) => item.toUpperCase()));
-    const fromMasters = master.filter(
-      (name) => allowed.has(name.toUpperCase()) || name.toUpperCase() === value.toUpperCase()
-    );
-    return Array.from(new Set([...suggestions, ...fromMasters]));
-  }, [data, suggestions, value]);
-
+  const selected = options.find((option) => option.value === value);
   const q = query.trim().toLowerCase();
   const results = useMemo(() => {
-    if (!q) return names;
-    return names.filter((name) => name.toLowerCase().includes(q));
-  }, [names, q]);
-  const canCreate = allowCreate && q.length > 0 && !names.some((name) => name.toLowerCase() === q);
+    if (!q) return options;
+    return options.filter((option) => option.label.toLowerCase().includes(q));
+  }, [options, q]);
 
   useEffect(() => {
     setHighlight(0);
@@ -100,7 +80,8 @@ export function MasterCombobox({
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopPropagation();
-      close();
+      setOpen(false);
+      setQuery("");
     }
     document.addEventListener("keydown", onKey, true);
     return () => document.removeEventListener("keydown", onKey, true);
@@ -118,21 +99,10 @@ export function MasterCombobox({
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  function close() {
+  function choose(next: string) {
+    onChange(next);
     setOpen(false);
     setQuery("");
-  }
-
-  function select(name: string) {
-    onChange(uppercase ? name.toUpperCase() : name);
-    close();
-  }
-
-  async function createNamed(raw: string) {
-    const name = await ensure(raw, { uppercase, known: names });
-    if (!name) return false;
-    select(name);
-    return true;
   }
 
   function onSearchKey(event: KeyboardEvent<HTMLInputElement>) {
@@ -144,12 +114,12 @@ export function MasterCombobox({
       setHighlight((index) => Math.max(index - 1, 0));
     } else if (event.key === "Enter") {
       event.preventDefault();
-      if (results[highlight]) select(results[highlight]);
-      else if (canCreate) void createNamed(query);
+      if (results[highlight]) choose(results[highlight].value);
     } else if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
-      close();
+      setOpen(false);
+      setQuery("");
     }
   }
 
@@ -169,28 +139,30 @@ export function MasterCombobox({
                 <input
                   ref={searchRef}
                   value={query}
-                  onChange={(event) => setQuery(uppercase ? event.target.value.toUpperCase() : event.target.value)}
+                  onChange={(event) => setQuery(event.target.value)}
                   onKeyDown={onSearchKey}
-                  placeholder={isLoading ? "Loading…" : `Search ${label.toLowerCase()}...`}
+                  placeholder={`Search ${label.toLowerCase()}...`}
                   className={dropdownSearchClass}
                   aria-label={`Search ${label}`}
                 />
               </div>
             </div>
             <ul className="max-h-[240px] overflow-y-auto overscroll-contain px-1.5 py-1.5">
-              {results.map((name, index) => {
-                const on = name.toLowerCase() === value.toLowerCase();
+              {results.map((option, index) => {
+                const on = option.value === value;
                 return (
-                  <li key={name}>
+                  <li key={option.value || "none"}>
                     <button
                       type="button"
                       role="option"
                       aria-selected={on}
                       onMouseEnter={() => setHighlight(index)}
-                      onClick={() => select(name)}
+                      onClick={() => choose(option.value)}
                       className={clsx(
                         "flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-sm transition-colors duration-100",
-                        on ? "bg-[var(--color-primary-very-light)] text-[var(--color-text-primary)]" : "text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]",
+                        on
+                          ? "bg-[var(--color-primary-very-light)] text-[var(--color-text-primary)]"
+                          : "text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]",
                         index === highlight && !on && "bg-[var(--color-surface-secondary)]"
                       )}
                     >
@@ -202,29 +174,19 @@ export function MasterCombobox({
                       >
                         <Check className={clsx("h-3 w-3 transition-transform duration-150", on ? "scale-100" : "scale-0")} />
                       </span>
-                      <span className="truncate">{name}</span>
+                      <span className="truncate">{option.label}</span>
                     </button>
                   </li>
                 );
               })}
-              {results.length === 0 && !canCreate && (
-                <li className="px-3 py-3 text-xs text-[var(--color-text-muted)]">No matches</li>
-              )}
+              {results.length === 0 && <li className="px-3 py-3 text-xs text-[var(--color-text-muted)]">No matches</li>}
             </ul>
-            {allowCreate && (
-              <MasterCreateRow
-                label={label}
-                query={query}
-                canCreateFromQuery={canCreate}
-                pending={creating}
-                uppercase={uppercase}
-                onCreate={createNamed}
-              />
-            )}
           </div>,
           document.body
         )
       : null;
+
+  const shown = selected?.label || placeholder;
 
   return (
     <div ref={rootRef} className="relative">
@@ -246,11 +208,11 @@ export function MasterCombobox({
           error ? "border-destructive/50" : open ? dropdownTriggerOpenClass : dropdownTriggerIdleClass
         )}
       >
-        <span className={clsx("truncate", value ? "font-medium text-[var(--color-text-primary)]" : "font-normal text-[var(--color-text-muted)]")}>
-          {value || placeholder}
+        <span className={clsx("truncate", selected ? "font-medium text-[var(--color-text-primary)]" : "font-normal text-[var(--color-text-muted)]")}>
+          {shown}
         </span>
         <span className="flex shrink-0 items-center gap-1 text-[var(--color-text-muted)]">
-          {value && (
+          {clearable && value && (
             <span
               role="button"
               tabIndex={0}

@@ -17,6 +17,7 @@ import {
 import { BarChart3, Plus } from "lucide-react";
 
 import { ChartOverflowMenu } from "@/components/reports/ChartOverflowMenu";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { CompactSelect } from "@/components/reports/CompactSelect";
 import { COUNT_SERIES_HEX, PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 import { formatAxisValue, formatMetricValue } from "@/lib/reports/format";
@@ -199,6 +200,10 @@ export function GroupedReportChart({
       <header className="flex h-11 shrink-0 items-center gap-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           <BarChart3 className="h-4 w-4 shrink-0 text-[var(--color-text-muted)]" aria-hidden />
+          <InfoTooltip
+            content="Compares the metrics you select across each group in this report, such as symbol, session, or setup."
+            label="Grouped performance"
+          />
           {metrics.map((id, i) => (
             <CompactSelect
               key={`${id}-${i}`}

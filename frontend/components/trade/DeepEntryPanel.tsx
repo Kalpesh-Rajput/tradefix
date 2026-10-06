@@ -1,0 +1,298 @@
+"use client";
+
+import { Minus, Plus } from "lucide-react";
+import { Controller, UseFormReturn, useFormState } from "react-hook-form";
+
+import { MasterCombobox } from "@/components/trade/MasterCombobox";
+import { MasterMultiCombobox } from "@/components/trade/MasterMultiCombobox";
+import { NotesEditor } from "@/components/trade/NotesEditor";
+import { PartialFillsEditor } from "@/components/trade/PartialFillsEditor";
+import { ScreenshotUploader, Shot } from "@/components/trade/ScreenshotUploader";
+import { capitalPresentation, RiskPlanFields } from "@/components/trade/SegmentSpecificFields";
+import { AddTradeFormValues } from "@/components/trade/schema";
+import { TradeSelect } from "@/components/trade/TradeSelect";
+import { FieldSlot, FormSection, tradeGridClass } from "@/components/trade/ui";
+import { useLiveTradeCalc } from "@/components/trade/useLiveTradeCalc";
+import { fmtMoney } from "@/lib/format";
+
+export function hasDeepEntryData(values: AddTradeFormValues, screenshotCount = 0) {
+  const plan = values.plan_compliance;
+  const hasPlan = plan != null && String(plan) !== "";
+  return Boolean(
+    values.exits.length ||
+      values.entry_condition ||
+      hasPlan ||
+      values.mood.length ||
+      values.precheck_list_id ||
+      values.playbook_id ||
+      values.strategies.length ||
+      values.mistakes.length ||
+      values.wentWell.length ||
+      values.notes?.trim() ||
+      screenshotCount
+  );
+}
+
+export function DeepEntryPanel({
+  form,
+  open,
+  onOpenChange,
+  precheckLists,
+  playbooks,
+  shots,
+  onShotsChange,
+  onDeleteSaved,
+}: {
+  form: UseFormReturn<AddTradeFormValues>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  precheckLists: { id: string; name: string }[];
+  playbooks: { id: string; name: string; icon?: string | null }[];
+  shots: Shot[];
+  onShotsChange: (shots: Shot[]) => void;
+  onDeleteSaved?: (url: string) => void;
+}) {
+  const { control, register } = form;
+  const { errors } = useFormState({ control });
+  const { calc, assetType, side, leverage } = useLiveTradeCalc(control);
+  const capital = capitalPresentation(assetType, side, leverage, calc);
+  const risk = calc.riskAmount != null ? fmtMoney(calc.riskAmount, { signed: false }) : "—";
+  const tone = calc.pnl == null ? "text-[var(--color-text-primary)]" : calc.pnl >= 0 ? "text-emerald-600" : "text-destructive";
+
+  return (
+    <div className="mt-4">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => onOpenChange(!open)}
+        className="flex w-full items-center justify-between gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-3 text-left transition-colors duration-150 hover:border-primary/35 hover:bg-[var(--color-primary-very-light)]"
+      >
+        <span className="inline-flex items-center gap-2.5 text-[15px] font-semibold text-[var(--color-text-primary)]">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            {open ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          </span>
+          Deep Entry
+        </span>
+        <span className="flex shrink-0 items-center gap-4">
+          <span className="text-right">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-muted)]">{capital.label}</span>
+            <span className="block font-mono text-[13px] font-medium text-[var(--color-text-secondary)]">{capital.value}</span>
+          </span>
+          <span className="text-right">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-muted)]">Risk</span>
+            <span className="block font-mono text-[13px] font-medium text-[var(--color-text-secondary)]">{risk}</span>
+          </span>
+        </span>
+      </button>
+
+      <div
+        className={`grid transition-[grid-template-rows] duration-200 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+      >
+        <div className="min-h-0 overflow-hidden" inert={open ? undefined : true}>
+          <div className="space-y-1 pt-1">
+            <FormSection title="Trade execution">
+              <div className={tradeGridClass}>
+                <FieldSlot name="analysis_timeframe">
+                  <Controller
+                    control={control}
+                    name="analysis_timeframe"
+                    render={({ field }) => (
+                      <MasterCombobox
+                        category="timeframe"
+                        label="Analysis TF"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="Select timeframe"
+                      />
+                    )}
+                  />
+                </FieldSlot>
+                <FieldSlot name="entry_timeframe">
+                  <Controller
+                    control={control}
+                    name="entry_timeframe"
+                    render={({ field }) => (
+                      <MasterCombobox
+                        category="timeframe"
+                        label="Entry TF"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="Select timeframe"
+                      />
+                    )}
+                  />
+                </FieldSlot>
+              </div>
+            </FormSection>
+
+            <FormSection title="Risk & plan">
+              <RiskPlanFields
+                register={register}
+                errors={errors}
+                asset={assetType}
+                side={side}
+                leverage={leverage}
+                calc={calc}
+              />
+              <FieldSlot name="entry_condition" className="mt-3">
+                <Controller
+                  control={control}
+                  name="entry_condition"
+                  render={({ field }) => (
+                    <MasterCombobox
+                      category="entry_condition"
+                      label="Entry condition"
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder="Select entry condition"
+                    />
+                  )}
+                />
+              </FieldSlot>
+            </FormSection>
+
+            <FormSection title="Exits">
+              <PartialFillsEditor control={control} register={register} errors={errors} calc={calc} />
+              <div className="grid grid-cols-2 gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-3 sm:grid-cols-3 xl:grid-cols-5">
+                <MiniStat label="Exit qty" value={calc.sellQuantity ? String(calc.sellQuantity) : "—"} />
+                <MiniStat label="Avg exit price" value={calc.exitPrice != null ? calc.exitPrice.toFixed(5) : "—"} />
+                <MiniStat
+                  label="Exit value"
+                  value={calc.sellQuantity ? fmtMoney(calc.totalSellAmount, { signed: false }) : "$0.00"}
+                />
+                <MiniStat
+                  label="Remaining"
+                  value={calc.sellQuantity ? String(calc.remainingQuantity) : String(calc.quantity || "—")}
+                />
+                <MiniStat label="Realized P&L" value={calc.pnl == null ? "—" : fmtMoney(calc.pnl)} className={tone} />
+              </div>
+            </FormSection>
+
+            <FormSection title="Trade context">
+              <div className={tradeGridClass}>
+                <FieldSlot name="mood">
+                  <Controller
+                    control={control}
+                    name="mood"
+                    render={({ field }) => (
+                      <MasterMultiCombobox
+                        category="mood"
+                        label="Mood"
+                        value={field.value ?? []}
+                        onChange={field.onChange}
+                        placeholder="Select mood"
+                      />
+                    )}
+                  />
+                </FieldSlot>
+                <FieldSlot name="precheck_list_id">
+                  <Controller
+                    control={control}
+                    name="precheck_list_id"
+                    render={({ field }) => (
+                      <TradeSelect
+                        label="Pre-checklist"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="None"
+                        options={[
+                          { value: "", label: "None" },
+                          ...precheckLists.map((list) => ({ value: list.id, label: list.name })),
+                        ]}
+                      />
+                    )}
+                  />
+                </FieldSlot>
+                <FieldSlot name="playbook_id">
+                  <Controller
+                    control={control}
+                    name="playbook_id"
+                    render={({ field }) => (
+                      <TradeSelect
+                        label="Playbook"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="None"
+                        options={[
+                          { value: "", label: "None" },
+                          ...playbooks.map((playbook) => ({
+                            value: playbook.id,
+                            label: `${playbook.icon ? `${playbook.icon} ` : ""}${playbook.name}`,
+                          })),
+                        ]}
+                      />
+                    )}
+                  />
+                </FieldSlot>
+                <FieldSlot name="strategies">
+                  <Controller
+                    control={control}
+                    name="strategies"
+                    render={({ field }) => (
+                      <MasterMultiCombobox
+                        category="strategy"
+                        label="Strategies"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select strategies"
+                      />
+                    )}
+                  />
+                </FieldSlot>
+              </div>
+            </FormSection>
+
+            <FormSection title="Trade review">
+              <div className={tradeGridClass}>
+                <FieldSlot name="mistakes">
+                  <Controller
+                    control={control}
+                    name="mistakes"
+                    render={({ field }) => (
+                      <MasterMultiCombobox
+                        category="mistake"
+                        label="Mistakes"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select mistakes"
+                      />
+                    )}
+                  />
+                </FieldSlot>
+                <FieldSlot name="wentWell">
+                  <Controller
+                    control={control}
+                    name="wentWell"
+                    render={({ field }) => (
+                      <MasterMultiCombobox
+                        category="went_well"
+                        label="What went well"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select what went well"
+                      />
+                    )}
+                  />
+                </FieldSlot>
+              </div>
+            </FormSection>
+
+            <FormSection title="Notes & evidence">
+              <NotesEditor register={register} />
+              <ScreenshotUploader files={shots} onChange={onShotsChange} onDeleteSaved={onDeleteSaved} max={3} />
+            </FormSection>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, className }: { label: string; value: string; className?: string }) {
+  return (
+    <div>
+      <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">{label}</p>
+      <p className={`mt-0.5 font-mono text-sm ${className || "text-[var(--color-text-primary)]"}`}>{value}</p>
+    </div>
+  );
+}

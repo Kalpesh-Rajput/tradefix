@@ -35,7 +35,7 @@ export function CumulativePnlChart({
   const zeroAt = span > 0 ? max / span : inProfit ? 1 : 0;
 
   return (
-    <ChartCard title={t("dashboard.cumulativePnl")}>
+    <ChartCard title={t("dashboard.cumulativePnl")} hint={t("dashboard.hint.cumulativePnl")}>
       <div className="w-full shrink-0" style={{ height: CHART_BODY_H }}>
         {series.length === 0 ? (
           <EmptyChart height={CHART_BODY_H} />
@@ -105,7 +105,7 @@ export function DailyPnlChart({
   const { t } = useLocale();
 
   return (
-    <ChartCard title={t("dashboard.netDailyPnl")}>
+    <ChartCard title={t("dashboard.netDailyPnl")} hint={t("dashboard.hint.netDailyPnl")}>
       <div className="w-full shrink-0" style={{ height: CHART_BODY_H }}>
         {series.length === 0 ? (
           <EmptyChart height={CHART_BODY_H} />

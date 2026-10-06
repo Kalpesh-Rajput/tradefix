@@ -15,10 +15,46 @@ import {
 } from "recharts";
 
 import { MoodPnlChart } from "@/components/charts/MoodPnlChart";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { SetupTable } from "@/components/charts/SetupTable";
 import { TimeBucketChart } from "@/components/charts/TimeBucketChart";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 import type { AnalyticsResponse, EdgeFinder, EquityPoint, TagExpectancy, TimeBucketStat } from "@/lib/types";
+
+const KPI_HINTS: Record<string, string> = {
+  "Total trades": "Shows how many trades are included in this report.",
+  "Win rate": "Shows the percentage of closed trades that were profitable. Compare it with average win and average loss.",
+  "Total P&L": "Shows net profit and loss for the selected period. Positive is profit and negative is loss.",
+  "Profit factor": "Compares gross profits with gross losses. Above 1 means profits are greater than losses.",
+  "Avg win": "Shows the average profit on your winning trades in this period.",
+  "Avg loss": "Shows the average loss on your losing trades in this period.",
+  Expectancy: "Estimates the average amount you can expect to gain or lose per trade from this history.",
+  "Trading days": "Shows how many days in this period had at least one closed trade.",
+  "Best day": "Shows the largest daily profit in this period.",
+  "Worst day": "Shows the largest daily loss in this period.",
+  "Largest win": "Shows the single most profitable trade in this period.",
+  "Largest loss": "Shows the single largest losing trade in this period.",
+  "Max drawdown": "Shows the deepest decline from an equity peak in this period.",
+  "Max DD %": "Shows that deepest decline as a percentage of the peak it fell from.",
+  "Avg execution": "Shows the average execution score recorded on your trades, from 0 to 100.",
+  "Avg R": "Shows the average realized R-multiple. One R is the amount you planned to risk.",
+  "Current streak": "Shows how many winning or losing trades you currently have in a row.",
+  "Total fees": "Shows commissions and fees recorded on trades in this period.",
+};
+
+const PANEL_HINTS: Record<string, string> = {
+  "R distribution": "Groups closed trades by realized R-multiple so you can see whether results cluster around your plan.",
+  "By session": "Compares P&L across Asia, London, New York, and the overlap so you can see which session you trade best.",
+  "Performance timeline": "Shows monthly execution, account health, and P&L together so you can see how process and results moved.",
+  "Win rate by hour": "Shows the share of winning trades for each hour you entered, so you can find the hours where you have an edge.",
+  "Win rate by day of week": "Shows the share of winning trades for each weekday so you can see which days fit your strategy.",
+  "Setup performance": "Shows the rolling win rate of each tagged setup so you can see which playbooks are holding up.",
+  "Symbol performance": "Shows net P&L by instrument so you can see where your strategy works and where it struggles.",
+  "Mood vs P&L": "Compares P&L with the mood you logged so you can see which mental states line up with better results.",
+  "Equity curve": "Shows cumulative P&L from closed trades. The curve rises when you are profitable and falls when you are not.",
+  "Edge Finder": "Highlights the day, hour, and setup that made the most, and the symbol and emotion that cost the most.",
+  "Expectancy by tag": "Ranks your setup tags by average P&L per trade so you can see which tags have a positive expectancy.",
+};
 
 const AXIS = { fontSize: 10, fill: "var(--color-chart-axis)" };
 const CHART_H = 220;
@@ -358,7 +394,10 @@ function Panel({
   return (
     <section className="dash-card flex h-full min-w-0 flex-col p-3.5">
       <div className="mb-2 flex h-11 shrink-0 flex-col justify-center">
-        <h3 className="truncate text-[12px] font-medium leading-4 text-[var(--color-text-primary)]">{title}</h3>
+        <div className="flex min-w-0 items-center gap-1">
+          <h3 className="truncate text-[12px] font-medium leading-4 text-[var(--color-text-primary)]">{title}</h3>
+          {PANEL_HINTS[title] ? <InfoTooltip content={PANEL_HINTS[title]} label={title} /> : null}
+        </div>
         {subtitle ? (
           <p className="mt-0.5 truncate text-[11px] leading-4 text-[var(--color-text-muted)]">{subtitle}</p>
         ) : (
@@ -391,9 +430,13 @@ function Kpi({
 }) {
   const color =
     tone === "pos" ? PNL_PROFIT_HEX : tone === "neg" ? PNL_LOSS_HEX : "var(--color-text-kpi)";
+  const hint = KPI_HINTS[label];
   return (
     <article className="dash-card flex h-[88px] flex-col justify-start p-3.5">
-      <p className="text-[11px] font-medium leading-4 text-[var(--color-text-label)]">{label}</p>
+      <p className="flex items-center gap-1 text-[11px] font-medium leading-4 text-[var(--color-text-label)]">
+        <span className="truncate">{label}</span>
+        {hint ? <InfoTooltip content={hint} label={label} /> : null}
+      </p>
       <p className="mt-1.5 truncate text-[16px] font-semibold leading-6 tracking-tight tabular-nums" style={{ color }}>
         {value}
       </p>

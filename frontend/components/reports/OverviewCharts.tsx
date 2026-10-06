@@ -1,7 +1,8 @@
 "use client";
 
-import { Info } from "lucide-react";
 import type { ReactNode } from "react";
+
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 
 import { PerformanceChart } from "@/components/reports/PerformanceChart";
 import { getReportMetric } from "@/lib/reports/metrics";
@@ -39,14 +40,14 @@ export function OverviewCharts({
       <OverviewChartCard
         title={net ? "Daily net cumulative P&L" : "Daily gross cumulative P&L"}
         rangeLabel={rangeLabel}
-        hint="Sum of daily P&L from the start of the selected range through each day."
+        hint="Shows the running total of daily P&L from the start of the selected range. The line rises when you are profitable and falls when you are not."
       >
         <PerformanceChart series={cumulative} metric={cumMetric} formatMoney={formatMoney} height={CHART_H} />
       </OverviewChartCard>
       <OverviewChartCard
         title={net ? "Net daily P&L" : "Gross daily P&L"}
         rangeLabel={rangeLabel}
-        hint="P&L realized on each trading day. Green is profit, red is loss."
+        hint="Shows P&L realized on each trading day. Green is a profitable day and red is a losing day. Use it to spot streaks and possible revenge-trading days."
       >
         <PerformanceChart series={daily} metric={dailyMetric} formatMoney={formatMoney} height={CHART_H} />
       </OverviewChartCard>
@@ -68,22 +69,19 @@ function OverviewChartCard({
   return (
     <section className="dash-card flex h-full min-w-0 flex-col p-3.5">
       <header className="mb-2 flex h-11 shrink-0 items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="truncate text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-primary)]">
-            {title}
-          </h3>
-          <p className="mt-0.5 text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
-            ({rangeLabel})
-          </p>
+        <div className="flex min-w-0 items-start gap-1">
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-1">
+              <h3 className="truncate text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-primary)]">
+                {title}
+              </h3>
+              <InfoTooltip content={hint} label={title} />
+            </div>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+              ({rangeLabel})
+            </p>
+          </div>
         </div>
-        <button
-          type="button"
-          title={hint}
-          aria-label={hint}
-          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--color-text-muted)] outline-none hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-secondary)] focus-visible:ring-2 focus-visible:ring-primary/30"
-        >
-          <Info className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-        </button>
       </header>
       <div className="min-w-0 flex-1">{children}</div>
     </section>

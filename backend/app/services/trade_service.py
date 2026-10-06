@@ -14,7 +14,7 @@ from app.models.trade import ExecutionLegType, Trade, TradeExecution, TradeStatu
 from app.models.trade_master import MasterCategory
 from app.models.user import User
 from app.schemas.trade import TradeCreate, TradeExecutionInput, TradeUpdate
-from app.services.masters_service import upsert_master
+from app.services.masters_service import parse_moods, parse_went_well, unknown_master_labels, upsert_master, find_master
 from app.services.instruments import default_contract_size
 from app.services.trade_calc import Fill, TradeCalcResult, calculate_trade
 
@@ -156,21 +156,111 @@ def _validate_precheck(db: Session, user_id: uuid.UUID, list_id: uuid.UUID | Non
     return row.id
 
 
+def _remember_master(
+    db: Session,
+    user_id: uuid.UUID,
+    category: MasterCategory,
+    name: str | None,
+    *,
+    create: bool,
+) -> None:
+    cleaned = " ".join((name or "").split())
+    if not cleaned:
+        return
+    if category == MasterCategory.symbol:
+        cleaned = cleaned.upper()
+    existing = find_master(db, user_id, category, cleaned)
+    if existing:
+        return
+    if create:
+        upsert_master(db, user_id, category, cleaned)
+
+
+def saved_mood_labels(trade: Trade) -> list[str]:
+    stored = (trade.extra or {}).get("moods")
+    if stored is not None:
+        return parse_moods(stored)
+    return parse_moods(trade.mood)
+
+
 def remember_trade_masters(db: Session, user_id: uuid.UUID, trade: Trade) -> None:
-    upsert_master(db, user_id, MasterCategory.symbol, trade.symbol)
-    pairs = [
+    """Remember free-typed instrument fields. Never reactivate a deactivated master."""
+    _remember_master(db, user_id, MasterCategory.symbol, trade.symbol, create=True)
+    created = [
         (MasterCategory.session, trade.session),
         (MasterCategory.trade_type, trade.trade_type),
         (MasterCategory.timeframe, trade.analysis_timeframe),
         (MasterCategory.timeframe, trade.entry_timeframe),
         (MasterCategory.entry_condition, trade.entry_condition),
         (MasterCategory.exit_condition, trade.exit_condition),
-        (MasterCategory.mood, trade.mood),
-        (MasterCategory.strategy, trade.strategy_name or trade.setup_tag),
     ]
-    for category, name in pairs:
-        if name:
-            upsert_master(db, user_id, category, name)
+    for category, name in created:
+        _remember_master(db, user_id, category, name, create=True)
+    for mood_name in saved_mood_labels(trade):
+        _remember_master(db, user_id, MasterCategory.mood, mood_name, create=False)
+    _remember_master(db, user_id, MasterCategory.strategy, trade.strategy_name or trade.setup_tag, create=False)
+
+
+def _playbook_name(db: Session, playbook_id: uuid.UUID | None) -> str | None:
+    if not playbook_id:
+        return None
+    row = db.get(Playbook, playbook_id)
+    return row.name if row else None
+
+
+def _reject_unknown(category_label: str, labels: list[str]) -> None:
+    if not labels:
+        return
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail=f"Unknown {category_label}: {', '.join(labels)}",
+    )
+
+
+def assert_trade_master_labels(
+    db: Session,
+    user_id: uuid.UUID,
+    *,
+    moods: list[str] | None = None,
+    check_mood: bool = False,
+    mistakes: list[str] | None = None,
+    check_mistakes: bool = False,
+    strategies: list[str] | None = None,
+    check_strategies: bool = False,
+    went_well: list[str] | None = None,
+    check_went_well: bool = False,
+    playbook_id: uuid.UUID | None = None,
+    prior_moods: list[str] | None = None,
+    prior_mistakes: list[str] | None = None,
+    prior_strategies: list[str] | None = None,
+    prior_went_well: list[str] | None = None,
+) -> None:
+    playbook_name = _playbook_name(db, playbook_id)
+    if check_mood:
+        _reject_unknown(
+            "mood",
+            unknown_master_labels(db, user_id, MasterCategory.mood, moods or [], list(prior_moods or [])),
+        )
+    if check_mistakes:
+        _reject_unknown(
+            "mistake",
+            unknown_master_labels(db, user_id, MasterCategory.mistake, mistakes or [], list(prior_mistakes or [])),
+        )
+    if check_strategies:
+        allowed = list(prior_strategies or [])
+        if playbook_name:
+            allowed.append(playbook_name)
+        _reject_unknown(
+            "strategy",
+            unknown_master_labels(db, user_id, MasterCategory.strategy, strategies or [], allowed),
+        )
+    if check_went_well:
+        _reject_unknown(
+            "what went well",
+            unknown_master_labels(
+                db, user_id, MasterCategory.went_well, went_well or [], list(prior_went_well or [])
+            ),
+        )
 
 
 def compute_for_payload(

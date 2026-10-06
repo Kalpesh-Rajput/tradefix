@@ -1,5 +1,6 @@
 "use client";
 
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import type { RuleAnalytics } from "@/lib/progress-tracker/types";
 
 function pct(value: number | null) {
@@ -26,7 +27,13 @@ export function CurrentRulesTable({
   return (
     <section className="dash-card overflow-hidden">
       <div className="flex h-11 items-center justify-between gap-2 border-b border-[var(--color-border)] px-4">
-        <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)]">Current rules</h2>
+        <div className="flex min-w-0 items-center gap-1">
+          <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)]">Current rules</h2>
+          <InfoTooltip
+            content="Your active trading rules and how often you followed each one in the selected range."
+            label="Current rules"
+          />
+        </div>
         <button type="button" onClick={onEdit} className="dash-btn-secondary h-8 text-[12px]">
           Edit rules
         </button>

@@ -3,16 +3,18 @@
 import Link from "next/link";
 
 import { ChartCard } from "@/components/dashboard/zella/ChartCard";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { SessionFlag } from "@/components/market-sessions/SessionFlag";
 import { useMarketSessions } from "@/lib/hooks/useMarketSessions";
 import { formatDurationMs } from "@/lib/market-sessions/timezone";
 
 export function MarketSessionsWidget() {
   const { snapshot, prefs } = useMarketSessions();
+  const { t } = useLocale();
 
   if (!prefs.hydrated) {
     return (
-      <ChartCard title="Market sessions">
+      <ChartCard title={t("nav.marketSessions")} hint={t("dashboard.hint.marketSessions")}>
         <div className="flex min-h-[120px] flex-1 flex-col gap-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-8 animate-pulse rounded-md bg-[var(--color-surface-secondary)]" />
@@ -30,8 +32,8 @@ export function MarketSessionsWidget() {
 
   return (
     <ChartCard
-      title="Market sessions"
-      hint="Live open/closed state for the major FX cash sessions in your selected timezone."
+      title={t("nav.marketSessions")}
+      hint={t("dashboard.hint.marketSessions")}
       headerRight={
         <Link
           href="/market-sessions"

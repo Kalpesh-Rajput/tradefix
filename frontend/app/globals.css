@@ -149,6 +149,21 @@ progress {
   accent-color: hsl(var(--primary));
 }
 
+.trade-dropdown {
+  box-shadow: var(--shadow-dropdown);
+}
+
+.trade-dropdown-open,
+.trade-dropdown-trigger:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.trade-dropdown-search:focus {
+  border-color: hsl(var(--primary) / 0.4);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -610,6 +625,17 @@ html.dark ::-webkit-scrollbar-thumb {
   .report-metric-scroll::-webkit-scrollbar-thumb {
     background: color-mix(in srgb, var(--color-text-muted) 35%, transparent);
     border-radius: 99px;
+  }
+
+  @keyframes entryMomentIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   @keyframes reportMenuIn {

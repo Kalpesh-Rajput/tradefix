@@ -11,6 +11,7 @@ import {
 } from "recharts";
 
 import { CHART_BODY_COMPACT, ChartCard, EmptyChart, chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { CHART_LINE_HEX } from "@/lib/appearance";
 import type { LinePoint } from "@/lib/dashboardSeries";
 
@@ -21,10 +22,11 @@ export function AccountBalanceChart({
   series: LinePoint[];
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
 }) {
+  const { t } = useLocale();
   return (
     <ChartCard
-      title="Account balance"
-      hint="Starting balance plus cumulative closed P&L. The coral line is starting capital (no deposit/withdrawal ledger yet)."
+      title={t("dashboard.accountBalance")}
+      hint={t("dashboard.hint.accountBalance")}
       headerRight={
         <div className="chart-legend max-w-[55%] items-center gap-2 truncate text-[9px] text-[#6B6E78]">
           <span className="inline-flex items-center gap-1">

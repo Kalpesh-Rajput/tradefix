@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { useMemo, useState } from "react";
 
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import type { HeatmapCell } from "@/lib/progress-tracker/types";
 import { parseLocalIso, shortMonth } from "@/lib/dateLocal";
 
@@ -73,7 +74,13 @@ export function DisciplineHeatmap({
   return (
     <section className="dash-card flex h-full min-h-[220px] flex-col p-4">
       <div className="mb-3 flex h-11 shrink-0 items-center justify-between gap-2">
-        <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)]">Progress tracker</h2>
+        <div className="flex min-w-0 items-center gap-1">
+          <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)]">Progress tracker</h2>
+          <InfoTooltip
+            content="Each square is a trading day. Darker blue means you followed more of your rules that day."
+            label="Progress tracker"
+          />
+        </div>
         <div className="flex items-center gap-1 text-[10px] text-[var(--color-text-muted)]">
           <span>Less</span>
           {LEVELS.map((c) => (

@@ -22,6 +22,7 @@ export type ReportMetricDef = {
   valueType: ReportValueType;
   chartType: ReportChartType;
   signed: boolean;
+  description?: string;
 };
 
 export type ReportChartConfig = {

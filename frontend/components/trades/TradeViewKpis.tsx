@@ -1,9 +1,9 @@
 "use client";
 
-import { Info } from "lucide-react";
 import { useId, useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 import { computeTradeViewKpis } from "@/lib/trades/viewKpis";
@@ -49,7 +49,10 @@ export function TradeViewKpis({
   return (
     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <article className="dash-card flex h-[104px] flex-col overflow-hidden rounded-[14px] px-3.5 pb-1.5 pt-2.5">
-        <KpiLabel label="Net cumulative P&L" />
+        <KpiLabel
+          label="Net cumulative P&L"
+          hint="Shows the running total of net profit and loss for the trades in the current filters."
+        />
         <p
           className="mt-0.5 text-[18px] font-semibold leading-6 tracking-tight tabular-nums"
           style={{ color: stats.netPnl >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX }}
@@ -63,7 +66,10 @@ export function TradeViewKpis({
 
       <article className="dash-card flex h-[104px] items-center justify-between gap-3 overflow-hidden rounded-[14px] px-3.5 py-2.5">
         <div className="min-w-0">
-          <KpiLabel label="Profit factor" hint="Gross profit divided by gross loss" />
+          <KpiLabel
+            label="Profit factor"
+            hint="Compares gross profits with gross losses for the current filters. Above 1 means profits are greater than losses."
+          />
           <p className="mt-0.5 text-[18px] font-semibold leading-6 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
             {stats.profitFactor != null ? stats.profitFactor.toFixed(2) : "—"}
           </p>
@@ -73,7 +79,10 @@ export function TradeViewKpis({
 
       <article className="dash-card flex h-[104px] items-center justify-between gap-3 overflow-hidden rounded-[14px] px-3.5 py-2.5">
         <div className="min-w-0">
-          <KpiLabel label="Trade win %" hint="Winning closed trades in the current filters" />
+          <KpiLabel
+            label="Trade win %"
+            hint="Shows the percentage of closed trades in the current filters that were profitable. Compare it with your average win and average loss."
+          />
           <p className="mt-0.5 text-[18px] font-semibold leading-6 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
             {stats.winRate != null ? `${stats.winRate.toFixed(2)}%` : "—"}
           </p>
@@ -82,7 +91,10 @@ export function TradeViewKpis({
       </article>
 
       <article className="dash-card flex h-[104px] flex-col overflow-hidden rounded-[14px] px-3.5 pb-2.5 pt-2.5">
-        <KpiLabel label="Avg win/loss trade" hint="Average winning trade divided by average losing trade" />
+        <KpiLabel
+          label="Avg win/loss trade"
+          hint="Compares the size of your average winning trade with your average losing trade in the current filters."
+        />
         <p className="mt-0.5 text-[18px] font-semibold leading-6 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
           {stats.avgWinLossRatio != null ? stats.avgWinLossRatio.toFixed(2) : "—"}
         </p>
@@ -101,13 +113,11 @@ export function TradeViewKpis({
   );
 }
 
-function KpiLabel({ label, hint }: { label: string; hint?: string }) {
+function KpiLabel({ label, hint }: { label: string; hint: string }) {
   return (
     <div className="flex h-4 items-center gap-1 text-[11px] font-medium leading-4 text-[var(--color-text-label)]">
       <span className="truncate">{label}</span>
-      <span className="inline-flex" title={hint || label}>
-        <Info className="h-3 w-3 shrink-0 text-[#9A9BA3]" strokeWidth={1.75} />
-      </span>
+      <InfoTooltip content={hint} label={label} />
     </div>
   );
 }

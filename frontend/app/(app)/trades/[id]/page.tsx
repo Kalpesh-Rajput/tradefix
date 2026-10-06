@@ -3,20 +3,18 @@
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { MasterMultiCombobox } from "@/components/trade/MasterMultiCombobox";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
-import { ChipGroup } from "@/components/trade/ui";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ScreenshotGrid } from "@/components/media/ScreenshotGrid";
 import { useToast } from "@/components/ui/Toast";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
-import { resolveEmotionCatalog } from "@/lib/emotions";
 import {
   useDeleteTrade,
   useDeleteTradeScreenshot,
@@ -24,7 +22,6 @@ import {
   useUpdateTrade,
   useUploadTradeScreenshot,
 } from "@/lib/hooks/useTrades";
-import { resolveMistakeCatalog, resolveStrategyCatalog } from "@/lib/tradingDefaults";
 
 const MAX_SHOTS = 5;
 
@@ -60,7 +57,6 @@ function fmtR(n: number | null | undefined) {
 export default function TradeDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { user } = useAuth();
   const { displayPnl } = useAccountPrefs();
   const toast = useToast();
   const { openEdit } = useAddTradeModal();
@@ -85,10 +81,6 @@ export default function TradeDetailPage() {
     score_psychology: 5,
   });
   const [uploadPct, setUploadPct] = useState<number | null>(null);
-
-  const strategies = useMemo(() => resolveStrategyCatalog(user), [user]);
-  const emotions = useMemo(() => resolveEmotionCatalog(user), [user]);
-  const mistakeOptions = useMemo(() => resolveMistakeCatalog(user), [user]);
 
   useEffect(() => {
     if (!trade) return;
@@ -321,18 +313,25 @@ export default function TradeDetailPage() {
 
       {/* Tags */}
       <section className="space-y-5 rounded-xl border border-white/[0.06] bg-zinc-950/80 p-5">
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-white">Setup tags</h2>
-          <ChipGroup options={strategies} value={setupTags} onChange={setSetupTags} />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <MasterMultiCombobox
+            category="strategy"
+            label="Strategies"
+            value={setupTags}
+            onChange={setSetupTags}
+            placeholder="Select strategies"
+          />
+          <MasterMultiCombobox
+            category="mistake"
+            label="Mistakes"
+            value={mistakes}
+            onChange={setMistakes}
+            placeholder="Select mistakes"
+          />
         </div>
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-white">Emotion tags</h2>
-          <ChipGroup options={emotions} value={emotionTags} onChange={setEmotionTags} />
-        </div>
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-white">Mistakes</h2>
-          <ChipGroup options={mistakeOptions} value={mistakes} onChange={setMistakes} tone="danger" />
-        </div>
+        {emotionTags.length > 0 && (
+          <p className="text-xs text-zinc-400">Emotions: {emotionTags.join(", ")}</p>
+        )}
       </section>
 
       {/* Health score dimensions */}

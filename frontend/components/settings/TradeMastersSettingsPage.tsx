@@ -1,7 +1,8 @@
 "use client";
 
+import clsx from "clsx";
 import { useState } from "react";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, RotateCcw, Trash2 } from "lucide-react";
 
 import {
   SettingsCard,
@@ -19,6 +20,7 @@ import {
   useDeletePrecheckList,
   useMasters,
   usePrecheckLists,
+  useUpdateMaster,
 } from "@/lib/hooks/useMasters";
 import type { MasterCategory } from "@/lib/types";
 
@@ -30,13 +32,16 @@ const CATEGORIES: { id: MasterCategory; label: string; hint: string }[] = [
   { id: "session", label: "Sessions", hint: "Asian, London, New York, overlaps." },
   { id: "trade_type", label: "Trade types", hint: "Scalping, intraday, swing, positional." },
   { id: "mood", label: "Mood", hint: "How you felt taking the trade." },
-  { id: "strategy", label: "Strategies", hint: "Playbook names assigned to trades." },
+  { id: "strategy", label: "Strategies", hint: "Setups assigned to a trade." },
+  { id: "mistake", label: "Mistakes", hint: "What went wrong. A trade can have more than one." },
+  { id: "went_well", label: "What went well", hint: "What you did right. A trade can have more than one." },
 ];
 
 export function TradeMastersSettingsPage() {
   const toast = useToast();
   const { data: masters = [], isLoading } = useMasters();
   const createMaster = useCreateMaster();
+  const updateMaster = useUpdateMaster();
   const deleteMaster = useDeleteMaster();
   const { data: lists = [] } = usePrecheckLists();
   const createList = useCreatePrecheckList();
@@ -79,7 +84,7 @@ export function TradeMastersSettingsPage() {
     <SettingsShell>
       <SettingsPageHeader
         title="Trade masters"
-        subtitle="Lists used on Add Trade. Add a custom value once and it will be suggested next time."
+        subtitle="Lists used on Add Trade. Add a value once and it shows up next time. Deactivated values stay on old trades."
       />
 
       {isLoading ? (
@@ -96,17 +101,32 @@ export function TradeMastersSettingsPage() {
                   {rows.map((row) => (
                     <span
                       key={row.id}
-                      className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1 text-xs text-white"
+                      className={clsx(
+                        "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs",
+                        row.is_active
+                          ? "border-white/10 bg-zinc-950 text-white"
+                          : "border-dashed border-white/15 bg-transparent text-zinc-500"
+                      )}
                     >
                       {row.name}
-                      {!row.is_builtin && (
+                      {!row.is_active && <span className="text-[10px] uppercase tracking-wide">Off</span>}
+                      {row.is_active ? (
                         <button
                           type="button"
-                          aria-label={`Remove ${row.name}`}
+                          aria-label={`Deactivate ${row.name}`}
                           onClick={() => deleteMaster.mutate(row.id)}
                           className="text-zinc-500 hover:text-destructive"
                         >
                           <Trash2 className="h-3 w-3" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          aria-label={`Restore ${row.name}`}
+                          onClick={() => updateMaster.mutate({ id: row.id, data: { is_active: true } })}
+                          className="text-zinc-500 hover:text-primary"
+                        >
+                          <RotateCcw className="h-3 w-3" />
                         </button>
                       )}
                     </span>

@@ -2,16 +2,16 @@
 
 import clsx from "clsx";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
-import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { useTodayCheckin, useUpsertCheckin } from "@/lib/hooks/useCheckins";
-import { resolveStrategyCatalog } from "@/lib/tradingDefaults";
+import { useMasters } from "@/lib/hooks/useMasters";
+import { masterNames } from "@/lib/masters";
 import type { CheckinFollowed } from "@/lib/types";
 
 const FOLLOWED: { value: CheckinFollowed; label: string }[] = [
@@ -21,7 +21,6 @@ const FOLLOWED: { value: CheckinFollowed; label: string }[] = [
 ];
 
 export function DailyCheckinCard() {
-  const { user } = useAuth();
   const { dateKey } = useLocale();
   const { activeAccount } = useAccountPrefs();
   const toast = useToast();
@@ -36,7 +35,15 @@ export function DailyCheckinCard() {
   const [followed, setFollowed] = useState<CheckinFollowed | null>(null);
   const [eveningNote, setEveningNote] = useState("");
 
-  const setups = resolveStrategyCatalog(user);
+  const { data: strategyMasters = [] } = useMasters("strategy");
+  const setups = useMemo(() => {
+    const names = masterNames(strategyMasters, focusSetup ? [focusSetup] : []);
+    const visible = names.slice(0, 12);
+    if (focusSetup && !visible.some((name) => name.toLowerCase() === focusSetup.toLowerCase())) {
+      return [...visible.slice(0, 11), focusSetup];
+    }
+    return visible;
+  }, [strategyMasters, focusSetup]);
 
   useEffect(() => {
     if (!checkin) {
@@ -141,7 +148,7 @@ export function DailyCheckinCard() {
       <div className="mt-3">
         <label className="mb-1.5 block text-[10px] uppercase tracking-wider text-zinc-500">Focus setup</label>
         <div className="flex flex-wrap gap-1.5">
-          {setups.slice(0, 12).map((label) => {
+          {setups.map((label) => {
             const on = focusSetup === label;
             return (
               <button

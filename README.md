@@ -125,3 +125,14 @@ frontend/
   components/    ui primitives, trades, calendar, insights, charts, layout
   lib/           api client, hooks, types
 ```
+```
+cd backend
+venv\Scripts\activate
+uvicorn app.main:app --reload --port 8001
+```
+```
+cd frontend
+npm run dev
+
+ngrok http 3000
+```

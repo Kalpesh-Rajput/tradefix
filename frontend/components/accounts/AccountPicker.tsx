@@ -95,8 +95,10 @@ export function AccountPicker({
             role="listbox"
             style={menuStyle}
             className={clsx(
-              "overflow-hidden rounded-lg border shadow-lg",
-              tone === "trade" ? "border-white/10 bg-zinc-950" : "border-border bg-surface"
+              "overflow-hidden rounded-xl border shadow-[var(--shadow-dropdown)]",
+              tone === "trade"
+                ? "border-[var(--color-border)] bg-[var(--color-surface)]"
+                : "border-border bg-surface"
             )}
           >
             <ul className="max-h-56 overflow-y-auto py-1">
@@ -112,8 +114,8 @@ export function AccountPicker({
                       }}
                       className={clsx(
                         "flex h-9 w-full items-center justify-between gap-2 px-3 text-left text-sm transition",
-                        tone === "trade" ? "hover:bg-white/[0.04]" : "hover:bg-foreground/5",
-                        selected ? "text-primary" : tone === "trade" ? "text-white" : "text-foreground"
+                        tone === "trade" ? "hover:bg-[var(--color-surface-secondary)]" : "hover:bg-foreground/5",
+                        selected ? "text-primary" : tone === "trade" ? "text-[var(--color-text-primary)]" : "text-foreground"
                       )}
                     >
                       <span className="min-w-0 truncate">{getLabel(account)}</span>
@@ -161,15 +163,21 @@ export function AccountPicker({
         aria-controls={listId}
         onClick={() => setOpen((v) => !v)}
         className={clsx(
-          "flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-40",
+          "flex w-full items-center justify-between gap-2 rounded-lg border px-3 text-left text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-40",
           tone === "trade"
-            ? "border-white/10 bg-zinc-900 text-white hover:border-primary/40 focus-visible:border-primary/40"
-            : "border-border bg-background text-foreground hover:border-primary/40 focus-visible:border-primary/40"
+            ? "h-12 rounded-xl border-[var(--color-border)] bg-[var(--color-surface)] font-medium text-[var(--color-text-primary)] hover:border-[var(--color-text-secondary)] focus-visible:border-primary focus-visible:shadow-[var(--focus-ring)]"
+            : "py-2.5 border-border bg-background text-foreground hover:border-primary/40 focus-visible:border-primary/40"
         )}
       >
-        <span className="min-w-0 truncate">{label}</span>
+        <span className={clsx("min-w-0 truncate", tone === "trade" && selectedAccount ? "font-medium" : "", tone === "trade" && !selectedAccount && !extra && "font-normal text-[var(--color-text-muted)]")}>
+          {label}
+        </span>
         <ChevronDown
-          className={clsx("h-4 w-4 shrink-0 text-muted transition", open && "rotate-180")}
+          className={clsx(
+            "shrink-0",
+            tone === "trade" ? "h-4 w-4 text-[var(--color-text-muted)] transition-transform duration-150" : "h-4 w-4 text-muted transition",
+            open && "rotate-180"
+          )}
         />
       </button>
       {menu}

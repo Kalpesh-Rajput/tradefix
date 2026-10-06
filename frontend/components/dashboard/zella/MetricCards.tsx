@@ -1,9 +1,10 @@
 "use client";
 
 import clsx from "clsx";
-import { Calculator, Info } from "lucide-react";
+import { Calculator } from "lucide-react";
 
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 
 const BE_HEX = "#7B8DB8";
@@ -28,13 +29,11 @@ function KpiShell({
   );
 }
 
-function LabelRow({ label, hint }: { label: string; hint?: string }) {
+function LabelRow({ label, hint }: { label: string; hint: string }) {
   return (
     <div className="mb-1.5 flex h-5 items-center gap-1 text-[14px] font-bold leading-5 text-[var(--color-text-label)]">
       <span className="truncate">{label}</span>
-      <span title={hint} className="inline-flex shrink-0">
-        <Info className="h-3 w-3 text-[#777881]" strokeWidth={1.75} aria-hidden />
-      </span>
+      <InfoTooltip content={hint} label={label} />
     </div>
   );
 }
@@ -230,7 +229,7 @@ export function MetricCards({
     <div className="dash-metrics">
       <KpiShell className="relative justify-start">
         <div className="min-w-0">
-          <LabelRow label={t("dashboard.netPnl")} />
+          <LabelRow label={t("dashboard.netPnl")} hint={t("dashboard.hint.netPnl")} />
           <p
             className="text-[18px] font-semibold leading-6 tracking-tight"
             style={{ color: netPnl >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX }}
@@ -245,7 +244,7 @@ export function MetricCards({
 
       <KpiShell className="!flex-row !items-start !justify-between !gap-2">
         <div className="min-w-0 pt-0">
-          <LabelRow label={t("dashboard.tradeWinPct")} />
+          <LabelRow label={t("dashboard.tradeWinPct")} hint={t("dashboard.hint.tradeWinPct")} />
           <p className="text-[18px] font-semibold leading-6 tracking-tight text-[var(--color-text-kpi)]">
             {winRate.toFixed(2)}%
           </p>
@@ -257,7 +256,7 @@ export function MetricCards({
 
       <KpiShell className="!flex-row !items-start !justify-between !gap-2">
         <div className="min-w-0">
-          <LabelRow label={t("dashboard.profitFactor")} />
+          <LabelRow label={t("dashboard.profitFactor")} hint={t("dashboard.hint.profitFactor")} />
           <p className="text-[18px] font-semibold leading-6 tracking-tight text-[var(--color-text-kpi)]">
             {Number.isFinite(profitFactor) ? profitFactor.toFixed(2) : "—"}
           </p>
@@ -269,7 +268,7 @@ export function MetricCards({
 
       <KpiShell className="!flex-row !items-start !justify-between !gap-2">
         <div className="min-w-0">
-          <LabelRow label={t("dashboard.dayWinPct")} />
+          <LabelRow label={t("dashboard.dayWinPct")} hint={t("dashboard.hint.dayWinPct")} />
           <p className="text-[18px] font-semibold leading-6 tracking-tight text-[var(--color-text-kpi)]">
             {dayWinPct != null ? `${dayWinPct.toFixed(2)}%` : "—"}
           </p>
@@ -281,7 +280,7 @@ export function MetricCards({
 
       <KpiShell className="justify-start">
         <div className="min-w-0">
-          <LabelRow label={t("dashboard.avgWinLoss")} />
+          <LabelRow label={t("dashboard.avgWinLoss")} hint={t("dashboard.hint.avgWinLoss")} />
           <p className="mb-2 text-[18px] font-semibold leading-6 tracking-tight text-[var(--color-text-kpi)]">
             {avgRatio ? avgRatio.toFixed(2) : "—"}
           </p>
@@ -321,10 +320,7 @@ export function MetricCards({
             </span>
           </p>
         </div>
-        <div
-          className="shrink-0 self-center"
-          title={t("dashboard.expectancyHint")}
-        >
+        <div className="shrink-0 self-center">
           <ExpectancySpark values={expectancySeries} />
         </div>
       </KpiShell>

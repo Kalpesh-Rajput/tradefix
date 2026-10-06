@@ -1,16 +1,16 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { Control, Controller, FieldErrors, UseFormRegister, UseFormWatch, useFieldArray } from "react-hook-form";
+import { Control, Controller, FieldErrors, UseFormRegister, useFieldArray, useWatch } from "react-hook-form";
 
+import { currentClock } from "@/components/trade/DateTimePicker";
+import { DateTimeMomentField } from "@/components/trade/EntryMomentPicker";
+import { FeeField } from "@/components/trade/FeeField";
 import { MasterCombobox } from "@/components/trade/MasterCombobox";
 import { AddTradeFormValues } from "@/components/trade/schema";
-import { FieldLabel } from "@/components/trade/ui";
+import { FieldLabel, formNumberClass } from "@/components/trade/ui";
 import { fmtMoney } from "@/lib/format";
-import { calculateExitPnl, type TradeCalcResult } from "@/lib/tradeCalc";
-
-const inputClass =
-  "w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-primary/40 disabled:opacity-40";
+import { calculateExitPnl, positionValue, type TradeCalcResult } from "@/lib/tradeCalc";
 
 function statusLabel(status: TradeCalcResult["displayStatus"]): string {
   if (status === "partially_closed") return "Partially closed";
@@ -18,64 +18,67 @@ function statusLabel(status: TradeCalcResult["displayStatus"]): string {
   return "Open";
 }
 
+function localDate() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
 export function PartialFillsEditor({
   control,
   register,
-  watch,
   errors,
   calc,
 }: {
   control: Control<AddTradeFormValues>;
   register: UseFormRegister<AddTradeFormValues>;
-  watch: UseFormWatch<AddTradeFormValues>;
   errors: FieldErrors<AddTradeFormValues>;
   calc: TradeCalcResult;
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: "exits" });
-  const asset = watch("asset_type");
-  const side = watch("side");
-  const symbol = watch("symbol");
-  const entryPrice = Number(watch("entry_price") || 0);
-  const contractSize = watch("contract_size");
+  const asset = useWatch({ control, name: "asset_type" });
+  const side = useWatch({ control, name: "side" });
+  const symbol = useWatch({ control, name: "symbol" });
+  const entryPrice = Number(useWatch({ control, name: "entry_price" }) || 0);
+  const contractSize = useWatch({ control, name: "contract_size" });
+  const exitRows = useWatch({ control, name: "exits" }) ?? [];
   const isForex = asset === "forex";
   const qtyLabel = isForex ? "Exit lots" : "Exit qty";
   const remainingLabel = isForex ? "Remaining lots" : "Remaining qty";
-  const now = new Date();
-  const date = now.toISOString().slice(0, 10);
-  const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  const exitRows = watch("exits") ?? [];
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-wider text-muted">Partial profit / exits</p>
+    <div className="space-y-3" data-field="exits">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            Partial profit / exits
+          </p>
+          <p className="mt-1 text-[11px] text-[var(--color-text-muted)]">
+            Add one or more closes against the same trade.
+          </p>
+        </div>
         <button
           type="button"
           onClick={() =>
             append({
               quantity: "" as unknown as number,
               price: "" as unknown as number,
-              date,
-              time,
+              date: localDate(),
+              time: currentClock(),
               condition: "",
               fees: 0,
             })
           }
-          className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1 text-[11px] text-zinc-300 hover:border-primary/40 hover:text-primary"
+          className="inline-flex h-9 shrink-0 items-center gap-1 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-medium text-primary hover:border-primary/40"
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-3.5 w-3.5" />
           Add exit
         </button>
       </div>
-      <p className="text-[11px] text-muted">
-        Add one or more closes against the same trade. Remaining {isForex ? "lots stay" : "quantity stays"} open until
-        exits cover the full size.
-      </p>
       {fields.length === 0 && (
-        <div className="rounded-lg border border-dashed border-white/10 px-3 py-4 text-center text-xs text-muted">
-          No exits yet — trade stays open.
+        <div className="rounded-[10px] border border-dashed border-[var(--color-border)] px-3 py-4 text-center text-xs text-[var(--color-text-muted)]">
+          No exits yet
           <br />
-          Add a partial or full exit when you book profit.
+          Trade stays open.
         </div>
       )}
       <div className="space-y-3">
@@ -98,28 +101,28 @@ export function PartialFillsEditor({
               : null;
           const net = gross != null ? Math.round((gross - fees) * 100) / 100 : null;
           return (
-            <div key={field.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+            <div key={field.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-3">
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-[11px] font-medium text-zinc-400">Exit {index + 1}</span>
+                <span className="text-xs font-medium text-[var(--color-text-secondary)]">Exit {index + 1}</span>
                 <button
                   type="button"
                   onClick={() => remove(index)}
-                  className="rounded p-1 text-zinc-500 hover:text-destructive"
+                  className="rounded p-1 text-[var(--color-text-muted)] hover:text-destructive"
                   aria-label={`Remove exit ${index + 1}`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <FieldLabel error={errors.exits?.[index]?.quantity?.message as string | undefined}>
-                    {qtyLabel}
-                  </FieldLabel>
+                  <FieldLabel error={errors.exits?.[index]?.quantity?.message as string | undefined}>{qtyLabel}</FieldLabel>
                   <input
                     type="number"
                     step="any"
+                    inputMode="decimal"
                     placeholder="0.00"
-                    className={`${inputClass} font-mono`}
+                    aria-invalid={errors.exits?.[index]?.quantity ? true : undefined}
+                    className={formNumberClass(errors.exits?.[index]?.quantity?.message as string | undefined)}
                     {...register(`exits.${index}.quantity`)}
                   />
                 </div>
@@ -128,46 +131,62 @@ export function PartialFillsEditor({
                   <input
                     type="number"
                     step="any"
+                    inputMode="decimal"
                     placeholder="0.00"
-                    className={`${inputClass} font-mono`}
+                    aria-invalid={errors.exits?.[index]?.price ? true : undefined}
+                    className={formNumberClass(errors.exits?.[index]?.price?.message as string | undefined)}
                     {...register(`exits.${index}.price`)}
                   />
                 </div>
-                <div>
-                  <FieldLabel>Date</FieldLabel>
-                  <input type="date" className={inputClass} {...register(`exits.${index}.date`)} />
-                </div>
-                <div>
-                  <FieldLabel>Time</FieldLabel>
-                  <input type="time" className={`${inputClass} [color-scheme:dark]`} {...register(`exits.${index}.time`)} />
-                </div>
-                <div>
-                  <FieldLabel error={errors.exits?.[index]?.fees?.message as string | undefined}>Fees</FieldLabel>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="0"
-                    className={`${inputClass} font-mono`}
-                    {...register(`exits.${index}.fees`)}
-                  />
-                </div>
+                <Controller
+                  control={control}
+                  name={`exits.${index}.date`}
+                  render={({ field: dateField }) => (
+                    <Controller
+                      control={control}
+                      name={`exits.${index}.time`}
+                      render={({ field: timeField }) => (
+                        <DateTimeMomentField
+                          date={dateField.value || ""}
+                          time={timeField.value || ""}
+                          onDateChange={dateField.onChange}
+                          onTimeChange={timeField.onChange}
+                          label="Date & time"
+                          error={
+                            (errors.exits?.[index]?.date?.message as string | undefined) ||
+                            (errors.exits?.[index]?.time?.message as string | undefined)
+                          }
+                        />
+                      )}
+                    />
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name={`exits.${index}.fees`}
+                  render={({ field: feeField }) => (
+                    <FeeField
+                      label="Fees"
+                      amount={feeField.value}
+                      basis={positionValue({
+                        assetType: asset,
+                        symbol: symbol || "",
+                        quantity: qty,
+                        entryPrice: price,
+                        contractSize: contractSize != null ? Number(contractSize) : null,
+                      })}
+                      basisLabel="exit value"
+                      onChange={feeField.onChange}
+                      error={errors.exits?.[index]?.fees?.message as string | undefined}
+                    />
+                  )}
+                />
               </div>
               {gross != null && (
                 <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
-                  <div className="rounded-lg border border-white/[0.04] bg-black/20 px-2 py-1.5">
-                    <p className="text-muted">Gross P&L</p>
-                    <p className={`font-mono ${gross >= 0 ? "text-emerald-400" : "text-red-400"}`}>{fmtMoney(gross)}</p>
-                  </div>
-                  <div className="rounded-lg border border-white/[0.04] bg-black/20 px-2 py-1.5">
-                    <p className="text-muted">Fees</p>
-                    <p className="font-mono text-zinc-300">{fmtMoney(fees, { signed: false })}</p>
-                  </div>
-                  <div className="rounded-lg border border-white/[0.04] bg-black/20 px-2 py-1.5">
-                    <p className="text-muted">Net P&L</p>
-                    <p className={`font-mono ${(net ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                      {fmtMoney(net ?? 0)}
-                    </p>
-                  </div>
+                  <MiniStat label="Gross P&L" value={fmtMoney(gross)} tone={gross >= 0 ? "profit" : "loss"} />
+                  <MiniStat label="Fees" value={fmtMoney(fees, { signed: false })} />
+                  <MiniStat label="Net P&L" value={fmtMoney(net ?? 0)} tone={(net ?? 0) >= 0 ? "profit" : "loss"} />
                 </div>
               )}
               <div className="mt-2">
@@ -180,7 +199,7 @@ export function PartialFillsEditor({
                       label="Exit condition"
                       value={cond.value || ""}
                       onChange={cond.onChange}
-                      placeholder="Target hit, stop…"
+                      placeholder="Select exit condition"
                     />
                   )}
                 />
@@ -189,21 +208,20 @@ export function PartialFillsEditor({
           );
         })}
       </div>
+      {typeof errors.exits?.message === "string" && (
+        <p className="text-xs text-destructive">{errors.exits.message}</p>
+      )}
       {fields.length > 0 && (
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+        <div className="rounded-xl border border-[var(--color-border)] p-3">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[10px] uppercase tracking-wider text-muted">Exit summary</p>
-            <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-zinc-300">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">Exit summary</p>
+            <span className="rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[10px] text-[var(--color-text-secondary)]">
               {statusLabel(calc.displayStatus)}
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-3">
             <SummaryRow label="Total exited" value={String(calc.sellQuantity)} />
-            <SummaryRow
-              label="Avg exit price"
-              value={calc.exitPrice != null ? String(calc.exitPrice) : "—"}
-              mono
-            />
+            <SummaryRow label="Avg exit price" value={calc.exitPrice != null ? String(calc.exitPrice) : "—"} />
             <SummaryRow label={remainingLabel} value={String(calc.remainingQuantity)} />
             <SummaryRow
               label="Realized gross"
@@ -219,7 +237,7 @@ export function PartialFillsEditor({
           </div>
         </div>
       )}
-      {watch("exits")?.length > 0 && (
+      {exitRows.length > 0 && (
         <Controller
           control={control}
           name="exit_condition"
@@ -229,7 +247,7 @@ export function PartialFillsEditor({
               label="Primary exit condition"
               value={field.value || ""}
               onChange={field.onChange}
-              placeholder="Used when a row has none"
+              placeholder="Select exit condition"
             />
           )}
         />
@@ -238,23 +256,32 @@ export function PartialFillsEditor({
   );
 }
 
+function MiniStat({ label, value, tone }: { label: string; value: string; tone?: "profit" | "loss" }) {
+  return (
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5">
+      <p className="text-[var(--color-text-muted)]">{label}</p>
+      <p className={`font-mono ${tone === "profit" ? "text-emerald-600" : tone === "loss" ? "text-destructive" : "text-[var(--color-text-primary)]"}`}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function SummaryRow({
   label,
   value,
-  mono,
   tone,
 }: {
   label: string;
   value: string;
-  mono?: boolean;
   tone?: "profit" | "loss";
 }) {
   return (
-    <div className="rounded-lg border border-white/[0.04] bg-black/20 px-2 py-1.5">
-      <p className="text-muted">{label}</p>
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5">
+      <p className="text-[var(--color-text-muted)]">{label}</p>
       <p
         className={`font-mono ${
-          tone === "profit" ? "text-emerald-400" : tone === "loss" ? "text-red-400" : mono ? "text-zinc-200" : "text-zinc-300"
+          tone === "profit" ? "text-emerald-600" : tone === "loss" ? "text-destructive" : "text-[var(--color-text-primary)]"
         }`}
       >
         {value}

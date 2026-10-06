@@ -3,38 +3,34 @@
 import { Plus } from "lucide-react";
 import { useMemo } from "react";
 
-import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/ui/Toast";
 import { useMasters } from "@/lib/hooks/useMasters";
 import { usePlaybooks } from "@/lib/hooks/usePlaybooks";
 import { useUpdateTrade } from "@/lib/hooks/useTrades";
 import { playbookMatchingName } from "@/lib/playbooks/stats";
 import { assignedStrategy } from "@/lib/trades/previewStats";
-import { resolveStrategyCatalog } from "@/lib/tradingDefaults";
+import { masterNames } from "@/lib/masters";
 import type { Trade } from "@/lib/types";
 
 export function StrategyTab({ trade }: { trade: Trade }) {
-  const { user } = useAuth();
   const toast = useToast();
   const update = useUpdateTrade();
   const { data: masters = [] } = useMasters("strategy");
   const { data: playbooks = [] } = usePlaybooks();
+  const current = assignedStrategy(trade);
   const catalog = useMemo(() => {
-    const fromUser = resolveStrategyCatalog(user);
-    const fromMasters = masters.map((m) => m.name);
-    const fromPlaybooks = playbooks.map((p) => p.name);
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const name of [...fromUser, ...fromMasters, ...fromPlaybooks]) {
-      const key = name.toLowerCase();
+    const names = masterNames(masters, current ? [current] : []);
+    const seen = new Set(names.map((name) => name.toLowerCase()));
+    const out = [...names];
+    for (const playbook of playbooks) {
+      const key = playbook.name.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
-      out.push(name);
+      out.push(playbook.name);
     }
     return out;
-  }, [user, masters, playbooks]);
+  }, [masters, playbooks, current]);
 
-  const current = assignedStrategy(trade);
   const masterByName = useMemo(() => {
     const map = new Map(masters.map((m) => [m.name.toLowerCase(), m]));
     return map;

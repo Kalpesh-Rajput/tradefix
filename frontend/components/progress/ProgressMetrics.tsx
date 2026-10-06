@@ -3,6 +3,8 @@
 import clsx from "clsx";
 import { Flame } from "lucide-react";
 
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+
 function ScoreRing({ value }: { value: number | null }) {
   const pct = value == null ? 0 : Math.max(0, Math.min(100, value));
   const r = 28;
@@ -54,7 +56,13 @@ export function ProgressMetrics({
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <section className="dash-card flex min-h-[148px] flex-col p-4">
-        <p className="text-[11px] font-medium text-[var(--color-text-muted)]">Current streak</p>
+        <p className="flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)]">
+          <span>Current streak</span>
+          <InfoTooltip
+            content="Consecutive trading days you started. Weekends you skipped in your rules do not break the streak."
+            label="Current streak"
+          />
+        </p>
         {loading ? (
           <div className="mt-4 h-10 w-24 animate-pulse rounded bg-[var(--color-primary-very-light)]" />
         ) : (
@@ -72,7 +80,13 @@ export function ProgressMetrics({
       </section>
 
       <section className="dash-card flex min-h-[148px] flex-col p-4">
-        <p className="text-[11px] font-medium text-[var(--color-text-muted)]">Current period score</p>
+        <p className="flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)]">
+          <span>Current period score</span>
+          <InfoTooltip
+            content="Average of your daily rule-follow scores for the selected date range."
+            label="Current period score"
+          />
+        </p>
         <div className="mt-2 flex flex-1 items-center gap-3">
           {loading ? (
             <div className="h-[72px] w-[72px] animate-pulse rounded-full bg-[var(--color-primary-very-light)]" />
@@ -86,7 +100,13 @@ export function ProgressMetrics({
       </section>
 
       <section className="dash-card flex min-h-[148px] flex-col p-4">
-        <p className="text-[11px] font-medium text-[var(--color-text-muted)]">Today&apos;s progress</p>
+        <p className="flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)]">
+          <span>Today&apos;s progress</span>
+          <InfoTooltip
+            content="How many of today’s rules you have already passed."
+            label="Today's progress"
+          />
+        </p>
         {loading ? (
           <div className="mt-4 h-8 w-16 animate-pulse rounded bg-[var(--color-primary-very-light)]" />
         ) : (

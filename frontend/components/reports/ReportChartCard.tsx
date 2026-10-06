@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { BarChart3, Plus } from "lucide-react";
 
 import { AggregationSelector } from "@/components/reports/AggregationSelector";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { ChartOverflowMenu } from "@/components/reports/ChartOverflowMenu";
 import { MetricSelector } from "@/components/reports/MetricSelector";
 import { PerformanceChart } from "@/components/reports/PerformanceChart";
@@ -87,6 +88,7 @@ export function ReportChartCard({
             accent={accent}
             onChange={(metricId) => onChange({ ...config, metricId })}
           />
+          {metric.description ? <InfoTooltip content={metric.description} label={metric.legendLabel} /> : null}
           <button
             type="button"
             onClick={onAdd}

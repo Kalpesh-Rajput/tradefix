@@ -405,10 +405,62 @@ export const REPORT_METRICS: ReportMetricDef[] = [
   },
 ];
 
+const METRIC_DESCRIPTIONS: Record<string, string> = {
+  avg_trading_days_duration_cumulative:
+    "Running average of how long your trading days last through the selected range.",
+  avg_hold_time_cumulative: "Running average of how long closed trades stay open.",
+  longest_trade_duration_cumulative: "The longest a single trade stayed open, tracked as a running maximum.",
+  max_trading_days_duration_cumulative: "The longest trading day so far in the selected range.",
+  net_pnl_cumulative:
+    "Running total of net profit and loss. Above zero is profit and below zero is loss.",
+  avg_daily_net_pnl_cumulative: "Running average of net P&L per trading day.",
+  avg_daily_win_loss_cumulative: "Running ratio of the average winning day to the average losing day.",
+  avg_loss_cumulative: "Running average size of your losing trades.",
+  avg_max_trade_loss_cumulative: "Running average of the largest loss in each period.",
+  avg_max_trade_profit_cumulative: "Running average of the largest profit in each period.",
+  avg_net_trade_pnl_cumulative: "Running average net P&L per closed trade.",
+  avg_trade_win_loss_cumulative: "Running ratio of the average winner to the average loser.",
+  avg_win_cumulative: "Running average size of your winning trades.",
+  daily_net_pnl:
+    "Net P&L for each day. Green is a profitable day and red is a losing day. Use it to spot streaks.",
+  profit_factor_cumulative:
+    "Running gross profit divided by gross loss. Above 1 means profits are greater than losses.",
+  expectancy_cumulative: "Running estimate of the average amount you gain or lose per trade.",
+  largest_win_cumulative: "The biggest winning trade so far in the range.",
+  largest_loss_cumulative: "The biggest losing trade so far in the range.",
+  drawdown: "Decline from the previous equity peak. Use it to see how deep and how long losing periods last.",
+  max_drawdown_cumulative: "The deepest decline from a peak reached so far.",
+  max_drawdown_pct_cumulative: "That deepest decline as a percentage of the peak it fell from.",
+  avg_daily_volume_cumulative: "Running average of size traded per day.",
+  daily_net_drawdown_cumulative: "Running net drawdown from the equity peak.",
+  logged_days_cumulative: "Count of days with journal activity, accumulated through the range.",
+  longs_breakeven_cumulative: "Running count of long trades that closed flat.",
+  longs_losing_cumulative: "Running count of long trades that closed at a loss.",
+  longs_open_cumulative: "Running count of long trades that are still open.",
+  longs_trades_cumulative: "Running count of long trades.",
+  longs_winning_cumulative: "Running count of long trades that closed in profit.",
+  net_account_balance: "Account balance after closed P&L in the selected range.",
+  open_trades_cumulative: "Running count of trades that are still open.",
+  shorts_breakeven_cumulative: "Running count of short trades that closed flat.",
+  shorts_losing_cumulative: "Running count of short trades that closed at a loss.",
+  shorts_winning_cumulative: "Running count of short trades that closed in profit.",
+  shorts_trades_cumulative: "Running count of short trades.",
+  shorts_open_cumulative: "Running count of short trades that are still open.",
+  volume_cumulative: "Running total of size traded.",
+  trades_cumulative: "Running count of trades taken.",
+  win_streak: "The current run of consecutive winning trades.",
+  loss_streak: "The current run of consecutive losing trades.",
+  max_win_streak_cumulative: "The longest run of winning trades so far.",
+  max_loss_streak_cumulative: "The longest run of losing trades so far.",
+  win_rate_cumulative:
+    "Running percentage of closed trades that were profitable. Compare it with average win and average loss.",
+};
+
 const BY_ID = new Map(REPORT_METRICS.map((m) => [m.id, m]));
 
 export function getReportMetric(id: string): ReportMetricDef {
-  return BY_ID.get(id) ?? BY_ID.get(DEFAULT_REPORT_METRIC_ID)!;
+  const metric = BY_ID.get(id) ?? BY_ID.get(DEFAULT_REPORT_METRIC_ID)!;
+  return { ...metric, description: METRIC_DESCRIPTIONS[metric.id] };
 }
 
 export function metricsByCategory(): { category: ReportMetricCategory; metrics: ReportMetricDef[] }[] {

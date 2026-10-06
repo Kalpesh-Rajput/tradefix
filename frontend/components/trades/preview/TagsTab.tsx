@@ -4,31 +4,24 @@ import { MoreHorizontal, Tag } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { useAuth } from "@/components/providers/AuthProvider";
+import { MasterMultiCombobox } from "@/components/trade/MasterMultiCombobox";
 import { useToast } from "@/components/ui/Toast";
-import { resolveEmotionCatalog } from "@/lib/emotions";
 import { useDecideAiTag } from "@/lib/hooks/useAgents";
 import { useMasters } from "@/lib/hooks/useMasters";
 import { useUpdateTrade } from "@/lib/hooks/useTrades";
-import { resolveMistakeCatalog } from "@/lib/tradingDefaults";
+import { masterNames } from "@/lib/masters";
 import type { Trade } from "@/lib/types";
 
 export function TagsTab({ trade }: { trade: Trade }) {
-  const { user } = useAuth();
   const toast = useToast();
   const update = useUpdateTrade();
   const decide = useDecideAiTag();
   const { data: timeframes = [] } = useMasters("timeframe");
 
-  const mistakes = useMemo(() => resolveMistakeCatalog(user), [user]);
-  const emotions = useMemo(() => resolveEmotionCatalog(user), [user]);
-  const tfOptions = useMemo(() => {
-    const names = timeframes.map((m) => m.name);
-    if (trade.entry_timeframe && !names.includes(trade.entry_timeframe)) {
-      return [trade.entry_timeframe, ...names];
-    }
-    return names;
-  }, [timeframes, trade.entry_timeframe]);
+  const tfOptions = useMemo(
+    () => masterNames(timeframes, trade.entry_timeframe ? [trade.entry_timeframe] : []),
+    [timeframes, trade.entry_timeframe]
+  );
 
   async function patch(data: Parameters<typeof update.mutateAsync>[0]["data"]) {
     try {
@@ -38,9 +31,6 @@ export function TagsTab({ trade }: { trade: Trade }) {
     }
   }
 
-  const selectedMistake = trade.rules_broken?.[0] ?? "";
-  const selectedEmotion = trade.emotion_tags?.[0] ?? "";
-
   return (
     <div>
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -49,29 +39,23 @@ export function TagsTab({ trade }: { trade: Trade }) {
           <p className="text-[12px] text-[var(--color-text-tertiary)]">Organize this trade</p>
         </div>
         <Link
-          href="/settings/trading-defaults"
+          href="/settings/masters"
           className="text-[12px] font-medium text-primary hover:underline"
         >
           Manage tags
         </Link>
       </div>
 
-      <Category
-        title="Mistakes"
-        accent="#E6B325"
-        value={selectedMistake}
-        options={mistakes}
-        disabled={update.isPending}
-        onChange={(v) => patch({ rules_broken: v ? [v] : [] })}
-      />
-      <Category
-        title="Emotions"
-        accent="#3BB273"
-        value={selectedEmotion}
-        options={emotions}
-        disabled={update.isPending}
-        onChange={(v) => patch({ emotion_tags: v ? [v] : [] })}
-      />
+      <div className="mb-3">
+        <MasterMultiCombobox
+          category="mistake"
+          label="Mistakes"
+          value={trade.rules_broken ?? []}
+          onChange={(next) => void patch({ rules_broken: next })}
+          placeholder="Select mistakes"
+          disabled={update.isPending}
+        />
+      </div>
       <Category
         title="Entry TF"
         accent="#7C5CBF"
@@ -118,13 +102,13 @@ export function TagsTab({ trade }: { trade: Trade }) {
 
       <div className="mt-4 flex items-center justify-between">
         <Link
-          href="/settings/trading-defaults"
+          href="/settings/masters"
           className="text-[12px] font-medium text-primary hover:underline"
         >
           Add new category
         </Link>
         <Link
-          href="/settings/trading-defaults"
+          href="/settings/masters"
           className="text-[12px] font-medium text-primary hover:underline"
         >
           Manage tags
@@ -157,7 +141,7 @@ function Category({
           <span className="text-[13px] font-medium text-[var(--color-text-primary)]">{title}</span>
         </div>
         <Link
-          href="/settings/trading-defaults"
+          href="/settings/masters"
           className="rounded p-1 text-[var(--color-text-muted)] hover:bg-[#F5F5F7] hover:text-[var(--color-text-primary)]"
           aria-label={`Manage ${title}`}
         >

@@ -22,6 +22,7 @@ class TradeMasterCreate(BaseModel):
 class TradeMasterUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=100)
     sort_order: int | None = None
+    is_active: bool | None = None
 
     @field_validator("name")
     @classmethod
@@ -40,6 +41,7 @@ class TradeMasterResponse(BaseModel):
     name: str
     sort_order: int
     is_builtin: bool
+    is_active: bool
     created_at: datetime
 
     class Config:

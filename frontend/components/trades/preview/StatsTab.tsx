@@ -1,10 +1,11 @@
 "use client";
 
 import clsx from "clsx";
-import { Info, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { useToast } from "@/components/ui/Toast";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 import { useUpdateTrade } from "@/lib/hooks/useTrades";
@@ -130,9 +131,10 @@ export function StatsTab({
       <section className="pt-4">
         <h3 className="mb-2 flex items-center gap-1 text-[12px] font-semibold" style={{ color: PNL_PROFIT_HEX }}>
           Profit Target
-          <span title="Price where you plan to take profit. Saved on this trade." className="inline-flex">
-            <Info className="h-3 w-3 text-[var(--color-text-muted)]" strokeWidth={1.75} />
-          </span>
+          <InfoTooltip
+            content="The price where you plan to take profit. This is saved on the trade and used when you review risk and reward."
+            label="Profit Target"
+          />
         </h3>
         <label className="mb-1.5 block text-[11px] text-[var(--color-text-tertiary)]">Target in Price</label>
         <div className="flex items-center gap-2">
@@ -154,9 +156,10 @@ export function StatsTab({
       <section className="pt-4">
         <h3 className="mb-2 flex items-center gap-1 text-[12px] font-semibold" style={{ color: PNL_LOSS_HEX }}>
           Stop loss
-          <span title="Price where you plan to exit if the trade moves against you. Saved on this trade." className="inline-flex">
-            <Info className="h-3 w-3 text-[var(--color-text-muted)]" strokeWidth={1.75} />
-          </span>
+          <InfoTooltip
+            content="The price where you plan to exit if the trade moves against you. This is saved on the trade and used for risk and R-multiple."
+            label="Stop loss"
+          />
         </h3>
         <label className="mb-1.5 block text-[11px] text-[var(--color-text-tertiary)]">Target in Price</label>
         <div className="flex items-center gap-2">

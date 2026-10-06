@@ -3,6 +3,7 @@
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { CHART_BODY_H, ChartCard, EmptyChart, chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { CHART_LINE_HEX, PNL_LOSS_HEX } from "@/lib/appearance";
 import type { DrawdownPoint } from "@/lib/dashboardSeries";
 
@@ -13,8 +14,9 @@ export function DrawdownChart({
   series: DrawdownPoint[];
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
 }) {
+  const { t } = useLocale();
   return (
-    <ChartCard title="Drawdown" hint="Distance below the running equity peak for closed trades in this range.">
+    <ChartCard title={t("dashboard.drawdown")} hint={t("dashboard.hint.drawdown")}>
       <div className="w-full shrink-0" style={{ height: CHART_BODY_H }}>
         {series.length === 0 ? (
           <EmptyChart height={CHART_BODY_H} />

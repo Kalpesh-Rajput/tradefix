@@ -60,7 +60,7 @@ class Trade(Base):
     ai_tag_suggestions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     emotion_tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     plan_compliance: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    mood: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    mood: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     rules_broken: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     screenshot_urls: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")

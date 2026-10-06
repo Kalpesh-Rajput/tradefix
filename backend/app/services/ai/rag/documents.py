@@ -118,6 +118,8 @@ def trade_note_document(trade: Trade) -> tuple[str, dict] | None:
         f"Session: {trade.session or 'n/a'}",
         f"P&L: {float(trade.pnl) if trade.pnl is not None else 'n/a'}",
     ]
+    if trade.mood:
+        lines.append(f"Mood: {trade.mood}")
     if trade.emotion_tags:
         lines.append("Emotion: " + ", ".join(str(tag) for tag in trade.emotion_tags))
     if trade.rules_broken:

@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-import { BUILTIN_EMOTIONS } from "@/lib/emotions";
 import { defaultContractSize, defaultLotSize, getInstrument } from "@/lib/instruments/catalog";
-import { BUILTIN_MISTAKES, BUILTIN_STRATEGIES } from "@/lib/tradingDefaults";
+import { moodsFromTrade } from "@/lib/masters";
 import { calculateTrade, displayStatus } from "@/lib/tradeCalc";
 import type { Trade } from "@/lib/types";
 
@@ -12,25 +11,6 @@ export const ASSET_OPTIONS = [
   { value: "crypto", label: "Crypto" },
   { value: "option", label: "Options" },
   { value: "future", label: "Futures" },
-] as const;
-
-export const STRATEGIES = BUILTIN_STRATEGIES;
-export const MISTAKES = BUILTIN_MISTAKES;
-export const EMOTIONS = BUILTIN_EMOTIONS;
-
-export const WENT_WELL = [
-  "Followed Plan",
-  "Solid Risk/Reward",
-  "Patient Entry",
-  "Disciplined Exit",
-  "Respected Stops",
-  "Sized Position Well",
-  "Clear Setup",
-  "Avoided FOMO",
-  "Took Profit as Planned",
-  "Good Market Timing",
-  "Journaling/Review Helped",
-  "Other Positive",
 ] as const;
 
 export const POPULAR_SYMBOLS = [
@@ -89,10 +69,9 @@ export const addTradeSchema = z
     is_favourite: z.boolean().optional().default(false),
     precheck_list_id: z.string().optional().nullable(),
     playbook_id: z.string().optional().nullable(),
-    mood: z.string().optional().nullable(),
+    mood: z.array(z.string()).default([]),
     expiry: z.string().optional().nullable(),
     strategies: z.array(z.string()).default([]),
-    emotions: z.array(z.string()).default([]),
     mistakes: z.array(z.string()).default([]),
     wentWell: z.array(z.string()).default([]),
     plan_compliance: z.any().optional().nullable(),
@@ -229,15 +208,15 @@ export const addTradeSchema = z
     expiry_date: data.expiry_date || data.expiry || null,
     notes: data.notes || "",
     strategies: data.strategies ?? [],
-    emotions: data.emotions ?? [],
     mistakes: data.mistakes ?? [],
     wentWell: data.wentWell ?? [],
+    mood: data.mood ?? [],
     is_favourite: Boolean(data.is_favourite),
     exits: (data.exits ?? []).map((leg) => ({
       quantity: num(leg.quantity) ?? 0,
       price: num(leg.price) ?? 0,
       date: leg.date || "",
-      time: leg.time || "00:00",
+      time: leg.time || "00:00:00",
       condition: leg.condition || "",
       fees: num(leg.fees) ?? 0,
     })),
@@ -283,12 +262,11 @@ export type AddTradeFormValues = {
   is_favourite?: boolean;
   precheck_list_id?: string | null;
   playbook_id?: string | null;
-  mood?: string | null;
+  mood: string[];
   risk_amount?: number | null;
   plan_compliance?: number | null;
   expiry?: string | null;
   strategies: string[];
-  emotions: string[];
   mistakes: string[];
   wentWell: string[];
   notes?: string | null;
@@ -304,7 +282,7 @@ export function defaultAddTradeValues(opts?: {
 }): AddTradeFormValues {
   const now = new Date();
   const date = now.toISOString().slice(0, 10);
-  const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
   const fee = Math.abs(Number(opts?.defaultFee ?? 0));
   const qty = opts?.defaultQuantity != null && opts.defaultQuantity > 0 ? Number(opts.defaultQuantity) : 1;
   return {
@@ -338,12 +316,11 @@ export function defaultAddTradeValues(opts?: {
     is_favourite: false,
     precheck_list_id: "",
     playbook_id: "",
-    mood: "",
+    mood: [],
     risk_amount: null,
     plan_compliance: null,
     expiry: null,
     strategies: [...(opts?.defaultStrategies ?? [])],
-    emotions: [],
     mistakes: [],
     wentWell: [],
     notes: "",
@@ -359,10 +336,17 @@ export function combineDateTime(date?: string | null, time?: string | null): str
 }
 
 export function buildNotes(values: AddTradeFormValues): string {
-  const parts: string[] = [];
-  if (values.notes?.trim()) parts.push(values.notes.trim());
-  if (values.wentWell.length) parts.push(`What went well: ${values.wentWell.join(", ")}`);
-  return parts.join("\n\n") || "";
+  return values.notes?.trim() || "";
+}
+
+function parseWentWell(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+  if (typeof value === "string" && value.trim()) {
+    return value.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
 }
 
 export function liveTradeCalc(values: AddTradeFormValues) {
@@ -460,7 +444,7 @@ function splitIso(iso?: string | null): { date: string; time: string } {
   if (Number.isNaN(d.getTime())) return { date: "", time: "" };
   return {
     date: d.toISOString().slice(0, 10),
-    time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+    time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`,
   };
 }
 
@@ -489,9 +473,9 @@ export function mapTradeToForm(trade: Trade): AddTradeFormValues {
     wentWell = wellLine.split(",").map((s) => s.trim()).filter(Boolean);
     notes = notes.slice(0, wellIdx).trim();
   }
-  const extraWell = typeof extra.went_well === "string" ? extra.went_well : "";
-  if (extraWell) {
-    wentWell = extraWell.split(",").map((s) => s.trim()).filter(Boolean);
+  const extraWell = parseWentWell(extra.went_well);
+  if (extraWell.length) {
+    wentWell = extraWell;
   }
   return {
     asset_type: trade.asset_type,
@@ -524,12 +508,11 @@ export function mapTradeToForm(trade: Trade): AddTradeFormValues {
     is_favourite: Boolean(trade.is_favourite),
     precheck_list_id: trade.precheck_list_id || "",
     playbook_id: trade.playbook_id || "",
-    mood: trade.mood || "",
+    mood: moodsFromTrade(trade),
     risk_amount: trade.risk_amount != null ? Number(trade.risk_amount) : null,
     plan_compliance: trade.plan_compliance != null ? Number(trade.plan_compliance) : null,
     expiry: trade.expiry_date ? String(trade.expiry_date).slice(0, 10) : null,
     strategies: trade.setup_tags?.length ? trade.setup_tags : trade.setup_tag ? [trade.setup_tag] : [],
-    emotions: trade.emotion_tags ?? [],
     mistakes: trade.rules_broken ?? [],
     wentWell,
     notes,

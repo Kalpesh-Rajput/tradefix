@@ -4,10 +4,63 @@ import { Copy, MoreVertical } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { useToast } from "@/components/ui/Toast";
 import { formatMetricValue } from "@/lib/reports/format";
 import type { MoneyFormatter } from "@/lib/reports/types";
 import type { OverviewModel, OverviewMonthHighlight, OverviewStatRow } from "@/lib/reports/overview";
+
+const STAT_HINTS: Record<string, string> = {
+  "Your stats": "A snapshot of profitability, activity, holding time, and drawdown for the selected period.",
+  "Best month": "The month in this range with the highest net P&L.",
+  "Lowest month": "The month in this range with the lowest net P&L.",
+  Average: "The average net P&L per month in this range.",
+  "Total P&L": "Net profit and loss for the selected period.",
+  "Average daily volume": "Average size traded on the days you were active.",
+  "Average winning trade": "Average profit on trades that closed in the green.",
+  "Average losing trade": "Average loss on trades that closed in the red.",
+  "Total number of trades": "How many trades are included in this period.",
+  "Number of winning trades": "How many trades closed in profit.",
+  "Number of losing trades": "How many trades closed at a loss.",
+  "Number of break even trades": "How many trades closed flat.",
+  "Max consecutive wins": "The longest run of winning trades in this period.",
+  "Max consecutive losses": "The longest run of losing trades in this period.",
+  "Commissions & fees": "Commissions and fees recorded on these trades.",
+  "Largest profit": "The single most profitable trade in this period.",
+  "Largest loss": "The single largest losing trade in this period.",
+  "Average hold time (All trades)": "How long a typical trade stayed open.",
+  "Average hold time (Winning trades)": "How long your winning trades typically stayed open.",
+  "Average hold time (Losing trades)": "How long your losing trades typically stayed open.",
+  "Average hold time (Scratch trades)": "How long trades that closed flat typically stayed open.",
+  "Average trade P&L": "Average net result per closed trade. This is your trade expectancy.",
+  "Profit factor": "Gross profits divided by gross losses. Above 1 means profits were greater.",
+  "Open trades": "Trades that are still open.",
+  "Total trading days": "Days in this period that had closed trades.",
+  "Winning days": "Days that closed in profit.",
+  "Losing days": "Days that closed at a loss.",
+  "Breakeven days": "Days that closed flat.",
+  "Logged days": "Days with journal activity in this period.",
+  "Max consecutive winning days": "The longest run of profitable days.",
+  "Max consecutive losing days": "The longest run of losing days.",
+  "Average daily P&L": "Average net P&L on the days you traded.",
+  "Average winning day P&L": "Average profit on days that closed green.",
+  "Average losing day P&L": "Average loss on days that closed red.",
+  "Largest profitable day (Profits)": "The best single-day profit in this period.",
+  "Largest losing day (Losses)": "The worst single-day loss in this period.",
+  "Average planned R-Multiple": "Average R you planned to risk, where 1R is that planned risk.",
+  "Average realized R-Multiple": "Average R you actually made or lost versus planned risk.",
+  "Trade expectancy": "Average amount you gained or lost per closed trade.",
+  "Max drawdown": "The deepest decline from an equity peak in this period.",
+  "Max drawdown, %": "That deepest decline as a percentage of the peak.",
+  "Average drawdown": "The typical size of the declines from your peaks.",
+  "Average drawdown, %": "The typical decline from your peaks, as a percentage.",
+};
+
+function StatHint({ label }: { label: string }) {
+  const hint = STAT_HINTS[label];
+  if (!hint) return null;
+  return <InfoTooltip content={hint} label={label} />;
+}
 
 export function OverviewStatsCard({
   model,
@@ -22,9 +75,12 @@ export function OverviewStatsCard({
     <section className="dash-card p-4 sm:p-5">
       <header className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-primary)]">
-            Your stats
-          </h2>
+          <div className="flex items-center gap-1">
+            <h2 className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-primary)]">
+              Your stats
+            </h2>
+            <StatHint label="Your stats" />
+          </div>
           <p className="mt-0.5 text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">
             ({rangeLabel})
           </p>
@@ -44,7 +100,10 @@ export function OverviewStatsCard({
           formatMoney={formatMoney}
         />
         <div>
-          <p className="text-[12px] text-[var(--color-text-secondary)]">Average</p>
+          <p className="flex items-center gap-1 text-[12px] text-[var(--color-text-secondary)]">
+            <span>Average</span>
+            <StatHint label="Average" />
+          </p>
           <p className="mt-1 text-[18px] font-semibold tabular-nums tracking-tight text-[var(--color-text-primary)]">
             {model.avgMonth == null ? "—" : formatMetricValue(model.avgMonth, "currency", formatMoney)}
           </p>
@@ -77,7 +136,10 @@ function SummaryMetric({
 }) {
   return (
     <div>
-      <p className="text-[12px] text-[var(--color-text-secondary)]">{label}</p>
+      <p className="flex items-center gap-1 text-[12px] text-[var(--color-text-secondary)]">
+        <span>{label}</span>
+        <StatHint label={label} />
+      </p>
       <p className="mt-1 text-[18px] font-semibold tabular-nums tracking-tight text-[var(--color-text-primary)]">
         {highlight ? formatMetricValue(highlight.value, "currency", formatMoney) : "—"}
       </p>
@@ -94,7 +156,10 @@ function StatColumn({ rows }: { rows: OverviewStatRow[] }) {
           key={row.label}
           className="flex items-baseline justify-between gap-4 border-b border-[var(--color-border-subtle)] py-2 last:border-0"
         >
-          <span className="min-w-0 text-[12px] leading-4 text-[var(--color-text-secondary)]">{row.label}</span>
+          <span className="flex min-w-0 items-center gap-1 text-[12px] leading-4 text-[var(--color-text-secondary)]">
+            <span className="truncate">{row.label}</span>
+            <StatHint label={row.label} />
+          </span>
           <span className="shrink-0 text-[12px] font-medium tabular-nums text-[var(--color-text-primary)]">
             {row.value}
           </span>

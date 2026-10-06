@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { ChartCard } from "@/components/dashboard/zella/ChartCard";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import type { ActivityCell } from "@/lib/dashboardSeries";
 
 const LEVELS = ["#EEF1F6", "#C9D4F0", "#8EA4DE", "#5B7AC8", "#3B4F9C"] as const;
@@ -47,11 +48,12 @@ export function ProgressTracker({
   );
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const { t } = useLocale();
 
   return (
     <ChartCard
-      title="Progress tracker"
-      hint="Squares are trading days. Darker blue means more trades that day."
+      title={t("dashboard.progressTracker")}
+      hint={t("dashboard.hint.progressTracker")}
       headerRight={
         <Link href="/progress-tracker" className="text-[11px] font-medium text-primary hover:underline">
           View more

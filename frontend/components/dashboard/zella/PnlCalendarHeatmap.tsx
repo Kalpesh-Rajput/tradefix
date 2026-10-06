@@ -4,6 +4,8 @@ import clsx from "clsx";
 import { BookOpen, ChevronLeft, ChevronRight, RefreshCw, Sun, Target } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode, type Ref } from "react";
 
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { localIso, monthLabel, parseLocalIso } from "@/lib/dateLocal";
 import type { CalendarDay } from "@/lib/types";
 
@@ -115,6 +117,7 @@ export function PnlCalendarHeatmap({
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [selected, setSelected] = useState<string | null>(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     if (!month) return;
@@ -218,6 +221,7 @@ export function PnlCalendarHeatmap({
           >
             {monthLabel(cursor)}
           </h3>
+          <InfoTooltip content={t("dashboard.hint.calendar")} label={monthLabel(cursor)} />
           <div className="flex items-center">
             <button
               type="button"
