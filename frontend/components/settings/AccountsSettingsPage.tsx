@@ -1,13 +1,12 @@
 "use client";
 
+import clsx from "clsx";
 import { Check, Download, Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { AccountDetailsForm } from "@/components/accounts/AccountDetailsForm";
-import { AccountPicker } from "@/components/accounts/AccountPicker";
 import {
   SettingsCard,
-  SettingsField,
   SettingsPageHeader,
   SettingsShell,
 } from "@/components/settings/SettingsShell";
@@ -28,12 +27,6 @@ import {
   useSetDefaultAccount,
   useUpdateAccount,
 } from "@/lib/hooks/useAccounts";
-import type { Account } from "@/lib/types";
-
-function accountLabel(account: Account) {
-  return account.is_default ? `${account.name} (default)` : account.name;
-}
-
 export function AccountsSettingsPage() {
   const toast = useToast();
   const { data: accounts = [], isLoading, isError, refetch } = useAccounts();
@@ -78,8 +71,8 @@ export function AccountsSettingsPage() {
   }, [selected, selectedId]);
 
   useEffect(() => {
-    if (!accounts.length) setFormMode("create");
-  }, [accounts.length]);
+    if (!isLoading && accounts.length === 0) setFormMode("create");
+  }, [isLoading, accounts.length]);
 
   function startCreate() {
     setCreateNonce((n) => n + 1);
@@ -206,28 +199,52 @@ export function AccountsSettingsPage() {
 
       <div className="space-y-5">
         {accounts.length > 0 ? (
-          <SettingsCard title="Account to Edit">
-            <SettingsField label="Account to Edit">
-              <AccountPicker
-                accounts={accounts}
-                value={isCreate ? "__new__" : selected?.id ?? ""}
-                getLabel={(item) => {
-                  const match = accounts.find((account) => account.id === item.id);
-                  return match ? accountLabel(match) : item.name;
-                }}
-                extraOptions={[{ id: "__new__", label: "Create new account…" }]}
-                onChange={(id) => {
-                  if (id === "__new__") {
-                    startCreate();
-                    return;
-                  }
-                  setSelectedId(id);
-                  setFormMode("edit");
-                  setSaveState("idle");
-                  setErrorMsg(null);
-                }}
-              />
-            </SettingsField>
+          <SettingsCard title="Accounts" description="Select an account to edit it below.">
+            <ul
+              role="listbox"
+              aria-label="Accounts"
+              className="max-h-80 divide-y divide-border overflow-y-auto rounded-lg border border-border"
+            >
+              {accounts.map((account) => {
+                const active = !isCreate && selected?.id === account.id;
+                return (
+                  <li key={account.id}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={active}
+                      onClick={() => {
+                        setSelectedId(account.id);
+                        setFormMode("edit");
+                        setSaveState("idle");
+                        setErrorMsg(null);
+                      }}
+                      className={clsx(
+                        "flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
+                        active ? "bg-primary/10" : "hover:bg-foreground/5"
+                      )}
+                    >
+                      <span className="min-w-0">
+                        <span className={clsx("block truncate text-sm font-medium", active ? "text-primary" : "text-foreground")}>
+                          {account.name}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted">
+                          {`${account.base_currency} · ${account.trade_count} ${account.trade_count === 1 ? "trade" : "trades"}`}
+                        </span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        {account.is_default ? (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                            Default
+                          </span>
+                        ) : null}
+                        {active ? <Check className="h-4 w-4 text-primary" aria-hidden /> : null}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </SettingsCard>
         ) : null}
 

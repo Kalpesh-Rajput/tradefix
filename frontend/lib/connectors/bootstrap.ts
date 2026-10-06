@@ -2,9 +2,9 @@
 
 const KEY = "tradefix_connectors_bootstrap";
 
-export function stashConnectorsBootstrap(email: string, password: string): void {
+export function stashConnectorsBootstrap(_email: string, _password: string): void {
   if (typeof window === "undefined") return;
-  sessionStorage.setItem(KEY, JSON.stringify({ email: email.toLowerCase(), password }));
+  sessionStorage.removeItem(KEY);
 }
 
 export function peekConnectorsBootstrap(): { email: string; password: string } | null {

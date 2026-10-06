@@ -43,6 +43,12 @@ screenshot_upload_limiter = SlidingWindowRateLimiter(
     detail="Too many upload attempts. Please wait and try again.",
 )
 
+broker_connect_limiter = SlidingWindowRateLimiter(
+    max_calls=20,
+    window_seconds=60,
+    detail="Too many connection attempts. Wait a minute and try again.",
+)
+
 # 5 password changes per user per hour
 password_change_limiter = SlidingWindowRateLimiter(
     max_calls=5,

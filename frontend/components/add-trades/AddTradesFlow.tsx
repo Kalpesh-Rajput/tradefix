@@ -7,26 +7,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AccountFormStep } from "@/components/add-trades/AccountFormStep";
 import { AccountsStep } from "@/components/add-trades/AccountsStep";
 import { AddAccountChoice } from "@/components/add-trades/AddAccountChoice";
-import { BrokerSelectStep } from "@/components/add-trades/BrokerSelectStep";
 import {
   ImportMethodStep,
   type ImportMethod,
 } from "@/components/add-trades/ImportMethodStep";
-import { BrokerConnectWizard } from "@/components/broker/BrokerConnectWizard";
+import { BrokerConnectScreen } from "@/components/broker/BrokerConnectScreen";
+import { BrokerPickerScreen } from "@/components/broker/BrokerPickerScreen";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { useToast } from "@/components/ui/Toast";
 import {
   blankAccountValues,
   isBrokerAccount,
-  accountInputFromBrokerConnect,
   toAccountInput,
   type AccountFormValues,
 } from "@/lib/accounts/accountForm";
-import { buildUnifiedBrokerCatalog, type UnifiedBroker } from "@/lib/brokers/unified-catalog";
+import { findProvider, type BrokerProvider } from "@/lib/brokers/provider";
 import { useAccounts, useCreateAccount } from "@/lib/hooks/useAccounts";
-import { useBrokerCatalog } from "@/lib/hooks/useBroker";
-import type { ConnectResponse } from "@/lib/connectors/types";
+import { apiMessage, useProviderRegistry } from "@/lib/hooks/useProviders";
 import type { Account } from "@/lib/types";
 
 type FlowStep = "accounts" | "choose-account-type" | "broker" | "method" | "account-form" | "connect";
@@ -47,59 +45,32 @@ export function AddTradesFlow() {
   const { setActiveAccountId } = useAccountPrefs();
   const { data: accounts = [], isLoading, isError, refetch } = useAccounts();
   const createAccount = useCreateAccount();
-  const catalogQuery = useBrokerCatalog();
+  const registry = useProviderRegistry();
+  const providers = registry.data?.brokers ?? [];
 
   const [step, setStep] = useState<FlowStep>("accounts");
   const [accountMode, setAccountMode] = useState<AccountMode>("existing");
   const [targetAccountId, setTargetAccountId] = useState<string | null>(null);
-  const [selectedBroker, setSelectedBroker] = useState<UnifiedBroker | null>(null);
-  const [selectedServer, setSelectedServer] = useState<string | null>(null);
+  const [selectedBroker, setSelectedBroker] = useState<BrokerProvider | null>(null);
   const [pendingMethod, setPendingMethod] = useState<ImportMethod | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-
-  const unifiedBrokers = useMemo(
-    () => buildUnifiedBrokerCatalog(catalogQuery.data?.brokers ?? []),
-    [catalogQuery.data?.brokers]
-  );
-
-  useEffect(() => {
-    if (!selectedBroker) return;
-    const next =
-      unifiedBrokers.find((broker) => broker.id === selectedBroker.id) ??
-      unifiedBrokers.find((broker) => broker.name === selectedBroker.name);
-    if (!next) return;
-    if (
-      next.id !== selectedBroker.id ||
-      next.autoSyncAvailable !== selectedBroker.autoSyncAvailable ||
-      next.connectors?.id !== selectedBroker.connectors?.id ||
-      next.servers.length !== selectedBroker.servers.length
-    ) {
-      setSelectedBroker(next);
-    }
-  }, [unifiedBrokers, selectedBroker]);
 
   const accountFormDefaults = useMemo(() => {
     if (accountMode === "dummy") {
       return blankAccountValues({ name: "Dummy Account" });
     }
-    if (selectedServer) {
-      return blankAccountValues({ name: `${selectedServer} Account` });
-    }
-    const name = selectedBroker?.name ? `${selectedBroker.name} Account` : "New Account";
+    const name = selectedBroker?.display_name ? `${selectedBroker.display_name} Account` : "New Account";
     return blankAccountValues({ name });
-  }, [accountMode, selectedBroker?.name, selectedServer]);
+  }, [accountMode, selectedBroker?.display_name]);
 
   const accountFormResetKey =
-    accountMode === "dummy"
-      ? "dummy"
-      : `broker-${selectedBroker?.id ?? "none"}-${selectedServer ?? "none"}`;
+    accountMode === "dummy" ? "dummy" : `broker-${selectedBroker?.id ?? "none"}`;
 
   const resetLocal = useCallback(() => {
     setStep("accounts");
     setAccountMode("existing");
     setTargetAccountId(null);
     setSelectedBroker(null);
-    setSelectedServer(null);
     setPendingMethod(null);
     setFormError(null);
   }, []);
@@ -148,13 +119,11 @@ export function AddTradesFlow() {
       if (accountMode === "existing" || (accountMode === "dummy" && targetAccountId)) {
         setStep("accounts");
         setSelectedBroker(null);
-        setSelectedServer(null);
         return;
       }
       if (accountMode === "dummy") {
         setStep("choose-account-type");
         setSelectedBroker(null);
-        setSelectedServer(null);
         return;
       }
       setStep("broker");
@@ -164,12 +133,10 @@ export function AddTradesFlow() {
       if (accountMode === "existing") {
         setStep("accounts");
         setSelectedBroker(null);
-        setSelectedServer(null);
         return;
       }
       setStep("choose-account-type");
       setSelectedBroker(null);
-      setSelectedServer(null);
       return;
     }
     if (step === "choose-account-type") {
@@ -178,13 +145,9 @@ export function AddTradesFlow() {
     }
   }
 
-  function brokerForAccount(account: Account): UnifiedBroker | null {
+  function providerForAccount(account: Account): BrokerProvider | null {
     if (!isBrokerAccount(account)) return null;
-    return (
-      unifiedBrokers.find((broker) => broker.id === account.broker_id) ||
-      unifiedBrokers.find((broker) => broker.name === account.broker_name) ||
-      null
-    );
+    return findProvider(providers, account.broker_id) ?? findProvider(providers, account.broker_name);
   }
 
   function onSelectExistingAccount(account: Account) {
@@ -192,21 +155,18 @@ export function AddTradesFlow() {
     setActiveAccountId(account.id);
     setAccountMode("existing");
     setPendingMethod(null);
-    setSelectedBroker(brokerForAccount(account));
-    setStep("method");
+    const provider = providerForAccount(account);
+    setSelectedBroker(provider);
+    setStep(provider ? "connect" : "method");
   }
 
   function onSyncAccount(account: Account) {
-    const broker = brokerForAccount(account);
-    const brokerIdForSync =
-      broker?.connectors?.id ??
-      (broker?.autoSyncAvailable ? broker.id : null) ??
-      account.broker_id;
+    const provider = providerForAccount(account);
     setActiveAccountId(account.id);
     closeFlow();
     resetLocal();
     openModal("broker", {
-      initialBrokerId: brokerIdForSync,
+      initialBrokerId: provider?.id ?? null,
       initialAccountId: account.id,
     });
   }
@@ -214,7 +174,6 @@ export function AddTradesFlow() {
   function onAddNewAccount() {
     setTargetAccountId(null);
     setSelectedBroker(null);
-    setSelectedServer(null);
     setPendingMethod(null);
     setFormError(null);
     setAccountMode("new-connect");
@@ -231,53 +190,18 @@ export function AddTradesFlow() {
   function onChooseDummy() {
     setAccountMode("dummy");
     setSelectedBroker(null);
-    setSelectedServer(null);
     setPendingMethod(null);
     setFormError(null);
     setStep("account-form");
   }
 
-  async function onBrokerConnected(res: ConnectResponse): Promise<string | void> {
-    const broker = selectedBroker;
-    if (!broker) return;
-    const login = String(res.account.account_number);
-    const existing = accounts.find(
-      (account) =>
-        isBrokerAccount(account) &&
-        (account.broker_id === broker.id || account.broker_id === broker.connectors?.id) &&
-        account.name.includes(login)
-    );
-    if (existing) {
-      setTargetAccountId(existing.id);
-      setActiveAccountId(existing.id);
-      return existing.id;
-    }
-    const created = await createAccount.mutateAsync(
-      accountInputFromBrokerConnect({
-        brokerId: broker.connectors?.id ?? broker.id,
-        brokerName: broker.name,
-        company: selectedServer,
-        accountNumber: res.account.account_number,
-        balance: res.account.balance,
-        currency: res.account.currency,
-      })
-    );
-    setTargetAccountId(created.id);
-    setActiveAccountId(created.id);
-    return created.id;
-  }
-
-  function openTradeForMethod(method: ImportMethod, accountId: string, broker: UnifiedBroker | null) {
+  function openTradeForMethod(method: ImportMethod, accountId: string) {
     setActiveAccountId(accountId);
-    const brokerIdForSync =
-      broker?.connectors?.id ?? (broker?.autoSyncAvailable ? broker.id : null);
-
     closeFlow();
     resetLocal();
-
     if (method === "auto-sync") {
       openModal("broker", {
-        initialBrokerId: brokerIdForSync,
+        initialBrokerId: selectedBroker?.id ?? null,
         initialAccountId: accountId,
       });
       return;
@@ -297,7 +221,7 @@ export function AddTradesFlow() {
       return;
     }
     if (targetAccountId) {
-      openTradeForMethod(method, targetAccountId, selectedBroker);
+      openTradeForMethod(method, targetAccountId);
     }
   }
 
@@ -312,7 +236,7 @@ export function AddTradesFlow() {
             : {
                 source: "broker",
                 broker_id: selectedBroker?.id ?? null,
-                broker_name: selectedBroker?.name ?? null,
+                broker_name: selectedBroker?.display_name ?? null,
               }
         )
       );
@@ -324,7 +248,7 @@ export function AddTradesFlow() {
         return;
       }
       const method = pendingMethod ?? "manual";
-      openTradeForMethod(method, created.id, selectedBroker);
+      openTradeForMethod(method, created.id);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not create account";
       setFormError(message);
@@ -359,7 +283,9 @@ export function AddTradesFlow() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="relative flex h-[min(860px,100%)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-xl"
+            className={`relative flex h-[min(860px,100%)] w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-xl ${
+              step === "connect" ? "max-w-6xl" : "max-w-5xl"
+            }`}
           >
             <div className="relative shrink-0 border-b border-border px-4 py-3 sm:px-6">
               <div className="flex items-center justify-between gap-3">
@@ -414,49 +340,42 @@ export function AddTradesFlow() {
               ) : null}
 
               {step === "broker" ? (
-                <BrokerSelectStep
-                  brokers={unifiedBrokers}
-                  selected={selectedBroker}
-                  selectedServer={selectedServer}
-                  onSelect={(broker) => {
-                    setSelectedBroker(broker);
-                    setSelectedServer(null);
-                  }}
-                  onSelectServer={setSelectedServer}
-                  onContinue={() => {
-                    if (selectedBroker?.autoSyncAvailable) {
-                      setPendingMethod("auto-sync");
-                      setFormError(null);
-                      setStep("connect");
-                      return;
-                    }
-                    setStep("method");
-                  }}
-                  catalogLoading={catalogQuery.isLoading}
+                <BrokerPickerScreen
+                  providers={providers}
+                  loading={registry.isLoading}
+                  error={registry.isError ? apiMessage(registry.error) : null}
+                  onRetry={() => void registry.refetch()}
+                  selectedId={selectedBroker?.id ?? null}
+                  onSelect={setSelectedBroker}
+                  onContinue={() => setStep("connect")}
                 />
               ) : null}
 
               {step === "method" ? (
                 <ImportMethodStep
-                  broker={selectedBroker}
+                  broker={
+                    selectedBroker
+                      ? {
+                          id: selectedBroker.id,
+                          name: selectedBroker.display_name,
+                          autoSyncAvailable: selectedBroker.methods.includes("broker_sync"),
+                        }
+                      : null
+                  }
                   isDemo={methodIsDummy}
                   onContinue={onMethodContinue}
                 />
               ) : null}
 
-              {step === "connect" ? (
-                <BrokerConnectWizard
-                  key={`${selectedBroker?.id ?? "mt5"}-${selectedServer ?? "none"}`}
-                  compact
-                  embedded
-                  autoSyncOnConnect
-                  initialBrokerId={
-                    selectedBroker?.connectors?.id ??
-                    (selectedBroker?.autoSyncAvailable ? selectedBroker.id : null)
-                  }
-                  initialServer={selectedServer}
-                  companyLabel={selectedServer}
-                  onConnected={onBrokerConnected}
+              {step === "connect" && selectedBroker ? (
+                <BrokerConnectScreen
+                  provider={selectedBroker}
+                  onChangeProvider={() => setStep("broker")}
+                  onManual={() => {
+                    closeFlow();
+                    resetLocal();
+                    openModal("manual", { initialAccountId: targetAccountId });
+                  }}
                 />
               ) : null}
 

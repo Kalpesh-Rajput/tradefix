@@ -20,6 +20,7 @@ interface AccountPickerProps {
   placeholder?: string;
   className?: string;
   tone?: "settings" | "trade";
+  size?: "md" | "sm";
 }
 
 export function AccountPicker({
@@ -32,6 +33,7 @@ export function AccountPicker({
   placeholder = "Select account",
   className,
   tone = "settings",
+  size = "md",
 }: AccountPickerProps) {
   const [open, setOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
@@ -165,7 +167,10 @@ export function AccountPicker({
         className={clsx(
           "flex w-full items-center justify-between gap-2 rounded-lg border px-3 text-left text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-40",
           tone === "trade"
-            ? "h-12 rounded-xl border-[var(--color-border)] bg-[var(--color-surface)] font-medium text-[var(--color-text-primary)] hover:border-[var(--color-text-secondary)] focus-visible:border-primary focus-visible:shadow-[var(--focus-ring)]"
+            ? clsx(
+                "border-[var(--color-border)] bg-[var(--color-surface)] font-medium text-[var(--color-text-primary)] hover:border-[var(--color-text-secondary)] focus-visible:border-primary focus-visible:shadow-[var(--focus-ring)]",
+                size === "sm" ? "h-9 rounded-lg px-2.5 text-[13px]" : "h-12 rounded-xl"
+              )
             : "py-2.5 border-border bg-background text-foreground hover:border-primary/40 focus-visible:border-primary/40"
         )}
       >

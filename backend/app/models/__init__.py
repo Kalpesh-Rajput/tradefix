@@ -1,4 +1,21 @@
 from app.models.account import Account
+from app.models.broker import (
+    BrokerAccount,
+    BrokerConnection,
+    BrokerCredential,
+    BrokerExecution,
+    BrokerOrder,
+    BrokerPosition,
+    BrokerWorker,
+    ImportBatch,
+    ImportRow,
+    OAuthState,
+    RawProviderRecord,
+    SyncCheckpoint,
+    SyncEvent,
+    SyncJob,
+    SyncRun,
+)
 from app.models.agent_run import AgentRun
 from app.models.user_agent import UserAgent
 from app.models.user_notification import UserNotification
@@ -30,6 +47,21 @@ from app.models.user import User
 from app.models.watchlist import WatchlistItem
 
 __all__ = [
+    "BrokerConnection",
+    "BrokerCredential",
+    "BrokerAccount",
+    "RawProviderRecord",
+    "BrokerOrder",
+    "BrokerExecution",
+    "BrokerPosition",
+    "SyncJob",
+    "SyncRun",
+    "SyncCheckpoint",
+    "SyncEvent",
+    "BrokerWorker",
+    "ImportBatch",
+    "ImportRow",
+    "OAuthState",
     "User",
     "Account",
     "Trade",

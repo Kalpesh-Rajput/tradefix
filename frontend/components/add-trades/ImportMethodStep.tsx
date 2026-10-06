@@ -6,12 +6,17 @@ import { useEffect, useState } from "react";
 
 import { BrokerIcon } from "@/components/ui/BrokerIcon";
 import { Button } from "@/components/ui/Button";
-import type { UnifiedBroker } from "@/lib/brokers/unified-catalog";
 
 export type ImportMethod = "auto-sync" | "file" | "manual";
 
+interface MethodBroker {
+  id: string;
+  name: string;
+  autoSyncAvailable?: boolean;
+}
+
 interface ImportMethodStepProps {
-  broker: UnifiedBroker | null;
+  broker: MethodBroker | null;
   isDemo: boolean;
   onContinue: (method: ImportMethod) => void;
 }

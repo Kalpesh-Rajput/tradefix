@@ -1,8 +1,10 @@
 "use client";
 
 import clsx from "clsx";
-import { CalendarDays, Check, ChevronDown, X } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { CalendarDays, ChevronDown } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+
+import { RangeCalendarDialog, type CalendarPreset } from "@/components/ui/RangeCalendarDialog";
 
 function localIso(d: Date) {
   const y = d.getFullYear();
@@ -25,40 +27,22 @@ function formatRangeLabel(from: string, to: string) {
   return `${fmt(from)} – ${fmt(to)}`;
 }
 
-function normalizeRange(from: string, to: string) {
-  if (!from || !to) return { from, to };
-  if (from > to) return { from: to, to: from };
-  return { from, to };
+function inclusive(days: number) {
+  const today = startOfDay(new Date());
+  const from = new Date(today);
+  from.setDate(from.getDate() - Math.max(0, days - 1));
+  return { from: localIso(from), to: localIso(today) };
 }
 
-export type PresetId =
-  | "7d"
-  | "30d"
-  | "90d"
-  | "this_month"
-  | "last_month"
-  | "ytd"
-  | "all";
+export type PresetId = "7d" | "30d" | "90d" | "this_month" | "last_month" | "ytd" | "all";
 
 export function rangeForPreset(id: PresetId): { from: string; to: string } {
   const today = startOfDay(new Date());
   const to = localIso(today);
 
-  if (id === "7d") {
-    const from = new Date(today);
-    from.setDate(from.getDate() - 6);
-    return { from: localIso(from), to };
-  }
-  if (id === "30d") {
-    const from = new Date(today);
-    from.setDate(from.getDate() - 29);
-    return { from: localIso(from), to };
-  }
-  if (id === "90d") {
-    const from = new Date(today);
-    from.setDate(from.getDate() - 89);
-    return { from: localIso(from), to };
-  }
+  if (id === "7d") return inclusive(7);
+  if (id === "30d") return inclusive(30);
+  if (id === "90d") return inclusive(90);
   if (id === "this_month") {
     return { from: localIso(new Date(today.getFullYear(), today.getMonth(), 1)), to };
   }
@@ -70,18 +54,22 @@ export function rangeForPreset(id: PresetId): { from: string; to: string } {
   if (id === "ytd") {
     return { from: localIso(new Date(today.getFullYear(), 0, 1)), to };
   }
-  // all time — far enough back for journal history
   return { from: "2015-01-01", to };
 }
 
-const PRESETS: { id: PresetId; label: string }[] = [
-  { id: "7d", label: "Last 7 days" },
-  { id: "30d", label: "Last 30 days" },
-  { id: "90d", label: "Last 90 days" },
-  { id: "this_month", label: "This month" },
-  { id: "last_month", label: "Last month" },
-  { id: "ytd", label: "Year to date" },
-  { id: "all", label: "All time" },
+const DASHBOARD_PRESETS: CalendarPreset[] = [
+  { id: "custom", label: "Customised", resolve: null },
+  { id: "today", label: "Today", resolve: () => inclusive(1) },
+  { id: "3d", label: "Last 3 Days", resolve: () => inclusive(3) },
+  { id: "7d", label: "Last 7 Days", resolve: () => rangeForPreset("7d") },
+  { id: "30d", label: "Last 30 Days", resolve: () => rangeForPreset("30d") },
+  { id: "90d", label: "Last 3 Months", resolve: () => rangeForPreset("90d") },
+  { id: "180d", label: "Last 6 Months", resolve: () => inclusive(180) },
+  { id: "365d", label: "Last 1 Year", resolve: () => inclusive(365) },
+  { id: "this_month", label: "This month", resolve: () => rangeForPreset("this_month") },
+  { id: "last_month", label: "Last month", resolve: () => rangeForPreset("last_month") },
+  { id: "ytd", label: "Year to date", resolve: () => rangeForPreset("ytd") },
+  { id: "all", label: "All time", resolve: () => rangeForPreset("all") },
 ];
 
 export function DateRangePicker({
@@ -100,68 +88,18 @@ export function DateRangePicker({
   buttonLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [draftFrom, setDraftFrom] = useState(dateFrom);
-  const [draftTo, setDraftTo] = useState(dateTo);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const listId = useId();
-  const todayIso = localIso(startOfDay(new Date()));
-
-  useEffect(() => {
-    if (!open) return;
-    setDraftFrom(dateFrom);
-    setDraftTo(dateTo);
-  }, [open, dateFrom, dateTo]);
-
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  const activePreset = useMemo(() => {
-    return PRESETS.find((p) => {
-      const r = rangeForPreset(p.id);
-      return r.from === dateFrom && r.to === dateTo;
-    })?.id;
-  }, [dateFrom, dateTo]);
-
-  function apply(from: string, to: string) {
-    const next = normalizeRange(from, to);
-    if (!next.from || !next.to) return;
-    onChange(next.from, next.to);
-    setOpen(false);
-  }
-
-  function applyPreset(id: PresetId) {
-    const r = rangeForPreset(id);
-    setDraftFrom(r.from);
-    setDraftTo(r.to);
-    apply(r.from, r.to);
-  }
-
-  function resetDefault() {
-    const r = rangeForPreset("30d");
-    apply(r.from, r.to);
-  }
+  const anchorRef = useRef<HTMLButtonElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  const label = buttonLabel || formatRangeLabel(dateFrom, dateTo);
 
   return (
-    <div ref={rootRef} className={clsx("relative", className)}>
+    <div className={clsx("relative", className)}>
       <button
+        ref={anchorRef}
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-controls={listId}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen((value) => !value)}
         className={clsx(
           "inline-flex items-center gap-1.5 border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[11px] font-medium text-[var(--color-text-primary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)]",
           triggerClassName ?? "h-8 min-w-[210px] max-w-[280px] rounded-md"
@@ -169,7 +107,7 @@ export function DateRangePicker({
       >
         <CalendarDays className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={1.75} />
         <span className="min-w-0 flex-1 truncate text-left" title={formatRangeLabel(dateFrom, dateTo)}>
-          {buttonLabel || formatRangeLabel(dateFrom, dateTo)}
+          {label}
         </span>
         <ChevronDown
           className={clsx(
@@ -179,100 +117,19 @@ export function DateRangePicker({
           strokeWidth={1.75}
         />
       </button>
-
-      {open && (
-        <div
-          id={listId}
-          role="dialog"
-          aria-label="Select date range"
-          className="absolute right-0 z-[80] mt-1.5 w-[min(320px,calc(100vw-1.5rem))] overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] shadow-dropdown max-sm:fixed max-sm:inset-x-3 max-sm:top-16 max-sm:w-auto"
-        >
-          <div className="border-b border-[var(--color-border-light)] px-3 py-2">
-            <p className="text-[11px] font-medium text-[var(--color-text-secondary)]">Quick ranges</p>
-            <ul className="mt-1.5 grid grid-cols-2 gap-1">
-              {PRESETS.map((preset) => {
-                const selected = activePreset === preset.id;
-                return (
-                  <li key={preset.id}>
-                    <button
-                      type="button"
-                      onClick={() => applyPreset(preset.id)}
-                      className={clsx(
-                        "flex h-8 w-full items-center justify-between gap-1 rounded-md px-2 text-left text-[11px] transition-colors duration-150",
-                        selected
-                          ? "bg-[var(--color-primary-light)] font-medium text-primary"
-                          : "text-[var(--color-text-primary)] hover:bg-[var(--color-primary-very-light)]"
-                      )}
-                    >
-                      <span className="truncate">{preset.label}</span>
-                      {selected && <Check className="h-3 w-3 shrink-0" strokeWidth={2.25} />}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-
-          <div className="space-y-2.5 px-3 py-3">
-            <p className="text-[11px] font-medium text-[var(--color-text-secondary)]">Custom range</p>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="space-y-1">
-                <span className="block text-[10px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                  From
-                </span>
-                <input
-                  type="date"
-                  value={draftFrom}
-                  max={draftTo || todayIso}
-                  onChange={(e) => setDraftFrom(e.target.value)}
-                  className="h-8 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-[11px] text-[var(--color-text-primary)] outline-none transition focus:border-primary/40"
-                />
-              </label>
-              <label className="space-y-1">
-                <span className="block text-[10px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                  To
-                </span>
-                <input
-                  type="date"
-                  value={draftTo}
-                  min={draftFrom || undefined}
-                  max={todayIso}
-                  onChange={(e) => setDraftTo(e.target.value)}
-                  className="h-8 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-[11px] text-[var(--color-text-primary)] outline-none transition focus:border-primary/40"
-                />
-              </label>
-            </div>
-
-            <div className="flex items-center justify-between gap-2 pt-0.5">
-              <button
-                type="button"
-                onClick={resetDefault}
-                className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-[var(--color-text-secondary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-[var(--color-text-primary)]"
-              >
-                <X className="h-3 w-3" strokeWidth={1.75} />
-                Reset
-              </button>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="dash-btn-secondary !h-8 !px-3 !text-[11px]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={!draftFrom || !draftTo}
-                  onClick={() => apply(draftFrom, draftTo)}
-                  className="dash-btn-primary text-on-accent !h-8 !px-3 !text-[11px] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Apply
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <RangeCalendarDialog
+        open={open}
+        anchorRef={anchorRef}
+        align="end"
+        from={dateFrom}
+        to={dateTo}
+        presets={DASHBOARD_PRESETS}
+        onClose={close}
+        onApply={(next) => {
+          onChange(next.from, next.to);
+          setOpen(false);
+        }}
+      />
     </div>
   );
 }

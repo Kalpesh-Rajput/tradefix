@@ -10,6 +10,7 @@ import {
   isSameDay,
   isSameMonth,
   isToday,
+  startOfDay,
   startOfMonth,
   startOfWeek,
 } from "date-fns";
@@ -19,7 +20,8 @@ import { createPortal } from "react-dom";
 import { Control, useController } from "react-hook-form";
 import { useReducedMotion } from "framer-motion";
 
-import { AddTradeFormValues } from "@/components/trade/schema";
+import { AddTradeFormValues, FUTURE_MOMENT_MESSAGE } from "@/components/trade/schema";
+import { useToast } from "@/components/ui/Toast";
 import {
   currentClock,
   formatClock,
@@ -27,7 +29,7 @@ import {
   parseDateValue,
   toDateValue,
 } from "@/components/trade/DateTimePicker";
-import { FieldLabel, FieldSlot, formInputClass } from "@/components/trade/ui";
+import { FieldLabel, FieldSlot, formInputClass, tableInputClass } from "@/components/trade/ui";
 
 const ITEM = 36;
 const POPOVER_WIDTH = 340;
@@ -51,11 +53,15 @@ function TimeColumn({
   count,
   value,
   onChange,
+  isAllowed,
+  onBlocked,
 }: {
   label: string;
   count: number;
   value: number;
   onChange: (next: number) => void;
+  isAllowed?: (next: number) => boolean;
+  onBlocked?: () => void;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const syncing = useRef(false);
@@ -84,6 +90,28 @@ function TimeColumn({
 
   useEffect(() => () => window.clearTimeout(settle.current), []);
 
+  function snapToValue() {
+    const el = scroller.current;
+    if (!el) return;
+    syncing.current = true;
+    const previous = el.style.scrollBehavior;
+    el.style.scrollBehavior = "auto";
+    el.scrollTop = value * ITEM;
+    el.style.scrollBehavior = previous;
+    window.requestAnimationFrame(() => {
+      syncing.current = false;
+    });
+  }
+
+  function choose(next: number) {
+    if (isAllowed && !isAllowed(next)) {
+      snapToValue();
+      onBlocked?.();
+      return;
+    }
+    onChange(next);
+  }
+
   function readScroll() {
     const el = scroller.current;
     if (!el || syncing.current) return;
@@ -92,6 +120,11 @@ function TimeColumn({
       if (!scroller.current || syncing.current) return;
       const next = Math.min(count - 1, Math.max(0, Math.round(scroller.current.scrollTop / ITEM)));
       if (next === value) return;
+      if (isAllowed && !isAllowed(next)) {
+        snapToValue();
+        onBlocked?.();
+        return;
+      }
       origin.current = "scroll";
       onChange(next);
     }, 70);
@@ -116,11 +149,11 @@ function TimeColumn({
           onKeyDown={(event) => {
             if (event.key === "ArrowUp") {
               event.preventDefault();
-              onChange((value - 1 + count) % count);
+              choose((value - 1 + count) % count);
             }
             if (event.key === "ArrowDown") {
               event.preventDefault();
-              onChange((value + 1) % count);
+              choose((value + 1) % count);
             }
           }}
           className="relative z-[1] h-full overflow-y-auto overscroll-contain scroll-smooth snap-y snap-mandatory motion-reduce:scroll-auto [scrollbar-width:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 [&::-webkit-scrollbar]:hidden"
@@ -128,18 +161,22 @@ function TimeColumn({
           <div style={{ height: ITEM * 2 }} />
           {values.map((item) => {
             const selected = item === value;
+            const blocked = Boolean(isAllowed && !isAllowed(item));
             return (
               <button
                 key={item}
                 type="button"
                 role="option"
                 aria-selected={selected}
+                aria-disabled={blocked || undefined}
                 tabIndex={-1}
-                onClick={() => onChange(item)}
+                onClick={() => choose(item)}
                 className={`flex h-9 w-full snap-center items-center justify-center font-mono text-sm transition-colors duration-150 ${
-                  selected
-                    ? "font-semibold text-primary"
-                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                  blocked
+                    ? "cursor-not-allowed text-[var(--color-text-muted)] opacity-35"
+                    : selected
+                      ? "font-semibold text-primary"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
                 }`}
               >
                 {String(item).padStart(2, "0")}
@@ -164,6 +201,9 @@ export function DateTimeMomentField({
   error,
   slotName,
   timeSlotName,
+  compact = false,
+  placeholder = "e.g. 2026/10/06 10:03:19",
+  blockFuture = true,
 }: {
   date: string;
   time: string;
@@ -173,14 +213,21 @@ export function DateTimeMomentField({
   error?: string;
   slotName?: string;
   timeSlotName?: string;
+  compact?: boolean;
+  placeholder?: string;
+  blockFuture?: boolean;
 }) {
   const reduced = useReducedMotion();
+  const toast = useToast();
   const fieldId = useId();
   const [open, setOpen] = useState(false);
   const [box, setBox] = useState<{ top: number; left: number } | null>(null);
   const [draftDate, setDraftDate] = useState(() => parseDateValue(date) ?? new Date());
   const [cursor, setCursor] = useState(() => parseDateValue(date) ?? new Date());
   const [clock, setClock] = useState<Clock>(() => parseClock(time || currentClock()));
+  const [limit, setLimit] = useState(() => new Date());
+  const [notice, setNotice] = useState("");
+  const warnedAt = useRef(0);
   const anchorRef = useRef<HTMLElement | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -188,16 +235,42 @@ export function DateTimeMomentField({
   const shownClock = parseClock(time || "");
   const hasTime = Boolean(time);
   const summary = selected
-    ? `${format(selected, "d MMM yyyy")}${hasTime ? ` · ${formatClock(shownClock.h, shownClock.m, shownClock.s)}` : ""}`
-    : "Select date & time";
+    ? compact
+      ? `${format(selected, "yyyy/MM/dd")}${hasTime ? ` ${formatClock(shownClock.h, shownClock.m, shownClock.s)}` : ""}`
+      : `${format(selected, "d MMM yyyy")}${hasTime ? ` · ${formatClock(shownClock.h, shownClock.m, shownClock.s)}` : ""}`
+    : compact
+      ? placeholder
+      : "Select date & time";
+
+  function warnFuture() {
+    setNotice(FUTURE_MOMENT_MESSAGE);
+    const now = Date.now();
+    if (now - warnedAt.current < 1600) return;
+    warnedAt.current = now;
+    toast.error(FUTURE_MOMENT_MESSAGE);
+  }
+
+  function momentAfterLimit(day: Date, next: Clock, ceiling = limit) {
+    if (!blockFuture) return false;
+    const candidate = new Date(day.getFullYear(), day.getMonth(), day.getDate(), next.h, next.m, next.s, 0);
+    return candidate.getTime() > ceiling.getTime();
+  }
+
+  function dayAfterLimit(day: Date, ceiling = limit) {
+    if (!blockFuture) return false;
+    return startOfDay(day).getTime() > startOfDay(ceiling).getTime();
+  }
 
   function begin(anchor: HTMLElement) {
     anchorRef.current = anchor;
+    setNotice("");
+    const ceiling = new Date();
+    setLimit(ceiling);
     if (!open) {
-      const nextDate = parseDateValue(date) ?? new Date();
+      const nextDate = parseDateValue(date) ?? ceiling;
       setDraftDate(nextDate);
       setCursor(nextDate);
-      setClock(parseClock(time || currentClock()));
+      setClock(parseClock(time || currentClock(ceiling)));
     }
     setOpen(true);
   }
@@ -238,19 +311,58 @@ export function DateTimeMomentField({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open || !blockFuture) return;
+    const id = window.setInterval(() => setLimit(new Date()), 1000);
+    return () => window.clearInterval(id);
+  }, [open, blockFuture]);
+
   function apply() {
+    const ceiling = new Date();
+    setLimit(ceiling);
+    if (momentAfterLimit(draftDate, clock, ceiling)) {
+      warnFuture();
+      return;
+    }
     const nextDate = toDateValue(draftDate);
     const nextTime = formatClock(clock.h, clock.m, clock.s);
     if (nextDate !== date) onDateChange(nextDate);
     if (nextTime !== time) onTimeChange(nextTime);
+    setNotice("");
     setOpen(false);
   }
 
   function setNow() {
     const now = new Date();
+    setLimit(now);
+    setNotice("");
     setDraftDate(now);
     setCursor(now);
     setClock({ h: now.getHours(), m: now.getMinutes(), s: now.getSeconds() });
+  }
+
+  function partAllowed(part: "h" | "m" | "s", value: number) {
+    if (!blockFuture) return true;
+    if (part === "h") {
+      return new Date(draftDate.getFullYear(), draftDate.getMonth(), draftDate.getDate(), value, 0, 0, 0).getTime() <= limit.getTime();
+    }
+    if (part === "m") {
+      return new Date(draftDate.getFullYear(), draftDate.getMonth(), draftDate.getDate(), clock.h, value, 0, 0).getTime() <= limit.getTime();
+    }
+    return !momentAfterLimit(draftDate, { ...clock, s: value });
+  }
+
+  function changeClock(part: "h" | "m" | "s", value: number) {
+    setNotice("");
+    const ceiling = new Date();
+    setLimit(ceiling);
+    setClock((current) => {
+      const next = { ...current, [part]: value };
+      if (!momentAfterLimit(draftDate, next, ceiling)) return next;
+      if (part === "h") return { h: value, m: ceiling.getMinutes(), s: ceiling.getSeconds() };
+      if (part === "m") return { h: current.h, m: value, s: ceiling.getSeconds() };
+      return current;
+    });
   }
 
   const monthStart = startOfMonth(cursor);
@@ -280,6 +392,11 @@ export function DateTimeMomentField({
             }`}
           >
             <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-primary)]">Date & time</p>
+            {notice ? (
+              <p role="alert" className="mt-2 rounded-md bg-destructive/10 px-2 py-1.5 text-[12px] font-medium text-destructive">
+                {notice}
+              </p>
+            ) : null}
             <div className="mt-2 flex items-center justify-between">
               <p className="text-sm font-semibold text-[var(--color-text-primary)]">{format(cursor, "MMMM yyyy")}</p>
               <div className="flex items-center gap-0.5">
@@ -313,6 +430,7 @@ export function DateTimeMomentField({
                 const inMonth = isSameMonth(day, cursor);
                 const isSelected = isSameDay(day, draftDate);
                 const today = isToday(day);
+                const future = dayAfterLimit(day);
                 return (
                   <button
                     key={toDateValue(day)}
@@ -320,10 +438,21 @@ export function DateTimeMomentField({
                     role="gridcell"
                     data-date={toDateValue(day)}
                     aria-pressed={isSelected}
+                    aria-disabled={future || undefined}
                     aria-current={today ? "date" : undefined}
                     onClick={() => {
+                      if (future) {
+                        warnFuture();
+                        return;
+                      }
+                      setNotice("");
                       setDraftDate(day);
                       if (!inMonth) setCursor(day);
+                      if (momentAfterLimit(day, clock)) {
+                        const ceiling = new Date();
+                        setLimit(ceiling);
+                        setClock({ h: ceiling.getHours(), m: ceiling.getMinutes(), s: ceiling.getSeconds() });
+                      }
                     }}
                     onKeyDown={(event) => {
                       const delta =
@@ -333,13 +462,15 @@ export function DateTimeMomentField({
                       moveDay(day, delta);
                     }}
                     className={`h-8 rounded-md text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-                      isSelected
-                        ? "bg-primary font-semibold text-primary-foreground text-on-accent"
-                        : today
-                          ? "font-medium text-primary ring-1 ring-primary/40 hover:bg-[var(--color-primary-very-light)]"
-                          : inMonth
-                            ? "text-[var(--color-text-primary)] hover:bg-[var(--color-primary-very-light)]"
-                            : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-secondary)]"
+                      future
+                        ? "cursor-not-allowed text-[var(--color-text-muted)] opacity-35"
+                        : isSelected
+                          ? "bg-primary font-semibold text-primary-foreground text-on-accent"
+                          : today
+                            ? "font-medium text-primary ring-1 ring-primary/40 hover:bg-[var(--color-primary-very-light)]"
+                            : inMonth
+                              ? "text-[var(--color-text-primary)] hover:bg-[var(--color-primary-very-light)]"
+                              : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-secondary)]"
                     }`}
                   >
                     {format(day, "d")}
@@ -353,8 +484,13 @@ export function DateTimeMomentField({
                 className="rounded-md px-2 py-1 text-xs font-semibold text-primary hover:bg-[var(--color-primary-very-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                 onClick={() => {
                   const today = new Date();
+                  setLimit(today);
+                  setNotice("");
                   setDraftDate(today);
                   setCursor(today);
+                  if (momentAfterLimit(today, clock, today)) {
+                    setClock({ h: today.getHours(), m: today.getMinutes(), s: today.getSeconds() });
+                  }
                 }}
               >
                 Today
@@ -363,9 +499,30 @@ export function DateTimeMomentField({
             <div className="mt-2 border-t border-[var(--color-border)] pt-3">
               <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Time</p>
               <div className="mt-2 flex gap-2">
-                <TimeColumn label="Hour" count={24} value={clock.h} onChange={(h) => setClock((current) => ({ ...current, h }))} />
-                <TimeColumn label="Minute" count={60} value={clock.m} onChange={(m) => setClock((current) => ({ ...current, m }))} />
-                <TimeColumn label="Second" count={60} value={clock.s} onChange={(s) => setClock((current) => ({ ...current, s }))} />
+                <TimeColumn
+                  label="Hour"
+                  count={24}
+                  value={clock.h}
+                  isAllowed={(h) => partAllowed("h", h)}
+                  onBlocked={warnFuture}
+                  onChange={(h) => changeClock("h", h)}
+                />
+                <TimeColumn
+                  label="Minute"
+                  count={60}
+                  value={clock.m}
+                  isAllowed={(m) => partAllowed("m", m)}
+                  onBlocked={warnFuture}
+                  onChange={(m) => changeClock("m", m)}
+                />
+                <TimeColumn
+                  label="Second"
+                  count={60}
+                  value={clock.s}
+                  isAllowed={(s) => partAllowed("s", s)}
+                  onBlocked={warnFuture}
+                  onChange={(s) => changeClock("s", s)}
+                />
               </div>
             </div>
             <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--color-border)] pt-3">
@@ -401,18 +558,21 @@ export function DateTimeMomentField({
   const control = (
     <>
       <div data-field={timeSlotName}>
-          <FieldLabel error={error} htmlFor={fieldId}>
-            {label}
-          </FieldLabel>
+          {compact ? null : (
+            <FieldLabel error={error} htmlFor={fieldId}>
+              {label}
+            </FieldLabel>
+          )}
           <button
             ref={triggerRef}
             id={fieldId}
             type="button"
+            aria-label={label}
             aria-haspopup="dialog"
             aria-expanded={open}
             aria-invalid={error ? true : undefined}
             onClick={() => begin(triggerRef.current!)}
-            className={`${formInputClass(error)} flex items-center justify-between gap-2 text-left`}
+            className={`${compact ? tableInputClass(error) : formInputClass(error)} flex items-center justify-between gap-2 text-left`}
           >
             <span
               className={`min-w-0 truncate ${

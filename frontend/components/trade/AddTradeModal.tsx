@@ -371,11 +371,11 @@ export function AddTradeModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 8 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative flex max-h-[min(92vh,900px)] w-[min(1080px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[18px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_24px_64px_rgba(20,21,26,0.16)]"
+            className="relative flex max-h-[min(92vh,920px)] w-[min(1200px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_24px_64px_rgba(20,21,26,0.16)]"
           >
             <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
               <div>
-                <h2 id="add-trade-title" className="text-[22px] font-bold leading-7 tracking-tight text-[var(--color-text-primary)]">
+                <h2 id="add-trade-title" className="text-base font-semibold leading-6 text-[var(--color-text-primary)]">
                   {tab === "journal" ? "Daily Journal" : tab === "csv" ? "Import CSV" : tab === "broker" ? "Connect broker" : isEditing ? "Edit Trade" : "Add Trade"}
                 </h2>
                 {tab === "manual" && !editPending ? <TradeStatusLine control={control} /> : null}

@@ -141,12 +141,25 @@ export const tradeTextareaClass =
 
 export const tradeNumberClass = `${tradeInputClass} font-mono [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`;
 
+export const tableCellClass =
+  "h-9 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[13px] font-medium text-[var(--color-text-primary)] outline-none transition-[border-color,box-shadow] duration-150 placeholder:font-normal placeholder:text-[var(--color-text-muted)] hover:border-[var(--color-text-secondary)] focus:border-primary focus:shadow-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-40";
+
+export const tableNumberClass = `${tableCellClass} font-mono [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`;
+
 export function formInputClass(error?: string) {
   return clsx(tradeInputClass, error && "border-destructive/70 focus:border-destructive/70");
 }
 
 export function formNumberClass(error?: string) {
   return clsx(tradeNumberClass, error && "border-destructive/70 focus:border-destructive/70");
+}
+
+export function tableInputClass(error?: string) {
+  return clsx(tableCellClass, error && "border-destructive/70 focus:border-destructive/70");
+}
+
+export function tableNumClass(error?: string) {
+  return clsx(tableNumberClass, error && "border-destructive/70 focus:border-destructive/70");
 }
 
 export function FieldSlot({ name, children, className }: { name: string; children: ReactNode; className?: string }) {
@@ -207,6 +220,28 @@ export function FieldLabel({
         {children}
       </label>
       {error ? <span className="truncate text-[10px] text-destructive">{error}</span> : null}
+    </div>
+  );
+}
+
+export function PlainFieldLabel({
+  children,
+  error,
+  required,
+  htmlFor,
+}: {
+  children: ReactNode;
+  error?: string;
+  required?: boolean;
+  htmlFor?: string;
+}) {
+  return (
+    <div className="mb-1.5 flex items-center justify-between gap-2">
+      <label htmlFor={htmlFor} className="text-[13px] font-medium text-[var(--color-text-secondary)]">
+        {children}
+        {required ? <span className="text-destructive"> *</span> : null}
+      </label>
+      {error ? <span className="truncate text-[11px] text-destructive">{error}</span> : null}
     </div>
   );
 }

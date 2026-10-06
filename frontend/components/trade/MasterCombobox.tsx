@@ -9,6 +9,7 @@ import {
   dropdownPanelClass,
   dropdownSearchClass,
   dropdownTriggerClass,
+  dropdownTriggerCompactClass,
   dropdownTriggerIdleClass,
   dropdownTriggerOpenClass,
 } from "@/components/trade/dropdownStyles";
@@ -29,6 +30,8 @@ export function MasterCombobox({
   uppercase = false,
   disabled,
   suggestions,
+  compact = false,
+  hideLabel = false,
 }: {
   category: MasterCategory;
   value: string;
@@ -40,6 +43,8 @@ export function MasterCombobox({
   uppercase?: boolean;
   disabled?: boolean;
   suggestions?: string[];
+  compact?: boolean;
+  hideLabel?: boolean;
 }) {
   const { data = [], isLoading } = useMasters(category);
   const { ensure, pending: creating } = useEnsureMaster(category);
@@ -228,12 +233,14 @@ export function MasterCombobox({
 
   return (
     <div ref={rootRef} className="relative">
-      <FieldLabel error={error}>{label}</FieldLabel>
+      {hideLabel ? null : <FieldLabel error={error}>{label}</FieldLabel>}
       <button
         type="button"
         disabled={disabled}
+        aria-label={hideLabel ? label : undefined}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-invalid={error ? true : undefined}
         onClick={() => setOpen((current) => !current)}
         onKeyDown={(event) => {
           if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
@@ -242,7 +249,7 @@ export function MasterCombobox({
           }
         }}
         className={clsx(
-          dropdownTriggerClass,
+          compact ? dropdownTriggerCompactClass : dropdownTriggerClass,
           error ? "border-destructive/50" : open ? dropdownTriggerOpenClass : dropdownTriggerIdleClass
         )}
       >

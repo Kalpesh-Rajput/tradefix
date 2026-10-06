@@ -24,6 +24,7 @@ export function FeeField({
   basisLabel,
   onChange,
   error,
+  compact = false,
 }: {
   label: string;
   amount: number | string | null | undefined;
@@ -31,6 +32,7 @@ export function FeeField({
   basisLabel: string;
   onChange: (amount: number) => void;
   error?: string;
+  compact?: boolean;
 }) {
   const inputId = useId();
   const hintId = useId();
@@ -109,12 +111,15 @@ export function FeeField({
 
   return (
     <div>
-      <FieldLabel error={error} htmlFor={inputId}>
-        {label}
-      </FieldLabel>
+      {compact ? null : (
+        <FieldLabel error={error} htmlFor={inputId}>
+          {label}
+        </FieldLabel>
+      )}
       <div
         className={clsx(
-          "flex h-12 w-full items-center gap-1.5 rounded-xl border bg-[var(--color-surface)] px-2 transition-[border-color,box-shadow] duration-150",
+          "flex w-full items-center gap-1.5 border bg-[var(--color-surface)] transition-[border-color,box-shadow] duration-150",
+          compact ? "h-9 rounded-lg px-2" : "h-12 rounded-xl px-2",
           error
             ? "border-destructive/70 focus-within:border-destructive/70"
             : "border-[var(--color-border)] hover:border-[var(--color-text-secondary)] focus-within:border-primary focus-within:shadow-[var(--focus-ring)]"
@@ -123,19 +128,26 @@ export function FeeField({
         <input
           id={inputId}
           inputMode="decimal"
+          aria-label={compact ? label : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={hintId}
           value={text}
-          placeholder={mode === "amount" ? "0.00" : "0.00"}
+          placeholder="0"
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onChange={(event) => write(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent font-mono text-sm font-medium text-[var(--color-text-primary)] outline-none placeholder:font-normal placeholder:text-[var(--color-text-muted)]"
+          className={clsx(
+            "min-w-0 flex-1 bg-transparent font-mono font-medium text-[var(--color-text-primary)] outline-none placeholder:font-normal placeholder:text-[var(--color-text-muted)]",
+            compact ? "text-[13px]" : "text-sm"
+          )}
         />
         <span
           id={hintId}
           title={hint}
-          className="max-w-[38%] shrink-0 truncate text-right font-mono text-[11px] font-medium text-[var(--color-text-muted)]"
+          className={clsx(
+            "shrink-0 truncate text-right font-mono font-medium text-[var(--color-text-muted)]",
+            compact ? "max-w-[34%] text-[10px]" : "max-w-[38%] text-[11px]"
+          )}
         >
           {counterpart}
         </span>

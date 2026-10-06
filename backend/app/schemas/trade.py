@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -28,6 +28,17 @@ def _blank_to_none(v):
     if isinstance(v, str) and not v.strip():
         return None
     return v
+
+
+_FUTURE_GRACE = timedelta(seconds=90)
+
+
+def _reject_future(value: datetime | None) -> None:
+    if value is None:
+        return
+    stamp = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if stamp.astimezone(timezone.utc) > datetime.now(timezone.utc) + _FUTURE_GRACE:
+        raise ValueError("Choose a date before the current time")
 
 
 class TradeExecutionInput(BaseModel):
@@ -189,6 +200,10 @@ class TradeCreate(TradeJournalFields):
                 raise ValueError("Long stop loss should be below entry price")
             if side == "short" and self.stop_loss <= entry:
                 raise ValueError("Short stop loss should be above entry price")
+        _reject_future(self.opened_at)
+        _reject_future(self.closed_at)
+        for item in self.executions:
+            _reject_future(item.executed_at)
         return self
 
 
@@ -226,6 +241,14 @@ class TradeUpdate(TradeJournalFields):
         if v is None:
             return None
         return _cap_tags(list(v) if not isinstance(v, list) else v)
+
+    @model_validator(mode="after")
+    def _no_future_times(self):
+        _reject_future(self.opened_at)
+        _reject_future(self.closed_at)
+        for item in self.executions or []:
+            _reject_future(item.executed_at)
+        return self
 
 
 class TradeResponse(BaseModel):

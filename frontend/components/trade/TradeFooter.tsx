@@ -29,7 +29,7 @@ export function TradeFooter({
           variant="secondary"
           onClick={onCancel}
           disabled={saving}
-          className="h-12 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-[13px] font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]"
+          className="h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-[13px] font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]"
         >
           Cancel
         </Button>
@@ -37,7 +37,7 @@ export function TradeFooter({
           type="button"
           onClick={onSave}
           disabled={disabled || saving}
-          className="h-12 min-w-[9.5rem] rounded-xl bg-primary px-5 text-[13px] font-semibold text-primary-foreground text-on-accent hover:bg-primary-hover"
+          className="h-9 min-w-[7.5rem] rounded-lg bg-primary px-5 text-[13px] font-semibold text-primary-foreground text-on-accent hover:bg-primary-hover"
         >
           {saving ? (
             <>

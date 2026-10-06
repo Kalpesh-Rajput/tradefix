@@ -30,11 +30,11 @@ const FIELD_ORDER = [
 ];
 
 export const DEEP_FIELDS = new Set([
+  "stop_loss",
   "analysis_timeframe",
   "entry_timeframe",
   "plan_compliance",
   "entry_condition",
-  "exits",
   "mood",
   "precheck_list_id",
   "playbook_id",

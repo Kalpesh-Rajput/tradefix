@@ -22,6 +22,15 @@ export const POPULAR_SYMBOLS = [
   "QQQ",
 ];
 
+export const FUTURE_MOMENT_MESSAGE = "Choose a date before the current time";
+
+function localDateTimeMs(date?: string | null, time?: string | null): number | null {
+  if (!date) return null;
+  const clock = time && time.trim() ? time.trim() : "00:00:00";
+  const parsed = new Date(`${date}T${clock}`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.getTime();
+}
+
 function num(val: unknown): number | null {
   if (val === "" || val === null || val === undefined) return null;
   const n = typeof val === "number" ? val : Number(val);
@@ -154,6 +163,16 @@ export const addTradeSchema = z
       });
     }
 
+    const nowMs = Date.now();
+    const entryStamp = localDateTimeMs(data.entryDate, data.entryTime);
+    if (entryStamp != null && entryStamp > nowMs) {
+      ctx.addIssue({
+        code: "custom",
+        message: FUTURE_MOMENT_MESSAGE,
+        path: ["entryDate"],
+      });
+    }
+
     let exitQty = 0;
     (data.exits ?? []).forEach((leg, index) => {
       const lq = num(leg.quantity);
@@ -177,6 +196,15 @@ export const addTradeSchema = z
       }
       if (!leg.date) {
         ctx.addIssue({ code: "custom", message: "Exit date required", path: ["exits", index, "date"] });
+      } else {
+        const exitStamp = localDateTimeMs(leg.date, leg.time);
+        if (exitStamp != null && exitStamp > nowMs) {
+          ctx.addIssue({
+            code: "custom",
+            message: FUTURE_MOMENT_MESSAGE,
+            path: ["exits", index, "date"],
+          });
+        }
       }
     });
     if (qty && exitQty - qty > 1e-8) {
@@ -292,7 +320,7 @@ export function defaultAddTradeValues(opts?: {
     status: "open",
     account_id: null,
     session: "",
-    trade_type: "Intraday",
+    trade_type: "",
     option_type: "",
     analysis_timeframe: "15m",
     entry_timeframe: "5m",

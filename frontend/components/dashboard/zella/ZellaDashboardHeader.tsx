@@ -47,7 +47,7 @@ export function ZellaDashboardHeader({
           dateTo={dateTo}
           onChange={onRangeChange}
           className="order-2 w-full min-w-0 lg:order-none lg:w-auto"
-          triggerClassName="h-8 w-full min-w-0 rounded-md lg:w-auto lg:min-w-[9.5rem] lg:max-w-[15rem]"
+          triggerClassName="h-8 w-full min-w-0 rounded-md lg:w-auto lg:min-w-[12.5rem] lg:max-w-[18rem]"
         />
         <PortfolioSwitcher className="order-3 w-full min-w-0 lg:order-none lg:w-[11.5rem] [&_button]:h-8 [&_button]:w-full [&_button]:min-w-0 [&_button]:max-w-full [&_button]:rounded-md [&_button]:border-[var(--color-border)] [&_button]:bg-[var(--color-surface)] [&_button]:px-2.5 [&_button]:shadow-none [&_button]:text-[11px]" />
         <button

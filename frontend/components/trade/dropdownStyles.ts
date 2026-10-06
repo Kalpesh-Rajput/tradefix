@@ -1,6 +1,9 @@
 export const dropdownTriggerClass =
   "trade-dropdown-trigger flex h-12 w-full items-center justify-between gap-2 rounded-xl border bg-[var(--color-surface)] px-3.5 text-left text-sm font-medium outline-none transition-[border-color,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-40";
 
+export const dropdownTriggerCompactClass =
+  "trade-dropdown-trigger flex h-9 w-full items-center justify-between gap-2 rounded-lg border bg-[var(--color-surface)] px-2.5 text-left text-[13px] font-medium outline-none transition-[border-color,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-40";
+
 export const dropdownTriggerIdleClass =
   "border-[var(--color-border)] hover:border-[var(--color-text-secondary)] focus-visible:border-primary focus-visible:shadow-[var(--focus-ring)]";
 

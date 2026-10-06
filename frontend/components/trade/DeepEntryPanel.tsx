@@ -6,7 +6,6 @@ import { Controller, UseFormReturn, useFormState } from "react-hook-form";
 import { MasterCombobox } from "@/components/trade/MasterCombobox";
 import { MasterMultiCombobox } from "@/components/trade/MasterMultiCombobox";
 import { NotesEditor } from "@/components/trade/NotesEditor";
-import { PartialFillsEditor } from "@/components/trade/PartialFillsEditor";
 import { ScreenshotUploader, Shot } from "@/components/trade/ScreenshotUploader";
 import { capitalPresentation, RiskPlanFields } from "@/components/trade/SegmentSpecificFields";
 import { AddTradeFormValues } from "@/components/trade/schema";
@@ -18,8 +17,9 @@ import { fmtMoney } from "@/lib/format";
 export function hasDeepEntryData(values: AddTradeFormValues, screenshotCount = 0) {
   const plan = values.plan_compliance;
   const hasPlan = plan != null && String(plan) !== "";
+  const hasStop = values.stop_loss != null && String(values.stop_loss) !== "";
   return Boolean(
-    values.exits.length ||
+    hasStop ||
       values.entry_condition ||
       hasPlan ||
       values.mood.length ||
@@ -57,10 +57,9 @@ export function DeepEntryPanel({
   const { calc, assetType, side, leverage } = useLiveTradeCalc(control);
   const capital = capitalPresentation(assetType, side, leverage, calc);
   const risk = calc.riskAmount != null ? fmtMoney(calc.riskAmount, { signed: false }) : "—";
-  const tone = calc.pnl == null ? "text-[var(--color-text-primary)]" : calc.pnl >= 0 ? "text-emerald-600" : "text-destructive";
 
   return (
-    <div className="mt-4">
+    <div>
       <button
         type="button"
         aria-expanded={open}
@@ -149,23 +148,6 @@ export function DeepEntryPanel({
                   )}
                 />
               </FieldSlot>
-            </FormSection>
-
-            <FormSection title="Exits">
-              <PartialFillsEditor control={control} register={register} errors={errors} calc={calc} />
-              <div className="grid grid-cols-2 gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-3 sm:grid-cols-3 xl:grid-cols-5">
-                <MiniStat label="Exit qty" value={calc.sellQuantity ? String(calc.sellQuantity) : "—"} />
-                <MiniStat label="Avg exit price" value={calc.exitPrice != null ? calc.exitPrice.toFixed(5) : "—"} />
-                <MiniStat
-                  label="Exit value"
-                  value={calc.sellQuantity ? fmtMoney(calc.totalSellAmount, { signed: false }) : "$0.00"}
-                />
-                <MiniStat
-                  label="Remaining"
-                  value={calc.sellQuantity ? String(calc.remainingQuantity) : String(calc.quantity || "—")}
-                />
-                <MiniStat label="Realized P&L" value={calc.pnl == null ? "—" : fmtMoney(calc.pnl)} className={tone} />
-              </div>
             </FormSection>
 
             <FormSection title="Trade context">
@@ -284,15 +266,6 @@ export function DeepEntryPanel({
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function MiniStat({ label, value, className }: { label: string; value: string; className?: string }) {
-  return (
-    <div>
-      <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">{label}</p>
-      <p className={`mt-0.5 font-mono text-sm ${className || "text-[var(--color-text-primary)]"}`}>{value}</p>
     </div>
   );
 }

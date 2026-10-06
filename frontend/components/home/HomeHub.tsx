@@ -3,16 +3,23 @@
 import clsx from "clsx";
 import {
   ArrowRight,
+  BarChart3,
   BookOpen,
   Bot,
   Building2,
   CalendarDays,
+  ClipboardList,
   FlaskConical,
   HelpCircle,
+  LayoutDashboard,
   LineChart,
+  List,
   ListChecks,
   Newspaper,
   NotebookPen,
+  Plus,
+  UserRound,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,6 +28,7 @@ import { useMemo, useState } from "react";
 import { TradeFizAIComposer, tradefizPromptPillClass } from "@/components/ai/TradeFizAIComposer";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { chatHref } from "@/lib/ai-insights/links";
 import { firstName } from "@/lib/format";
 import type { MessageKey } from "@/lib/i18n";
@@ -29,6 +37,7 @@ export function HomeHub() {
   const { user } = useAuth();
   const { t } = useLocale();
   const router = useRouter();
+  const { openFlow } = useAddTradeModal();
   const [query, setQuery] = useState("");
   const name = firstName(user?.name, user?.email);
 
@@ -46,6 +55,75 @@ export function HomeHub() {
     { labelKey: "home.prompt.gamePlan", href: "/playbooks" },
     { labelKey: "home.prompt.askAnything", href: "/tradefiz-ai" },
   ];
+
+  const shortcuts: {
+    labelKey: MessageKey;
+    descKey: MessageKey;
+    icon: typeof LayoutDashboard;
+    tone: string;
+    href?: string;
+    onClick?: () => void;
+  }[] = [
+    {
+      labelKey: "common.addTrade",
+      descKey: "home.shortcuts.addTradeDesc",
+      icon: Plus,
+      tone: "bg-violet-500/15 text-violet-600 dark:text-violet-300",
+      onClick: () => openFlow(),
+    },
+    {
+      labelKey: "nav.today",
+      descKey: "home.shortcuts.dashboardDesc",
+      icon: LayoutDashboard,
+      tone: "bg-sky-500/15 text-sky-600 dark:text-sky-300",
+      href: "/today",
+    },
+    {
+      labelKey: "nav.analytics",
+      descKey: "home.shortcuts.reportsDesc",
+      icon: BarChart3,
+      tone: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300",
+      href: "/analytics",
+    },
+    {
+      labelKey: "nav.tradeLog",
+      descKey: "home.shortcuts.tradesDesc",
+      icon: ClipboardList,
+      tone: "bg-pink-500/15 text-pink-600 dark:text-pink-300",
+      href: "/trades",
+    },
+    {
+      labelKey: "settings.nav.masters",
+      descKey: "home.shortcuts.mastersDesc",
+      icon: List,
+      tone: "bg-amber-500/15 text-amber-600 dark:text-amber-300",
+      href: "/settings/masters",
+    },
+    {
+      labelKey: "settings.nav.accounts",
+      descKey: "home.shortcuts.accountsDesc",
+      icon: Wallet,
+      tone: "bg-rose-500/15 text-rose-600 dark:text-rose-300",
+      href: "/settings/accounts",
+    },
+    {
+      labelKey: "settings.nav.profile",
+      descKey: "home.shortcuts.profileDesc",
+      icon: UserRound,
+      tone: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300",
+      href: "/settings/profile",
+    },
+    {
+      labelKey: "nav.calendar",
+      descKey: "home.shortcuts.calendarDesc",
+      icon: CalendarDays,
+      tone: "bg-teal-500/15 text-teal-600 dark:text-teal-300",
+      href: "/calendar",
+    },
+  ];
+
+  const shortcutClass =
+    "flex h-full items-start gap-3.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left transition hover:border-primary/30 hover:shadow-sm";
 
   const products: {
     href: string;
@@ -130,6 +208,38 @@ export function HomeHub() {
             )}
           </div>
           <TradeFizAIComposer variant="full" value={query} onChange={setQuery} onSubmit={askCoach} />
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-[15px] font-semibold text-[var(--color-text-primary)]">{t("home.shortcuts")}</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {shortcuts.map((item) => {
+              const Icon = item.icon;
+              const inner = (
+                <>
+                  <span className={clsx("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", item.tone)}>
+                    <Icon className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[14px] font-semibold text-[var(--color-text-primary)]">{t(item.labelKey)}</span>
+                    <span className="mt-0.5 block text-[12.5px] leading-5 text-[var(--color-text-secondary)]">{t(item.descKey)}</span>
+                  </span>
+                </>
+              );
+              if (item.onClick) {
+                return (
+                  <button key={item.labelKey} type="button" onClick={item.onClick} className={shortcutClass}>
+                    {inner}
+                  </button>
+                );
+              }
+              return (
+                <Link key={item.href} href={item.href || "/today"} className={shortcutClass}>
+                  {inner}
+                </Link>
+              );
+            })}
+          </div>
         </section>
 
         <section>

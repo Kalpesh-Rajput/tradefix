@@ -16,7 +16,7 @@ import { Calendar, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock } fr
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { FieldLabel, formInputClass } from "@/components/trade/ui";
+import { FieldLabel, formInputClass, tableInputClass } from "@/components/trade/ui";
 
 type ClockPart = "h" | "m" | "s";
 
@@ -75,6 +75,9 @@ export function DateField({
   error,
   disabled,
   id,
+  compact = false,
+  hideLabel = false,
+  placeholder = "Select date",
 }: {
   label: string;
   value: string;
@@ -82,6 +85,9 @@ export function DateField({
   error?: string;
   disabled?: boolean;
   id?: string;
+  compact?: boolean;
+  hideLabel?: boolean;
+  placeholder?: string;
 }) {
   const reactId = useId();
   const fieldId = id || reactId;
@@ -222,23 +228,28 @@ export function DateField({
         )
       : null;
 
+  const shown = selected ? format(selected, compact ? "yyyy/MM/dd" : "d MMM yyyy") : placeholder;
+
   return (
     <div ref={rootRef}>
-      <FieldLabel error={error} htmlFor={fieldId}>
-        {label}
-      </FieldLabel>
+      {hideLabel ? null : (
+        <FieldLabel error={error} htmlFor={fieldId}>
+          {label}
+        </FieldLabel>
+      )}
       <button
         id={fieldId}
         type="button"
         disabled={disabled}
+        aria-label={hideLabel ? label : undefined}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-invalid={error ? true : undefined}
         onClick={() => setOpen((current) => !current)}
-        className={`${formInputClass(error)} flex items-center justify-between text-left font-medium`}
+        className={`${compact ? tableInputClass(error) : formInputClass(error)} flex items-center justify-between text-left font-medium`}
       >
-        <span className={selected ? "font-medium text-[var(--color-text-primary)]" : "font-normal text-[var(--color-text-muted)]"}>
-          {selected ? format(selected, "d MMM yyyy") : "Select date"}
+        <span className={`min-w-0 truncate ${selected ? "font-medium text-[var(--color-text-primary)]" : "font-normal text-[var(--color-text-muted)]"}`}>
+          {shown}
         </span>
         <Calendar className="h-4 w-4 shrink-0 text-[var(--color-text-muted)]" aria-hidden />
       </button>

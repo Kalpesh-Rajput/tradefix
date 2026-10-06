@@ -5,6 +5,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from fastapi.responses import JSONResponse
+
 from app.api.routers import (
     accounts,
     agents,
@@ -18,6 +20,8 @@ from app.api.routers import (
     day_notes,
     day_plans,
     fx,
+    broker_connections,
+    brokers,
     imports,
     insights,
     media,
@@ -35,6 +39,7 @@ from app.api.routers import (
 )
 from app.core.config import settings
 from app.core.security import decode_access_token
+from app.services.brokers.errors import BrokerError
 from app.services.scheduler import shutdown_scheduler, start_scheduler
 from app.services.ws_hub import hub
 
@@ -50,6 +55,10 @@ async def lifespan(app: FastAPI):
         pass
     if settings.enable_scheduler:
         start_scheduler()
+    if settings.broker_worker_in_process:
+        from app.workers.broker_worker import start_in_process
+
+        start_in_process()
     yield
     shutdown_scheduler()
 
@@ -74,6 +83,8 @@ app.include_router(playbooks.router)
 app.include_router(playbooks.templates_router)
 app.include_router(progress_tracker.router)
 app.include_router(imports.router)
+app.include_router(brokers.router)
+app.include_router(broker_connections.router)
 app.include_router(analytics.router)
 app.include_router(calendar.router)
 app.include_router(insights.router)
@@ -98,6 +109,11 @@ app.include_router(fx.router)
 uploads_path = Path(settings.upload_dir)
 uploads_path.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(uploads_path)), name="uploads")
+
+
+@app.exception_handler(BrokerError)
+def broker_error_handler(_request, exc: BrokerError):
+    return JSONResponse(status_code=exc.http_status, content=exc.as_dict())
 
 
 @app.get("/api/health")

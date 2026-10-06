@@ -83,6 +83,23 @@ class Settings(BaseSettings):
     fx_provider_url: str = "https://open.er-api.com/v6/latest/USD"
     fx_cache_ttl_seconds: int = 900
 
+    # AES-256-GCM keyring. Format: "keyId:base64,keyId:base64". Never commit real keys.
+    broker_credentials_keys: str = ""
+    broker_credentials_active_key: str = ""
+    # Existing TradeFix-Connectors base URL, called by the worker only. Empty means MT sync is unavailable.
+    tradefix_mt_bridge_url: str = ""
+    tradefix_mt_bridge_token: str = ""
+    broker_egress_ip: str = ""
+    ctrader_client_id: str = ""
+    ctrader_client_secret: str = ""
+    ctrader_redirect_uri: str = ""
+    broker_worker_in_process: bool = True
+    sync_job_timeout_seconds: int = 3600
+    sync_heartbeat_seconds: int = 15
+    sync_default_interval_minutes: int = 15
+    sync_reconcile_minutes: int = 10
+    sync_overlap_minutes: int = 30
+
     @property
     def cors_origins(self) -> list[str]:
         origins = [part.strip() for part in self.frontend_origin.split(",") if part.strip()]
