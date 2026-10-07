@@ -34,8 +34,8 @@ export function ChartCard({
   hint?: string;
 }) {
   return (
-    <div className={`chart-card dash-card flex h-full min-h-0 flex-col p-3.5 ${className}`}>
-      <div className="mb-2 flex h-7 shrink-0 items-center justify-between gap-2">
+    <div className={`chart-card dash-card flex h-full min-h-0 min-w-0 flex-col p-3.5 ${className}`}>
+      <div className="mb-2 flex h-8 shrink-0 items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-1">
           <h3 className="truncate text-[15px] font-bold leading-5 text-[var(--color-text-primary)]">
             {title}

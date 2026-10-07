@@ -3,6 +3,8 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.dashboard_analytics import DashboardPerformance
+
 
 class TradeFixScoreConfidence(BaseModel):
     level: str
@@ -155,6 +157,7 @@ class AnalyticsResponse(BaseModel):
     expectancy_total_tags: int = 0
     edge_finder: EdgeFinder | None = None
     performance_timeline: list[MonthScore] = []
+    performance: DashboardPerformance | None = None
     plan: str = "free"
 
 

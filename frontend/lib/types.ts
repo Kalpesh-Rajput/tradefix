@@ -390,7 +390,128 @@ export interface AnalyticsResponse {
   expectancy_total_tags: number;
   edge_finder: EdgeFinder | null;
   performance_timeline: MonthScore[];
+  performance?: DashboardPerformance | null;
   plan: string;
+}
+
+export interface PerformanceCounts {
+  trades: number;
+  wins: number;
+  losses: number;
+  breakeven: number;
+  win_rate: number | null;
+  pnl: number | null;
+  avg_pnl: number | null;
+  profit_factor: number | null;
+}
+
+export interface WeeklyWinRatePoint extends PerformanceCounts {
+  day: string;
+  weekday: number;
+}
+
+export interface MonthPerformancePoint extends PerformanceCounts {
+  year: number;
+  month: number;
+  label: string;
+  short_label: string;
+}
+
+export interface YearlyPerformanceBlock {
+  year: number;
+  months: MonthPerformancePoint[];
+  total: PerformanceCounts;
+}
+
+export interface HourlyPerformancePoint extends PerformanceCounts {
+  hour: number;
+  label: string;
+}
+
+export interface HeatmapDay extends PerformanceCounts {
+  date: string;
+  in_range: boolean;
+}
+
+export interface ActivityHeatmapBlock {
+  start: string;
+  end: string;
+  range_start: string;
+  range_end: string;
+  days: HeatmapDay[];
+}
+
+export interface DurationPnlPoint {
+  seconds: number;
+  pnl: number;
+}
+
+export interface StrategyPerformanceRow extends PerformanceCounts {
+  id: string;
+  name: string;
+}
+
+export interface DisciplineOption {
+  id: string;
+  label: string;
+}
+
+export interface DisciplineStats {
+  trades: number;
+  followed: number;
+  violated: number;
+  discipline_rate: number | null;
+  most_violated_rule: string | null;
+  most_violated_count: number;
+}
+
+export interface RuleDisciplineBlock {
+  options: DisciplineOption[];
+  by_strategy: Record<string, DisciplineStats>;
+}
+
+export interface SymbolPerformanceRow extends PerformanceCounts {
+  symbol: string;
+}
+
+export interface NamedPerformance extends PerformanceCounts {
+  name: string;
+}
+
+export interface MistakeInsight extends NamedPerformance {
+  occurrences: number;
+}
+
+export interface TradingInsightsBlock {
+  best_strategy: NamedPerformance | null;
+  best_session: NamedPerformance | null;
+  best_timeframe: NamedPerformance | null;
+  most_common_mistake: MistakeInsight | null;
+  best_entry: NamedPerformance | null;
+  best_exit: NamedPerformance | null;
+  sides: NamedPerformance[];
+  trade_types: NamedPerformance[];
+  moods: NamedPerformance[];
+  went_well: NamedPerformance[];
+  sessions: NamedPerformance[];
+  timeframes: NamedPerformance[];
+  entries: NamedPerformance[];
+  exits: NamedPerformance[];
+}
+
+export interface DashboardPerformance {
+  has_trades: boolean;
+  timezone: string;
+  weekly_win_rate: WeeklyWinRatePoint[];
+  yearly: YearlyPerformanceBlock;
+  hourly: HourlyPerformancePoint[];
+  monthly_profit: MonthPerformancePoint[];
+  heatmap: ActivityHeatmapBlock;
+  duration_pnl: DurationPnlPoint[];
+  strategies: StrategyPerformanceRow[];
+  rule_discipline: RuleDisciplineBlock;
+  symbols: SymbolPerformanceRow[];
+  insights: TradingInsightsBlock;
 }
 
 export interface CalendarDay {

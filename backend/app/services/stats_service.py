@@ -599,6 +599,17 @@ def full_analytics(
             )
     by_tag = expectancy_by_tag(trades, "setup")
     by_emotion = expectancy_by_tag(trades, "emotion")
+    from app.models.user import User
+    from app.services.dashboard_analytics import build_performance
+
+    user = db.get(User, user_id)
+    timezone_name = user.timezone if user is not None and user.timezone else "UTC"
+    performance = build_performance(
+        trades,
+        timezone_name,
+        date_from=date_from,
+        date_to=date_to,
+    )
     return {
         "overview": overview,
         "by_hour": by_hour_stats(trades),
@@ -615,6 +626,7 @@ def full_analytics(
         "expectancy_total_tags": len(by_tag),
         "edge_finder": edge_finder(trades),
         "performance_timeline": performance_timeline(trades),
+        "performance": performance,
         "plan": "free",
     }
 

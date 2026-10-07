@@ -45,7 +45,7 @@ export function PositionsTradesWidget({
         <InfoTooltip content={t("dashboard.hint.positions")} label={t("dashboard.recentTrades")} />
       </div>
 
-      <div className={clsx("min-h-0 flex-1 overflow-auto", compact ? "min-h-0" : "min-h-[240px] lg:min-h-0")}>
+      <div className={clsx("dash-pane-scroll min-h-0 flex-1", compact ? "min-h-0" : "min-h-[240px] lg:min-h-0")}>
         {rows.length === 0 ? (
           <div
             className={clsx(

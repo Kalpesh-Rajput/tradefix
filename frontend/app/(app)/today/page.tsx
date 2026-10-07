@@ -34,13 +34,14 @@ import { rangeForPreset } from "@/components/dashboard/DateRangePicker";
 import { usePublishAssistantScope } from "@/lib/ai/assistant-scope";
 import { localIso } from "@/lib/dateLocal";
 import { TRADE_LIST_LIMIT } from "@/lib/trades/limits";
+import { PerformanceAnalytics } from "@/components/dashboard/analytics/PerformanceAnalytics";
 import { useAnalytics, useCalendar } from "@/lib/hooks/useAnalytics";
 import { useTrades } from "@/lib/hooks/useTrades";
 
 export default function TodayPage() {
   const { t, formatChartDate } = useLocale();
   const { user } = useAuth();
-  const { displayPnl, formatMoney, activeAccount, loading: accountsLoading } = useAccountPrefs();
+  const { displayPnl, formatMoney, currencySymbol, activeAccount, loading: accountsLoading } = useAccountPrefs();
   const { openFlow } = useAddTradeModal();
   const name = firstName(user?.name, user?.email);
   const { widgets, editing, setEditing, toggle, labels } = useDashboardWidgets();
@@ -426,6 +427,14 @@ export default function TodayPage() {
                   </div>
                 )}
               </div>
+            )}
+
+            {widgets.performanceAnalytics && (
+              <PerformanceAnalytics
+                data={analytics?.performance}
+                formatMoney={formatMoney}
+                currencySymbol={currencySymbol}
+              />
             )}
             </div>
           </>
