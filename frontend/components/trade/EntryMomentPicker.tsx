@@ -32,7 +32,8 @@ import {
 import { FieldLabel, FieldSlot, formInputClass, tableInputClass } from "@/components/trade/ui";
 
 const ITEM = 36;
-const POPOVER_WIDTH = 340;
+const POPOVER_WIDTH = 528;
+const STACKED_WIDTH = 340;
 
 type Clock = { h: number; m: number; s: number };
 
@@ -156,7 +157,7 @@ function TimeColumn({
               choose((value + 1) % count);
             }
           }}
-          className="relative z-[1] h-full overflow-y-auto overscroll-contain scroll-smooth snap-y snap-mandatory motion-reduce:scroll-auto [scrollbar-width:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 [&::-webkit-scrollbar]:hidden"
+          className="absolute inset-0 z-[1] overflow-y-auto overscroll-contain scroll-smooth snap-y snap-mandatory motion-reduce:scroll-auto [scrollbar-width:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 [&::-webkit-scrollbar]:hidden"
         >
           <div style={{ height: ITEM * 2 }} />
           {values.map((item) => {
@@ -221,7 +222,7 @@ export function DateTimeMomentField({
   const toast = useToast();
   const fieldId = useId();
   const [open, setOpen] = useState(false);
-  const [box, setBox] = useState<{ top: number; left: number } | null>(null);
+  const [box, setBox] = useState<{ top: number; left: number; width: number } | null>(null);
   const [draftDate, setDraftDate] = useState(() => parseDateValue(date) ?? new Date());
   const [cursor, setCursor] = useState(() => parseDateValue(date) ?? new Date());
   const [clock, setClock] = useState<Clock>(() => parseClock(time || currentClock()));
@@ -279,8 +280,10 @@ export function DateTimeMomentField({
     if (!open || !anchorRef.current) return;
     function place() {
       if (!anchorRef.current) return;
-      const height = Math.min(560, window.innerHeight - 16);
-      setBox(placePopover(anchorRef.current, POPOVER_WIDTH, height));
+      const beside = window.innerWidth >= 560;
+      const width = Math.min(beside ? POPOVER_WIDTH : STACKED_WIDTH, window.innerWidth - 16);
+      const height = Math.min(beside ? 460 : 640, window.innerHeight - 16);
+      setBox({ ...placePopover(anchorRef.current, width, height), width });
     }
     place();
     window.addEventListener("resize", place);
@@ -386,7 +389,7 @@ export function DateTimeMomentField({
             ref={menuRef}
             role="dialog"
             aria-label="Date and time"
-            style={{ position: "fixed", top: box.top, left: box.left, width: POPOVER_WIDTH, zIndex: 80 }}
+            style={{ position: "fixed", top: box.top, left: box.left, width: box.width, zIndex: 80 }}
             className={`max-h-[calc(100vh-16px)] overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-dropdown)] ${
               reduced ? "" : "animate-[entryMomentIn_150ms_ease-out]"
             }`}
@@ -397,7 +400,9 @@ export function DateTimeMomentField({
                 {notice}
               </p>
             ) : null}
-            <div className="mt-2 flex items-center justify-between">
+            <div className="mt-3 flex flex-col gap-3 min-[560px]:flex-row min-[560px]:items-stretch">
+            <div className="min-w-0 min-[560px]:w-[292px] min-[560px]:shrink-0">
+            <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-[var(--color-text-primary)]">{format(cursor, "MMMM yyyy")}</p>
               <div className="flex items-center gap-0.5">
                 <button
@@ -496,9 +501,10 @@ export function DateTimeMomentField({
                 Today
               </button>
             </div>
-            <div className="mt-2 border-t border-[var(--color-border)] pt-3">
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col border-t border-[var(--color-border)] pt-3 min-[560px]:justify-center min-[560px]:border-l min-[560px]:border-t-0 min-[560px]:pl-3 min-[560px]:pt-0">
               <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Time</p>
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 flex gap-1.5">
                 <TimeColumn
                   label="Hour"
                   count={24}
@@ -524,6 +530,7 @@ export function DateTimeMomentField({
                   onChange={(s) => changeClock("s", s)}
                 />
               </div>
+            </div>
             </div>
             <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--color-border)] pt-3">
               <button

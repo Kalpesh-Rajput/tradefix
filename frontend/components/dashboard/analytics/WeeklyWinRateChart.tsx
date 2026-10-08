@@ -20,7 +20,7 @@ import {
   AXIS,
   AnalyticsEmpty,
   GRID,
-  PNL_PROFIT_HEX,
+  BAR_PROFIT_HEX,
   ROW_CHART_H,
   TipCard,
   formatPct,
@@ -90,7 +90,7 @@ export function WeeklyWinRateChart({
               />
               <Bar dataKey="rate" radius={[0, 4, 4, 0]} barSize={10} background={{ fill: "var(--color-gauge-track)", radius: 4 }}>
                 {rows.map((row) => (
-                  <Cell key={row.day} fill={row.trades > 0 ? PNL_PROFIT_HEX : "transparent"} />
+                  <Cell key={row.day} fill={row.trades > 0 ? BAR_PROFIT_HEX : "transparent"} />
                 ))}
                 <LabelList dataKey="label" position="right" style={{ fontSize: 10, fill: "var(--color-text-secondary)", fontWeight: 600 }} />
               </Bar>

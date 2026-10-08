@@ -10,7 +10,7 @@ import {
   AXIS,
   AnalyticsEmpty,
   GRID,
-  PNL_PROFIT_HEX,
+  BAR_PROFIT_HEX,
   ROW_CHART_H,
   TipCard,
   pnlTone,
@@ -72,7 +72,7 @@ export function WeeklyFrequencyChart({
                   );
                 }}
               />
-              <Bar dataKey="trades" fill={PNL_PROFIT_HEX} radius={[0, 4, 4, 0]} barSize={10} />
+              <Bar dataKey="trades" fill={BAR_PROFIT_HEX} radius={[0, 4, 4, 0]} barSize={10} />
             </BarChart>
           </ResponsiveContainer>
         )}

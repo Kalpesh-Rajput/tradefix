@@ -22,6 +22,14 @@ export type OutcomeCardStats = {
   lossPct: number;
   avgWin: number;
   avgLoss: number;
+  /** Running winner count after each closed trade. */
+  winCount: number[];
+  /** Running loser count after each closed trade. */
+  lossCount: number[];
+  /** Running average win, updated on each winning trade. */
+  avgWinSeries: number[];
+  /** Running average loss size, updated on each losing trade. */
+  avgLossSeries: number[];
 };
 
 type DisplayPnl = (pnl: number | null, fees?: number) => number | null;
@@ -80,25 +88,50 @@ export function computeTradeViewKpis(trades: Trade[], displayPnl?: DisplayPnl): 
   };
 }
 
+function sampleSeries(values: number[], max = 32): number[] {
+  if (values.length <= max) return values;
+  const out: number[] = [];
+  const step = (values.length - 1) / (max - 1);
+  for (let index = 0; index < max; index += 1) out.push(values[Math.round(index * step)]);
+  return out;
+}
+
 export function computeOutcomeCards(trades: Trade[], displayPnl?: DisplayPnl): OutcomeCardStats {
+  const chronological = trades
+    .flatMap((trade) => {
+      const pnl = displayPnl ? displayPnl(trade.pnl, trade.fees) : trade.pnl;
+      return pnl == null ? [] : [{ trade, pnl }];
+    })
+    .sort((a, b) => {
+      const aTime = new Date(a.trade.closed_at || a.trade.opened_at).getTime();
+      const bTime = new Date(b.trade.closed_at || b.trade.opened_at).getTime();
+      return aTime - bTime;
+    });
+
   let wins = 0;
   let losses = 0;
   let flat = 0;
   let winSum = 0;
   let lossSum = 0;
+  const winCount: number[] = [];
+  const lossCount: number[] = [];
+  const avgWinSeries: number[] = [];
+  const avgLossSeries: number[] = [];
 
-  for (const trade of trades) {
-    const pnl = displayPnl ? displayPnl(trade.pnl, trade.fees) : trade.pnl;
-    if (pnl == null) continue;
-    if (pnl > 0) {
+  for (const row of chronological) {
+    if (row.pnl > 0) {
       wins += 1;
-      winSum += pnl;
-    } else if (pnl < 0) {
+      winSum += row.pnl;
+      avgWinSeries.push(winSum / wins);
+    } else if (row.pnl < 0) {
       losses += 1;
-      lossSum += pnl;
+      lossSum += row.pnl;
+      avgLossSeries.push(Math.abs(lossSum / losses));
     } else {
       flat += 1;
     }
+    winCount.push(wins);
+    lossCount.push(losses);
   }
 
   const rated = wins + losses + flat;
@@ -109,5 +142,9 @@ export function computeOutcomeCards(trades: Trade[], displayPnl?: DisplayPnl): O
     lossPct: rated ? (losses / rated) * 100 : 0,
     avgWin: wins ? winSum / wins : 0,
     avgLoss: losses ? Math.abs(lossSum / losses) : 0,
+    winCount: sampleSeries(winCount),
+    lossCount: sampleSeries(lossCount),
+    avgWinSeries: sampleSeries(avgWinSeries),
+    avgLossSeries: sampleSeries(avgLossSeries),
   };
 }

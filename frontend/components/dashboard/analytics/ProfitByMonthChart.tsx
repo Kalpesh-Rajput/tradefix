@@ -21,8 +21,8 @@ import {
   AXIS,
   AnalyticsEmpty,
   GRID,
-  PNL_LOSS_HEX,
-  PNL_PROFIT_HEX,
+  BAR_LOSS_HEX,
+  BAR_PROFIT_HEX,
   TIME_CHART_H,
   TipCard,
   formatPct,
@@ -104,7 +104,7 @@ export function ProfitByMonthChart({
               />
               <Bar dataKey="bar" radius={[3, 3, 0, 0]} maxBarSize={36}>
                 {rows.map((row) => (
-                  <Cell key={row.label} fill={(row.bar ?? 0) >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX} />
+                  <Cell key={row.label} fill={(row.bar ?? 0) >= 0 ? BAR_PROFIT_HEX : BAR_LOSS_HEX} />
                 ))}
               </Bar>
             </BarChart>

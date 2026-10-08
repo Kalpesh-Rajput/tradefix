@@ -9,7 +9,7 @@ import type { DashboardPerformance, StrategyPerformanceRow } from "@/lib/types";
 
 import {
   AnalyticsEmpty,
-  PNL_PROFIT_HEX,
+  BAR_PROFIT_HEX,
   compactMoney,
   formatPct,
   pnlClass,
@@ -85,7 +85,7 @@ export function StrategyPerformance({
                       className="h-full rounded-full"
                       style={{
                         width: `${Math.max(0, Math.min(100, row.win_rate ?? 0))}%`,
-                        background: PNL_PROFIT_HEX,
+                        background: BAR_PROFIT_HEX,
                       }}
                     />
                   </div>

@@ -1,4 +1,4 @@
-import { COUNT_SERIES_HEX, PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
+import { BAR_LOSS_HEX, BAR_PROFIT_HEX, COUNT_SERIES_HEX } from "@/lib/appearance";
 import type { DashboardPerformance, NamedPerformance, PerformanceCounts } from "@/lib/types";
 
 import { compactMoney, formatPct, type MoneyFormat } from "./shared";
@@ -101,10 +101,10 @@ export function formatInsightMetric(
 export function insightBarColor(metric: InsightMetric, value: number | null): string | null {
   if (value == null || value === 0) return null;
   if (metric.kind === "signed") {
-    return value > 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX;
+    return value > 0 ? BAR_PROFIT_HEX : BAR_LOSS_HEX;
   }
   if (metric.kind === "count") return COUNT_SERIES_HEX;
-  return PNL_PROFIT_HEX;
+  return BAR_PROFIT_HEX;
 }
 
 export function insightBarWidth(metric: InsightMetric, value: number | null, maxAbs: number): number {

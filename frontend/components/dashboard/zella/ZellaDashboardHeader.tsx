@@ -30,18 +30,11 @@ export function ZellaDashboardHeader({
   onToggleEdit: () => void;
   onImport: () => void;
 }) {
-  const { activeAccount, currencySymbol } = useAccountPrefs();
+  const { activeAccount } = useAccountPrefs();
   const toolbar = useMemo(
     () => (
       <div className="contents lg:flex lg:w-auto lg:flex-wrap lg:items-center lg:justify-end lg:gap-2">
         <ViewMyDayControl accountId={activeAccount?.id} />
-        <span
-          className="inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-md bg-primary px-1.5 text-[12px] font-semibold text-primary-foreground text-on-accent"
-          title={`Values shown in ${activeAccount?.base_currency || "USD"}`}
-          aria-label={`Display currency ${activeAccount?.base_currency || "USD"}`}
-        >
-          {currencySymbol.trim() || "$"}
-        </span>
         <DateRangePicker
           dateFrom={dateFrom}
           dateTo={dateTo}
@@ -74,7 +67,7 @@ export function ZellaDashboardHeader({
         </button>
       </div>
     ),
-    [dateFrom, dateTo, onRangeChange, editing, onToggleEdit, onImport, activeAccount?.id, activeAccount?.base_currency, currencySymbol]
+    [dateFrom, dateTo, onRangeChange, editing, onToggleEdit, onImport, activeAccount?.id]
   );
 
   return <HeaderActions subtitle={greeting}>{toolbar}</HeaderActions>;

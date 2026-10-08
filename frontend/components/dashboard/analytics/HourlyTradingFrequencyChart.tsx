@@ -10,7 +10,7 @@ import {
   AXIS,
   AnalyticsEmpty,
   GRID,
-  PNL_PROFIT_HEX,
+  BAR_PROFIT_HEX,
   TIME_CHART_H,
   TipCard,
   HOUR_AXIS_TICKS,
@@ -80,7 +80,7 @@ export function HourlyTradingFrequencyChart({
                   );
                 }}
               />
-              <Bar dataKey="trades" fill={PNL_PROFIT_HEX} radius={[3, 3, 0, 0]} maxBarSize={14} />
+              <Bar dataKey="trades" fill={BAR_PROFIT_HEX} radius={[3, 3, 0, 0]} maxBarSize={14} />
             </BarChart>
           </ResponsiveContainer>
         )}

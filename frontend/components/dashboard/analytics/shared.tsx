@@ -2,13 +2,13 @@
 
 import type { ReactNode } from "react";
 
-import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
+import { BAR_LOSS_HEX, BAR_PROFIT_HEX, PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 
 export const AXIS = { fontSize: 10, fill: "var(--color-chart-axis)", fontWeight: 500 as const };
 export const GRID = "var(--color-chart-grid)";
 export const TIME_CHART_H = 200;
 export const ROW_CHART_H = 208;
-export { PNL_LOSS_HEX, PNL_PROFIT_HEX };
+export { BAR_LOSS_HEX, BAR_PROFIT_HEX, PNL_LOSS_HEX, PNL_PROFIT_HEX };
 
 export type MoneyFormat = (n: number, opts?: { signed?: boolean; digits?: number }) => string;
 

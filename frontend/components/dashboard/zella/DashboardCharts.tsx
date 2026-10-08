@@ -15,7 +15,7 @@ import {
 
 import { CHART_BODY_H, ChartCard, EmptyChart, chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
-import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
+import { BAR_LOSS_HEX, BAR_PROFIT_HEX, PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 
 export function CumulativePnlChart({
   series,
@@ -133,7 +133,7 @@ export function DailyPnlChart({
               />
               <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={22}>
                 {series.map((entry, i) => (
-                  <Cell key={i} fill={entry.value >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX} />
+                  <Cell key={i} fill={entry.value >= 0 ? BAR_PROFIT_HEX : BAR_LOSS_HEX} />
                 ))}
               </Bar>
             </BarChart>

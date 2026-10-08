@@ -43,6 +43,9 @@ export const CHART_LINE_HEX = "#4B438B";
 /** P&L-only colors — charts and calendar heatmap, not brand accent. */
 export const PNL_PROFIT_HEX = "#2F9E6A";
 export const PNL_LOSS_HEX = "#D64545";
+/** Lighter fills for dashboard bar charts. */
+export const BAR_PROFIT_HEX = "#40C79A";
+export const BAR_LOSS_HEX = "#F26969";
 /** Secondary analytics series (trade count) — not P&L. */
 export const COUNT_SERIES_HEX = "#3B6AE0";
 

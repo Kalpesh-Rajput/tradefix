@@ -154,7 +154,7 @@ export function TradingInsights({
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-gauge-track)]">
                           <div
-                            className="h-full rounded-full bg-[#2F9E6A]"
+                            className="h-full rounded-full bg-[#40C79A]"
                             style={{ width: `${Math.max(0, Math.min(100, side.win_rate ?? 0))}%` }}
                           />
                         </div>

@@ -35,7 +35,7 @@ function addDays(iso: string, days: number): string {
 }
 
 function formatDay(iso: string): string {
-  return fromIso(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return fromIso(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 function cellColor(day: HeatmapDay | undefined, maxAbs: number): string {
@@ -87,6 +87,7 @@ export function ActivityHeatmap({
   const [tip, setTip] = useState<{
     iso: string;
     left: number;
+    caret: number;
     top: number;
     height: number;
     above: boolean;
@@ -99,13 +100,16 @@ export function ActivityHeatmap({
     const cell = element.getBoundingClientRect();
     if (!wrap) return;
     const top = cell.top - wrap.top;
-    const rawLeft = cell.left - wrap.left + cell.width / 2;
+    const anchor = cell.left - wrap.left + cell.width / 2;
+    const boxWidth = 148;
+    const left = Math.min(Math.max(anchor - 18, 4), Math.max(4, wrap.width - boxWidth));
     setTip({
       iso,
-      left: Math.min(Math.max(rawLeft, 64), Math.max(64, wrap.width - 64)),
+      left,
+      caret: Math.min(Math.max(anchor - left, 14), boxWidth - 14),
       top,
       height: cell.height,
-      above: top > 52,
+      above: top > 36,
     });
   }
 
@@ -184,31 +188,44 @@ export function ActivityHeatmap({
           </div>
           {tip ? (
             <div
-              className="pointer-events-none absolute z-20 min-w-[108px] -translate-x-1/2 rounded-md bg-[#1B1C21] px-2.5 py-1.5 text-center shadow-lg"
+              className="pointer-events-none absolute z-30"
               style={{
                 left: tip.left,
-                top: tip.above ? tip.top - 8 : tip.top + tip.height + 8,
-                transform: tip.above ? "translate(-50%, -100%)" : "translate(-50%, 0)",
+                top: tip.above ? tip.top - 6 : tip.top + tip.height + 6,
+                transform: tip.above ? "translateY(-100%)" : undefined,
               }}
             >
-              <p className="text-[11px] font-medium leading-4 text-white">{formatDay(tip.iso)}</p>
-              <p
-                className={`text-[11px] font-semibold leading-4 ${
-                  outsideActive || !activeDay?.trades
-                    ? "text-[#C8C8D0]"
-                    : (activeDay.pnl ?? 0) > 0
-                      ? "text-[#3DDC97]"
-                      : (activeDay.pnl ?? 0) < 0
-                        ? "text-[#FF8D8D]"
-                        : "text-white"
-                }`}
-              >
-                {outsideActive
-                  ? "Outside selected range"
-                  : activeDay?.trades
-                    ? formatMoney(activeDay.pnl ?? 0, { signed: true, digits: 2 })
-                    : "No trades"}
-              </p>
+              <div className="rounded-lg bg-[#1B1E28] px-3 py-2 text-left shadow-[0_8px_20px_rgba(16,18,28,0.22)]">
+                <p className="whitespace-nowrap text-[13px] font-semibold leading-[18px] text-white">
+                  {formatDay(tip.iso)}
+                </p>
+                <p
+                  className={`mt-0.5 whitespace-nowrap text-[12px] font-medium leading-4 ${
+                    outsideActive || !activeDay?.trades
+                      ? "text-[#A7ADBA]"
+                      : (activeDay.pnl ?? 0) > 0
+                        ? "text-[#3DDC97]"
+                        : (activeDay.pnl ?? 0) < 0
+                          ? "text-[#FF8D8D]"
+                          : "text-white"
+                  }`}
+                >
+                  {outsideActive
+                    ? "Outside selected range"
+                    : activeDay?.trades
+                      ? formatMoney(activeDay.pnl ?? 0, { signed: true, digits: 2 })
+                      : "No trades"}
+                </p>
+              </div>
+              <span
+                aria-hidden
+                className="absolute h-0 w-0 -translate-x-1/2 border-x-[5px] border-x-transparent"
+                style={
+                  tip.above
+                    ? { left: tip.caret, bottom: -5, borderTop: "6px solid #1B1E28" }
+                    : { left: tip.caret, top: -5, borderBottom: "6px solid #1B1E28" }
+                }
+              />
             </div>
           ) : null}
           <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] text-[var(--color-text-muted)]">
