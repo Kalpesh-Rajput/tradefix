@@ -52,6 +52,7 @@ export interface ConnectionStatus {
 
 export interface ImportBatch {
   id: string;
+  account_id?: string;
   filename: string;
   detected_format: string;
   status: string;
@@ -59,6 +60,9 @@ export interface ImportBatch {
   valid_count: number;
   duplicate_count: number;
   attention_count: number;
+  headers?: string[];
+  mapping?: Record<string, string>;
+  unmapped_required?: string[];
   rows: {
     row_number: number;
     status: string;

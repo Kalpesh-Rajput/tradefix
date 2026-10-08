@@ -1,4 +1,6 @@
+import logging
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile
 from sqlalchemy import select
@@ -12,9 +14,17 @@ from app.models.user import User
 from app.schemas.trade import TradeImportResult
 from app.services.csv_import_service import import_trades_from_csv
 from app.services.imports.confirm import confirm_batch
-from app.services.imports.parse import parse_upload
+from app.services.imports.duplicates import existing_duplicate_keys, mark_duplicates
+from app.services.imports.mapper import unmapped_required
+from app.services.imports.parser import ParsedFile
+from app.services.imports.pipeline import ImportFileError, build_preview, reprocess_rows, summarize
+from app.services.rate_limit import import_upload_limiter
 
 router = APIRouter(prefix="/api/imports", tags=["imports"])
+logger = logging.getLogger(__name__)
+
+_MAX_BYTES = 10 * 1024 * 1024
+_ALLOWED = {".csv", ".xlsx", ".xml", ".htm", ".html"}
 
 
 def _tag_imported_trades(user_id, trade_ids) -> None:
@@ -49,25 +59,37 @@ async def upload_import(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    import_upload_limiter.check(str(current_user.id))
     account = _owned_account(db, account_id, current_user) if account_id else get_default_account(db, current_user)
+    filename = _safe_filename(file.filename)
     payload = await file.read()
-    if not payload:
-        raise HTTPException(status_code=400, detail={"code": "UNKNOWN_ERROR", "message": "The file is empty."})
-    detected, parsed = parse_upload(file.filename or "upload.csv", payload)
-    attention = sum(1 for row in parsed if row["status"] != "valid")
+    if len(payload) > _MAX_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "UNKNOWN_ERROR", "message": "File is larger than 10 MB."},
+        )
+    try:
+        preview = build_preview(filename, payload)
+    except ImportFileError as exc:
+        raise HTTPException(status_code=400, detail={"code": "UNKNOWN_ERROR", "message": exc.message}) from exc
+    existing = existing_duplicate_keys(db, current_user.id, account.id)
+    mark_duplicates(preview.rows, existing)
+    valid, duplicates, attention = summarize(preview.rows)
     batch = ImportBatch(
         user_id=current_user.id,
         account_id=account.id,
-        filename=file.filename or "upload.csv",
-        detected_format=detected,
+        filename=filename,
+        detected_format=preview.detected_format,
         status="preview",
-        row_count=len(parsed),
-        valid_count=len(parsed) - attention,
+        mapping=_store_mapping(preview.headers, preview.mapping),
+        row_count=len(preview.rows),
+        valid_count=valid,
+        duplicate_count=duplicates,
         attention_count=attention,
     )
     db.add(batch)
     db.flush()
-    for row in parsed:
+    for row in preview.rows:
         db.add(
             ImportRow(
                 user_id=current_user.id,
@@ -80,6 +102,16 @@ async def upload_import(
             )
         )
     db.commit()
+    logger.info(
+        "import preview user=%s account=%s format=%s rows=%s valid=%s duplicates=%s attention=%s",
+        current_user.id,
+        account.id,
+        preview.detected_format,
+        len(preview.rows),
+        valid,
+        duplicates,
+        attention,
+    )
     return _batch_payload(db, batch)
 
 
@@ -97,7 +129,50 @@ def update_mapping(
     current_user: User = Depends(get_current_user),
 ):
     batch = _owned_batch(db, current_user, batch_id)
-    batch.mapping = body.get("mapping") or {}
+    if batch.status == "imported":
+        raise HTTPException(status_code=409, detail={"code": "NOT_SUPPORTED", "message": "This file was already imported."})
+    account_raw = body.get("account_id")
+    if account_raw:
+        try:
+            account = _owned_account(db, uuid.UUID(str(account_raw)), current_user)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "UNKNOWN_ERROR", "message": "Choose an account from the list."},
+            ) from exc
+        batch.account_id = account.id
+    override = body.get("mapping") or {}
+    if not isinstance(override, dict):
+        raise HTTPException(status_code=400, detail={"code": "UNKNOWN_ERROR", "message": "Mapping must be an object."})
+    rows = _batch_rows(db, batch)
+    headers = _headers(batch, rows)
+    unknown = [str(column) for column in override.values() if column and str(column) not in headers]
+    if unknown:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "UNKNOWN_ERROR", "message": "That column is not in this file."},
+        )
+    parsed = ParsedFile(
+        kind=batch.detected_format,
+        headers=headers,
+        records=[(row.row_number, dict(row.raw or {})) for row in rows],
+    )
+    existing = existing_duplicate_keys(db, current_user.id, batch.account_id)
+    mapping, processed = reprocess_rows(parsed, override={str(key): str(value) for key, value in override.items() if value}, existing=existing)
+    by_number = {row.row_number: row for row in rows}
+    for item in processed:
+        model = by_number.get(item["row_number"])
+        if model is None:
+            continue
+        model.status = item["status"]
+        model.errors = item["errors"]
+        model.normalized = item["normalized"]
+    valid, duplicates, attention = summarize(processed)
+    batch.mapping = _store_mapping(headers, mapping)
+    batch.row_count = len(processed)
+    batch.valid_count = valid
+    batch.duplicate_count = duplicates
+    batch.attention_count = attention
     db.commit()
     return _batch_payload(db, batch)
 
@@ -107,7 +182,41 @@ def confirm_import(batch_id: uuid.UUID, db: Session = Depends(get_db), current_u
     batch = _owned_batch(db, current_user, batch_id)
     if batch.status == "imported":
         raise HTTPException(status_code=409, detail={"code": "NOT_SUPPORTED", "message": "This file was already imported."})
-    return confirm_batch(db, current_user, batch)
+    result = confirm_batch(db, current_user, batch)
+    logger.info(
+        "import confirm user=%s batch=%s created=%s duplicates=%s attention=%s",
+        current_user.id,
+        batch.id,
+        result.get("created"),
+        result.get("duplicates"),
+        result.get("attention"),
+    )
+    return result
+
+
+def _safe_filename(filename: str | None) -> str:
+    name = Path(filename or "upload.csv").name
+    suffix = Path(name).suffix.lower()
+    if suffix not in _ALLOWED:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "NOT_SUPPORTED", "message": "Upload a CSV, Excel (.xlsx), or XML file."},
+        )
+    return name
+
+
+def _store_mapping(headers: list[str], mapping: dict[str, str]) -> dict:
+    return {"_headers": headers, **mapping}
+
+
+def _headers(batch: ImportBatch, rows: list[ImportRow]) -> list[str]:
+    stored = batch.mapping or {}
+    headers = stored.get("_headers")
+    if isinstance(headers, list) and headers:
+        return [str(header) for header in headers]
+    if rows and isinstance(rows[0].raw, dict):
+        return [str(key) for key in rows[0].raw.keys()]
+    return []
 
 
 def _owned_batch(db: Session, user: User, batch_id: uuid.UUID) -> ImportBatch:
@@ -117,10 +226,26 @@ def _owned_batch(db: Session, user: User, batch_id: uuid.UUID) -> ImportBatch:
     return batch
 
 
+def _batch_rows(db: Session, batch: ImportBatch) -> list[ImportRow]:
+    return list(
+        db.scalars(
+            select(ImportRow)
+            .where(ImportRow.batch_id == batch.id, ImportRow.user_id == batch.user_id)
+            .order_by(ImportRow.row_number)
+        ).all()
+    )
+
+
 def _batch_payload(db: Session, batch: ImportBatch) -> dict:
-    rows = db.scalars(select(ImportRow).where(ImportRow.batch_id == batch.id, ImportRow.user_id == batch.user_id).order_by(ImportRow.row_number)).all()
+    rows = _batch_rows(db, batch)
+    mapping = {
+        str(key): str(value)
+        for key, value in (batch.mapping or {}).items()
+        if not str(key).startswith("_") and value
+    }
     return {
         "id": str(batch.id),
+        "account_id": str(batch.account_id),
         "filename": batch.filename,
         "detected_format": batch.detected_format,
         "status": batch.status,
@@ -128,6 +253,9 @@ def _batch_payload(db: Session, batch: ImportBatch) -> dict:
         "valid_count": batch.valid_count,
         "duplicate_count": batch.duplicate_count,
         "attention_count": batch.attention_count,
+        "headers": _headers(batch, rows),
+        "mapping": mapping,
+        "unmapped_required": unmapped_required(mapping),
         "rows": [
             {
                 "row_number": row.row_number,

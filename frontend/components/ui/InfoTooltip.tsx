@@ -237,7 +237,7 @@ export function HoverTip({
               id={tipId}
               role="tooltip"
               className={clsx(
-                "pointer-events-none fixed z-[80] w-max max-w-[260px] rounded-lg bg-[#1C1C3A] px-3 py-2 text-[12px] font-normal leading-snug shadow-[0_8px_24px_rgba(20,16,40,0.28)]",
+                "pointer-events-none fixed z-[80] w-max max-w-[280px] whitespace-pre-line rounded-lg bg-[#1C1C3A] px-3 py-2 text-[12px] font-normal leading-snug shadow-[0_8px_24px_rgba(20,16,40,0.28)]",
                 reduce ? "" : "transition-[opacity,transform] duration-150 ease-out",
                 visible ? "opacity-100" : "opacity-0",
                 !reduce && (visible ? "scale-100" : "scale-[0.96]")

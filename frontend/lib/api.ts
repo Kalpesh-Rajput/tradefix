@@ -119,6 +119,38 @@ export const api = {
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   postForm: <T>(path: string, form: FormData) => request<T>(path, { method: "POST", body: form }),
   uploadWithProgress,
+  downloadPost: async (path: string, body: unknown, filename: string, onResponse?: () => void) => {
+    const token = getToken();
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      let detail = res.statusText;
+      try {
+        const payload = await res.json();
+        detail = payload.detail || detail;
+      } catch {
+        // ignore
+      }
+      throw new ApiError(typeof detail === "string" ? detail : JSON.stringify(detail), res.status);
+    }
+    onResponse?.();
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
   download: async (path: string, filename: string) => {
     const token = getToken();
     const res = await fetch(`${API_URL}${path}`, {

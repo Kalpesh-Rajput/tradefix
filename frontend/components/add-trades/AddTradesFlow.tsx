@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AccountFormStep } from "@/components/add-trades/AccountFormStep";
 import { AccountsStep } from "@/components/add-trades/AccountsStep";
 import { AddAccountChoice } from "@/components/add-trades/AddAccountChoice";
+import { FileImportStep } from "@/components/add-trades/FileImportStep";
 import {
   ImportMethodStep,
   type ImportMethod,
@@ -14,7 +15,7 @@ import {
 import { BrokerConnectScreen } from "@/components/broker/BrokerConnectScreen";
 import { BrokerPickerScreen } from "@/components/broker/BrokerPickerScreen";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
-import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
+import { useAddTradeModal, useAddTradeModalStore } from "@/components/trade/useAddTradeModal";
 import { useToast } from "@/components/ui/Toast";
 import {
   blankAccountValues,
@@ -27,7 +28,7 @@ import { useAccounts, useCreateAccount } from "@/lib/hooks/useAccounts";
 import { apiMessage, useProviderRegistry } from "@/lib/hooks/useProviders";
 import type { Account } from "@/lib/types";
 
-type FlowStep = "accounts" | "choose-account-type" | "broker" | "method" | "account-form" | "connect";
+type FlowStep = "accounts" | "choose-account-type" | "broker" | "method" | "account-form" | "connect" | "file";
 type AccountMode = "existing" | "new-connect" | "dummy";
 
 function progressForStep(step: FlowStep): number {
@@ -35,6 +36,7 @@ function progressForStep(step: FlowStep): number {
   if (step === "broker") return 0.45;
   if (step === "method") return 0.7;
   if (step === "connect") return 0.85;
+  if (step === "file") return 0.9;
   if (step === "account-form") return 0.9;
   return 0.85;
 }
@@ -76,7 +78,9 @@ export function AddTradesFlow() {
   }, []);
 
   useEffect(() => {
-    if (flowOpen) resetLocal();
+    if (!flowOpen) return;
+    if (useAddTradeModalStore.getState().resumeFlow) return;
+    resetLocal();
   }, [flowOpen, resetLocal]);
 
   useEffect(() => {
@@ -97,6 +101,10 @@ export function AddTradesFlow() {
   }
 
   function handleBack() {
+    if (step === "file") {
+      setStep("method");
+      return;
+    }
     if (step === "connect") {
       setStep("broker");
       return;
@@ -197,6 +205,10 @@ export function AddTradesFlow() {
 
   function openTradeForMethod(method: ImportMethod, accountId: string) {
     setActiveAccountId(accountId);
+    if (method === "manual") {
+      openModal("manual", { initialAccountId: accountId, resumeFlow: true });
+      return;
+    }
     closeFlow();
     resetLocal();
     if (method === "auto-sync") {
@@ -206,14 +218,15 @@ export function AddTradesFlow() {
       });
       return;
     }
-    if (method === "file") {
-      openModal("csv", { initialAccountId: accountId });
-      return;
-    }
-    openModal("manual", { initialAccountId: accountId });
+    openModal("csv", { initialAccountId: accountId });
   }
 
   function onMethodContinue(method: ImportMethod) {
+    if (method === "file" && targetAccountId) {
+      setPendingMethod(method);
+      setStep("file");
+      return;
+    }
     if (accountMode === "new-connect") {
       setPendingMethod(method);
       setFormError(null);
@@ -248,6 +261,12 @@ export function AddTradesFlow() {
         return;
       }
       const method = pendingMethod ?? "manual";
+      if (method === "file") {
+        setTargetAccountId(created.id);
+        setActiveAccountId(created.id);
+        setStep("file");
+        return;
+      }
       openTradeForMethod(method, created.id);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not create account";
@@ -318,7 +337,7 @@ export function AddTradesFlow() {
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-8 sm:py-7">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-5 sm:px-8 sm:py-7">
               {step === "accounts" ? (
                 <AccountsStep
                   accounts={accounts}
@@ -376,6 +395,19 @@ export function AddTradesFlow() {
                     resetLocal();
                     openModal("manual", { initialAccountId: targetAccountId });
                   }}
+                />
+              ) : null}
+
+              {step === "file" && targetAccountId ? (
+                <FileImportStep
+                  accountId={targetAccountId}
+                  accountLabel={
+                    methodIsDummy
+                      ? "Dummy account"
+                      : selectedBroker?.display_name || targetAccount?.name || "Account"
+                  }
+                  isDemo={methodIsDummy}
+                  onImported={handleClose}
                 />
               ) : null}
 

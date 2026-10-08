@@ -1,9 +1,9 @@
 "use client";
 
 import clsx from "clsx";
-import { ClipboardList, Filter, Menu, Plus, Search, Trash2, X } from "lucide-react";
+import { ClipboardList, Download, Filter, Menu, Plus, Search, Trash2, X } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { PortfolioSwitcher } from "@/components/dashboard/PortfolioSwitcher";
@@ -16,6 +16,7 @@ import { useQuickLog } from "@/components/providers/QuickLogProvider";
 import { useSidebar } from "@/components/providers/SidebarProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { AdvancedFilterDialog } from "@/components/trades/AdvancedFilterDialog";
+import { ExportTradesDialog } from "@/components/trades/ExportTradesDialog";
 import { ColumnPickerDialog, useTradeColumnPrefs } from "@/components/trades/ColumnPickerDialog";
 import { TradeLogTable } from "@/components/trades/TradeLogTable";
 import { TradeViewKpis } from "@/components/trades/TradeViewKpis";
@@ -64,7 +65,7 @@ export function TradesLogPage() {
   const { openFlow } = useAddTradeModal();
   const { openQuickLog } = useQuickLog();
   const { collapsed, mobileOpen, setMobileOpen } = useSidebar();
-  const { activeAccount, displayPnl, formatMoney, loading: accountsLoading } = useAccountPrefs();
+  const { activeAccount, displayPnl, formatMoney, loading: accountsLoading, pnlDisplayMode } = useAccountPrefs();
   const accountId = activeAccount?.id;
   const showJournalToggle = isJournalPath(pathname) && collapsed;
 
@@ -88,7 +89,10 @@ export function TradesLogPage() {
   const [hydrated, setHydrated] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [previewTradeId, setPreviewTradeId] = useState<string | null>(null);
+  const onExportBusy = useCallback((busy: boolean) => setExporting(busy), []);
 
   const deleteTrade = useDeleteTrade();
   const deleteTrades = useDeleteTrades();
@@ -279,6 +283,20 @@ export function TradesLogPage() {
             >
               <ClipboardList className="h-3.5 w-3.5" strokeWidth={1.75} />
             </button>
+            <button
+              type="button"
+              onClick={() => setExportOpen(true)}
+              disabled={exporting}
+              className={clsx(
+                iconBtnClass,
+                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              )}
+              aria-label="Export Trades"
+              title="Export Trades"
+              aria-busy={exporting}
+            >
+              <Download className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </button>
           </div>
         </div>
 
@@ -455,6 +473,14 @@ export function TradesLogPage() {
           setColumns(next);
           setColumnsOpen(false);
         }}
+      />
+      <ExportTradesDialog
+        open={exportOpen}
+        filters={filters}
+        accountId={accountId}
+        pnlDisplayMode={pnlDisplayMode === "gross" ? "gross" : "net"}
+        onClose={() => setExportOpen(false)}
+        onBusyChange={onExportBusy}
       />
       <AdvancedFilterDialog
         open={filtersOpen}

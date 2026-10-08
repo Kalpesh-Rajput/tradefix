@@ -2,10 +2,9 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
-import { BookOpen, CheckCircle2, FileSpreadsheet, Star, X } from "lucide-react";
+import { BookOpen, CheckCircle2, Star, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Control, Resolver, useForm, useFormState, useWatch } from "react-hook-form";
-import { useDropzone } from "react-dropzone";
 
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -24,6 +23,7 @@ import {
 import { hasDeepEntryData } from "@/components/trade/DeepEntryPanel";
 import { Shot } from "@/components/trade/ScreenshotUploader";
 import { TradeEntryForm } from "@/components/trade/TradeEntryForm";
+import { FileImportPreview } from "@/components/trades/FileImportPreview";
 import { TradeFooter } from "@/components/trade/TradeFooter";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { useLiveTradeCalc } from "@/components/trade/useLiveTradeCalc";
@@ -33,7 +33,6 @@ import { getInstrument, symbolsFor } from "@/lib/instruments/catalog";
 import {
   useCreateTrade,
   useDeleteTradeScreenshot,
-  useImportCsv,
   useTrade,
   useUpdateTrade,
   useUploadTradeScreenshot,
@@ -47,7 +46,7 @@ import { TradeExecutionInput, TradeInput } from "@/lib/types";
 export function AddTradeModal() {
   const { user } = useAuth();
   const { activeAccount, accounts } = useAccountPrefs();
-  const { open, closeModal, tab, tradeId, initialBrokerId, initialServer, initialAccountId } = useAddTradeModal();
+  const { open, closeModal, dismissModal, tab, tradeId, initialBrokerId, initialServer, initialAccountId } = useAddTradeModal();
   const createTrade = useCreateTrade();
   const updateTrade = useUpdateTrade();
   const deleteShot = useDeleteTradeScreenshot();
@@ -178,8 +177,8 @@ export function AddTradeModal() {
       setConfirmDiscard(true);
       return;
     }
-    closeModal();
-  }, [tab, isDirty, closeModal]);
+    dismissModal();
+  }, [tab, isDirty, dismissModal]);
 
   useEffect(() => {
     if (!open) return;
@@ -376,7 +375,7 @@ export function AddTradeModal() {
             <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
               <div>
                 <h2 id="add-trade-title" className="text-base font-semibold leading-6 text-[var(--color-text-primary)]">
-                  {tab === "journal" ? "Daily Journal" : tab === "csv" ? "Import CSV" : tab === "broker" ? "Connect broker" : isEditing ? "Edit Trade" : "Add Trade"}
+                  {tab === "journal" ? "Daily Journal" : tab === "csv" ? "Import file" : tab === "broker" ? "Connect broker" : isEditing ? "Edit Trade" : "Add Trade"}
                 </h2>
                 {tab === "manual" && !editPending ? <TradeStatusLine control={control} /> : null}
                 {tab === "manual" && editPending ? (
@@ -423,7 +422,7 @@ export function AddTradeModal() {
                 />
               ) : null}
               {tab === "journal" && <DailyJournalTab onDone={closeModal} />}
-              {tab === "csv" && <CsvTab onDone={closeModal} />}
+              {tab === "csv" && <CsvTab onDone={closeModal} accountId={initialAccountId || activeAccount?.id} />}
               {tab === "broker" && (
                 <BrokerTab initialBrokerId={initialBrokerId} initialServer={initialServer} journalAccountId={initialAccountId} />
               )}
@@ -451,7 +450,7 @@ export function AddTradeModal() {
                     <Button type="button" variant="secondary" onClick={() => setConfirmDiscard(false)}>
                       Keep editing
                     </Button>
-                    <Button type="button" variant="danger" onClick={closeModal}>
+                    <Button type="button" variant="danger" onClick={dismissModal}>
                       Discard
                     </Button>
                   </div>
@@ -580,52 +579,16 @@ function DailyJournalTab({ onDone }: { onDone: () => void }) {
   );
 }
 
-function CsvTab({ onDone }: { onDone: () => void }) {
-  const importCsv = useImportCsv();
-  const [message, setMessage] = useState<string | null>(null);
-
-  const onDrop = useCallback(
-    async (accepted: File[]) => {
-      const file = accepted[0];
-      if (!file) return;
-      try {
-        const res = await importCsv.mutateAsync(file);
-        setMessage(`Imported ${res.imported} trades (${res.skipped_duplicates} duplicates skipped).`);
-        if (res.imported > 0) window.setTimeout(onDone, 1200);
-      } catch (err) {
-        setMessage(err instanceof Error ? err.message : "Import failed");
-      }
-    },
-    [importCsv, onDone]
-  );
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { "text/csv": [".csv"], "application/vnd.ms-excel": [".csv"] },
-    multiple: false,
-  });
-
+function CsvTab({ onDone, accountId }: { onDone: () => void; accountId?: string | null }) {
   return (
-    <div className="flex min-h-full flex-col gap-5 py-2">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        <FileSpreadsheet className="h-5 w-5" />
-      </div>
-      <div className="shrink-0">
-        <h3 className="text-xl font-semibold text-[var(--color-text-primary)]">Import CSV</h3>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">Drop a broker export — columns are auto-mapped when possible.</p>
-      </div>
-      <div
-        {...getRootProps()}
-        className={`flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed px-6 py-12 text-center transition ${
-          isDragActive ? "border-primary bg-primary/10" : "border-[var(--color-border)] hover:border-primary/40"
-        }`}
-      >
-        <input {...getInputProps()} />
-        <p className="text-sm text-[var(--color-text-secondary)]">
-          {importCsv.isPending ? "Importing…" : "Drop CSV here or click to browse"}
-        </p>
-      </div>
-      {message && <p className="shrink-0 text-sm text-[var(--color-text-muted)]">{message}</p>}
+    <div className="min-h-full py-1">
+      <FileImportPreview
+        layout="panel"
+        accountId={accountId}
+        accept=".csv,.xlsx,.xml,.htm,.html"
+        acceptLabel="CSV, XLSX, or XML"
+        onImported={() => window.setTimeout(onDone, 900)}
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import Response
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -18,8 +19,10 @@ from app.models.account import Account
 from app.models.trade import Trade, TradeSide, TradeStatus
 from app.models.user import User
 from app.schemas.trade import TradeCreate, TradeExecutionResponse, TradeResponse, TradeUpdate
+from app.schemas.trade_export import TradeExportCountRequest, TradeExportRequest
 from app.services.behavior import apply_behavior_flags
-from app.services.rate_limit import screenshot_upload_limiter
+from app.services.rate_limit import screenshot_upload_limiter, trade_export_limiter
+from app.services.trade_export import EmptyExport, build_trade_export, count_trades_for_export
 from app.services.storage import delete_local_upload, save_trade_screenshot, save_trade_voice
 from app.services.trade_scores import execution_score, health_score, r_multiple
 from app.services.progress_tracker_service import touch_progress
@@ -400,6 +403,66 @@ def create_trade(
     safe_ingest(db, lambda: ingest_trade(db, trade))
     _notify(current_user.id, account.id, "trade_created")
     return _to_response(trade)
+
+
+def _export_filters_or_400(exc: Exception) -> HTTPException:
+    if isinstance(exc, LookupError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+    return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid export filters")
+
+
+@router.post("/export/count")
+def export_trades_count(
+    payload: TradeExportCountRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    trade_export_limiter.check(str(current_user.id))
+    try:
+        count = count_trades_for_export(
+            db,
+            current_user.id,
+            scope=payload.scope,
+            pnl_display_mode=payload.pnl_display_mode,
+            filters=payload.filters,
+        )
+    except (LookupError, ValueError) as exc:
+        raise _export_filters_or_400(exc) from exc
+    return {"count": count}
+
+
+@router.post("/export")
+def export_trades(
+    payload: TradeExportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    trade_export_limiter.check(str(current_user.id))
+    try:
+        body, media_type, filename, count = build_trade_export(db, current_user.id, payload)
+    except EmptyExport:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No trades available to export.")
+    except (LookupError, ValueError) as exc:
+        raise _export_filters_or_400(exc) from exc
+    except Exception:
+        logger.exception("trade_export_failed user=%s format=%s", current_user.id, payload.format)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Export failed. Please try again.")
+    logger.info(
+        "trade_export user=%s format=%s scope=%s trades=%s",
+        current_user.id,
+        payload.format,
+        payload.scope,
+        count,
+    )
+    return Response(
+        content=body,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.get("/{trade_id}", response_model=TradeResponse)

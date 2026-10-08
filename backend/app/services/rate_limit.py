@@ -63,6 +63,18 @@ giphy_search_limiter = SlidingWindowRateLimiter(
     detail="Too many GIF searches. Please wait and try again.",
 )
 
+trade_export_limiter = SlidingWindowRateLimiter(
+    max_calls=30,
+    window_seconds=60,
+    detail="Too many export attempts. Please wait and try again.",
+)
+
+import_upload_limiter = SlidingWindowRateLimiter(
+    max_calls=20,
+    window_seconds=60,
+    detail="Too many import attempts. Please wait and try again.",
+)
+
 giphy_proxy_limiter = SlidingWindowRateLimiter(
     max_calls=120,
     window_seconds=3600,
