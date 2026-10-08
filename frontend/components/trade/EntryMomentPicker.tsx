@@ -68,7 +68,33 @@ function TimeColumn({
   const syncing = useRef(false);
   const origin = useRef<"scroll" | "prop">("prop");
   const settle = useRef(0);
-  const values = Array.from({ length: count }, (_, index) => index);
+  const cycle = count * ITEM;
+  const values = Array.from({ length: count * 3 }, (_, index) => index % count);
+
+  function place(el: HTMLDivElement, top: number) {
+    syncing.current = true;
+    const previous = el.style.scrollBehavior;
+    el.style.scrollBehavior = "auto";
+    el.scrollTop = top;
+    el.style.scrollBehavior = previous;
+    window.requestAnimationFrame(() => {
+      syncing.current = false;
+    });
+  }
+
+  function recenter(el: HTMLDivElement) {
+    let top = el.scrollTop;
+    let guard = 0;
+    while (Math.round(top / ITEM) < count && guard < 4) {
+      top += cycle;
+      guard += 1;
+    }
+    while (Math.round(top / ITEM) >= count * 2 && guard < 8) {
+      top -= cycle;
+      guard += 1;
+    }
+    if (Math.abs(top - el.scrollTop) > 1) place(el, top);
+  }
 
   useLayoutEffect(() => {
     const el = scroller.current;
@@ -77,31 +103,17 @@ function TimeColumn({
       origin.current = "prop";
       return;
     }
-    const target = value * ITEM;
+    const target = (count + value) * ITEM;
     if (Math.abs(el.scrollTop - target) < 1) return;
-    syncing.current = true;
-    const previous = el.style.scrollBehavior;
-    el.style.scrollBehavior = "auto";
-    el.scrollTop = target;
-    el.style.scrollBehavior = previous;
-    window.requestAnimationFrame(() => {
-      syncing.current = false;
-    });
-  }, [value]);
+    place(el, target);
+  }, [count, value]);
 
   useEffect(() => () => window.clearTimeout(settle.current), []);
 
   function snapToValue() {
     const el = scroller.current;
     if (!el) return;
-    syncing.current = true;
-    const previous = el.style.scrollBehavior;
-    el.style.scrollBehavior = "auto";
-    el.scrollTop = value * ITEM;
-    el.style.scrollBehavior = previous;
-    window.requestAnimationFrame(() => {
-      syncing.current = false;
-    });
+    place(el, (count + value) * ITEM);
   }
 
   function choose(next: number) {
@@ -116,10 +128,13 @@ function TimeColumn({
   function readScroll() {
     const el = scroller.current;
     if (!el || syncing.current) return;
+    recenter(el);
     window.clearTimeout(settle.current);
     settle.current = window.setTimeout(() => {
-      if (!scroller.current || syncing.current) return;
-      const next = Math.min(count - 1, Math.max(0, Math.round(scroller.current.scrollTop / ITEM)));
+      const node = scroller.current;
+      if (!node || syncing.current) return;
+      recenter(node);
+      const next = ((Math.round(node.scrollTop / ITEM) % count) + count) % count;
       if (next === value) return;
       if (isAllowed && !isAllowed(next)) {
         snapToValue();
@@ -160,12 +175,12 @@ function TimeColumn({
           className="absolute inset-0 z-[1] overflow-y-auto overscroll-contain scroll-smooth snap-y snap-mandatory motion-reduce:scroll-auto [scrollbar-width:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 [&::-webkit-scrollbar]:hidden"
         >
           <div style={{ height: ITEM * 2 }} />
-          {values.map((item) => {
+          {values.map((item, index) => {
             const selected = item === value;
             const blocked = Boolean(isAllowed && !isAllowed(item));
             return (
               <button
-                key={item}
+                key={`${index}-${item}`}
                 type="button"
                 role="option"
                 aria-selected={selected}
