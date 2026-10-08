@@ -7,15 +7,14 @@ import { Controller, UseFormReturn, useFieldArray, useFormState, useWatch } from
 import { currentClock } from "@/components/trade/DateTimePicker";
 import { DirectionSelector } from "@/components/trade/DirectionSelector";
 import { DateTimeMomentField } from "@/components/trade/EntryMomentPicker";
-import { FeeField } from "@/components/trade/FeeField";
 import { MasterCombobox } from "@/components/trade/MasterCombobox";
 import { AddTradeFormValues } from "@/components/trade/schema";
 import { PlainFieldLabel, tableCellClass, tableNumClass } from "@/components/trade/ui";
 import { useLiveTradeCalc } from "@/components/trade/useLiveTradeCalc";
 import { fmtMoney } from "@/lib/format";
-import { calculateExitPnl, positionValue, type TradeCalcResult } from "@/lib/tradeCalc";
+import { calculateExitPnl, type TradeCalcResult } from "@/lib/tradeCalc";
 
-const COLUMNS = "2rem 7.5rem minmax(11rem,1.35fr) minmax(6rem,0.8fr) minmax(6.25rem,0.85fr) minmax(11.5rem,1.15fr) 5.5rem";
+const COLUMNS = "2rem 7.5rem minmax(11rem,1.35fr) minmax(6rem,0.8fr) minmax(6.25rem,0.85fr) minmax(6.25rem,0.85fr) 5.5rem";
 
 function localDate() {
   const now = new Date();
@@ -45,7 +44,6 @@ export function ExecutionBoard({ form }: { form: UseFormReturn<AddTradeFormValue
   const side = useWatch({ control, name: "side" });
   const symbol = useWatch({ control, name: "symbol" });
   const entryPrice = Number(useWatch({ control, name: "entry_price" }) || 0);
-  const quantity = Number(useWatch({ control, name: "quantity" }) || 0);
   const contractSize = useWatch({ control, name: "contract_size" });
   const exitRows = useWatch({ control, name: "exits" }) ?? [];
   const isForex = asset === "forex";
@@ -56,13 +54,6 @@ export function ExecutionBoard({ form }: { form: UseFormReturn<AddTradeFormValue
   const qtyPlaceholder = asset === "forex" ? "e.g. 10" : asset === "option" ? "e.g. 10" : asset === "future" ? "e.g. 2" : asset === "crypto" ? "e.g. 1" : "e.g. 100";
   const pricePlaceholder =
     asset === "forex" ? "e.g. 1.10000" : asset === "option" ? "e.g. 2.50" : asset === "future" ? "e.g. 4700.50" : asset === "crypto" ? "e.g. 30000" : "e.g. 150.25";
-  const feeBasis = positionValue({
-    assetType: asset,
-    symbol: symbol || "",
-    quantity,
-    entryPrice,
-    contractSize: Number(contractSize) > 0 ? Number(contractSize) : null,
-  });
 
   return (
     <section className="space-y-2" data-field="exits">
@@ -133,20 +124,16 @@ export function ExecutionBoard({ form }: { form: UseFormReturn<AddTradeFormValue
                 />
               </FieldCell>
               <FieldCell name="fees">
-                <Controller
-                  control={control}
-                  name="fees"
-                  render={({ field }) => (
-                    <FeeField
-                      label="Brokerage / Fees"
-                      amount={field.value}
-                      basis={feeBasis}
-                      basisLabel="position value"
-                      onChange={field.onChange}
-                      error={errors.fees?.message}
-                      compact
-                    />
-                  )}
+                <input
+                  type="number"
+                  step="any"
+                  inputMode="decimal"
+                  placeholder="0"
+                  aria-label="Brokerage / Fees"
+                  aria-invalid={errors.fees ? true : undefined}
+                  title={errors.fees?.message}
+                  className={tableNumClass(errors.fees?.message)}
+                  {...register("fees")}
                 />
               </FieldCell>
               <span />
@@ -227,26 +214,16 @@ export function ExecutionBoard({ form }: { form: UseFormReturn<AddTradeFormValue
                       className={tableNumClass(priceError)}
                       {...register(`exits.${index}.price`)}
                     />
-                    <Controller
-                      control={control}
-                      name={`exits.${index}.fees`}
-                      render={({ field: feeField }) => (
-                        <FeeField
-                          label="Fees"
-                          amount={feeField.value}
-                          basis={positionValue({
-                            assetType: asset,
-                            symbol: symbol || "",
-                            quantity: qty,
-                            entryPrice: price,
-                            contractSize: contractSize != null ? Number(contractSize) : null,
-                          })}
-                          basisLabel="exit value"
-                          onChange={feeField.onChange}
-                          error={errors.exits?.[index]?.fees?.message as string | undefined}
-                          compact
-                        />
-                      )}
+                    <input
+                      type="number"
+                      step="any"
+                      inputMode="decimal"
+                      placeholder="0"
+                      aria-label="Fees"
+                      aria-invalid={errors.exits?.[index]?.fees ? true : undefined}
+                      title={errors.exits?.[index]?.fees?.message as string | undefined}
+                      className={tableNumClass(errors.exits?.[index]?.fees?.message as string | undefined)}
+                      {...register(`exits.${index}.fees`)}
                     />
                     <button
                       type="button"
