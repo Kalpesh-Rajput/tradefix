@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { ClipboardList, Download, Filter, Menu, Plus, Search, Trash2, X } from "lucide-react";
+import { Download, Filter, Menu, Plus, Search, Trash2, X } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -12,7 +12,6 @@ import { NavCollapseButton } from "@/components/layout/NavCollapseButton";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
-import { useQuickLog } from "@/components/providers/QuickLogProvider";
 import { useSidebar } from "@/components/providers/SidebarProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
 import { AdvancedFilterDialog } from "@/components/trades/AdvancedFilterDialog";
@@ -63,7 +62,6 @@ export function TradesLogPage() {
   const pathname = usePathname();
   const toast = useToast();
   const { openFlow } = useAddTradeModal();
-  const { openQuickLog } = useQuickLog();
   const { collapsed, mobileOpen, setMobileOpen } = useSidebar();
   const { activeAccount, displayPnl, formatMoney, loading: accountsLoading, pnlDisplayMode } = useAccountPrefs();
   const accountId = activeAccount?.id;
@@ -169,16 +167,6 @@ export function TradesLogPage() {
     enabled: !!accountId,
   });
 
-  const lastClosedTradeId = useMemo(() => {
-    const closed = trades.filter((t) => t.status === "closed");
-    if (!closed.length) return null;
-    return [...closed].sort(
-      (a, b) =>
-        new Date(b.closed_at || b.opened_at).getTime() -
-        new Date(a.closed_at || a.opened_at).getTime()
-    )[0]?.id;
-  }, [trades]);
-
   const filtered = useMemo(
     () => trades.filter((trade) => matchesTrade(trade, filters, displayPnl)),
     [trades, filters, displayPnl]
@@ -273,16 +261,6 @@ export function TradesLogPage() {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <PortfolioSwitcher iconOnly />
-            <button
-              type="button"
-              onClick={() => openQuickLog(lastClosedTradeId)}
-              disabled={!lastClosedTradeId}
-              className={iconBtnClass}
-              aria-label="Quick Log"
-              title={lastClosedTradeId ? "Quick Log" : "No closed trades yet"}
-            >
-              <ClipboardList className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </button>
             <button
               type="button"
               onClick={() => setExportOpen(true)}

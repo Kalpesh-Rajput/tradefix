@@ -196,7 +196,7 @@ export function ActivityHeatmap({
               }}
             >
               <div className="rounded-lg bg-[#1B1E28] px-3 py-2 text-left shadow-[0_8px_20px_rgba(16,18,28,0.22)]">
-                <p className="whitespace-nowrap text-[13px] font-semibold leading-[18px] text-white">
+                <p className="whitespace-nowrap text-[13px] font-semibold leading-[18px] text-[#FFFFFF]">
                   {formatDay(tip.iso)}
                 </p>
                 <p
@@ -207,7 +207,7 @@ export function ActivityHeatmap({
                       ? "text-[#40C79A]"
                       : (activeDay.pnl ?? 0) < 0
                         ? "text-[#F26969]"
-                          : "text-white"
+                          : "text-[#FFFFFF]"
                   }`}
                 >
                   {outsideActive
