@@ -21,6 +21,7 @@ ALL_STRATEGIES = "__all__"
 NO_STRATEGY = "__none__"
 MAX_MONTHS = 24
 MAX_SYMBOLS = 80
+MAX_BREAKDOWN = 80
 MAX_DURATION_POINTS = 600
 
 
@@ -116,23 +117,53 @@ def _went_well(trade) -> list[str]:
     return parse_went_well(extra.get("went_well"))
 
 
+def _empty_counts() -> dict:
+    return {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "breakeven": 0,
+        "win_rate": None,
+        "pnl": None,
+        "avg_pnl": None,
+        "profit_factor": None,
+        "gross_profit": None,
+        "avg_win": None,
+        "avg_loss": None,
+    }
+
+
 def _counts(group: list) -> dict:
-    wins = sum(1 for trade in group if _pnl(trade) > 0)
-    losses = sum(1 for trade in group if _pnl(trade) < 0)
+    """Shared bucket stats. Expectancy is avg_pnl (sum of P&L / trades)."""
     trades = len(group)
-    breakeven = trades - wins - losses
-    pnl = round(sum(_pnl(trade) for trade in group), 2) if trades else None
-    gross_loss = abs(sum(_pnl(trade) for trade in group if _pnl(trade) < 0))
-    factor = profit_factor(group) if trades and gross_loss > 0 else None
+    if not trades:
+        return _empty_counts()
+    wins_pnl: list[float] = []
+    losses_pnl: list[float] = []
+    pnl_sum = 0.0
+    for trade in group:
+        value = _pnl(trade)
+        pnl_sum += value
+        if value > 0:
+            wins_pnl.append(value)
+        elif value < 0:
+            losses_pnl.append(value)
+    wins = len(wins_pnl)
+    losses = len(losses_pnl)
+    pnl = round(pnl_sum, 2)
+    gross_loss = abs(sum(losses_pnl))
     return {
         "trades": trades,
         "wins": wins,
         "losses": losses,
-        "breakeven": breakeven,
-        "win_rate": round(wins / trades * 100, 1) if trades else None,
+        "breakeven": trades - wins - losses,
+        "win_rate": round(wins / trades * 100, 1),
         "pnl": pnl,
-        "avg_pnl": round(pnl / trades, 2) if trades and pnl is not None else None,
-        "profit_factor": factor,
+        "avg_pnl": round(pnl / trades, 2),
+        "profit_factor": profit_factor(group) if gross_loss > 0 else None,
+        "gross_profit": round(sum(wins_pnl), 2),
+        "avg_win": round(sum(wins_pnl) / wins, 2) if wins else None,
+        "avg_loss": round(sum(losses_pnl) / losses, 2) if losses else None,
     }
 
 
@@ -397,13 +428,14 @@ def _insights(trades: list, strategies: list[dict]) -> dict:
         "best_entry": _best(entries),
         "best_exit": _best(exits),
         "sides": sides,
-        "trade_types": types,
-        "moods": moods,
+        "trade_types": types[:MAX_BREAKDOWN],
+        "moods": moods[:MAX_BREAKDOWN],
         "went_well": went_well[:8],
-        "sessions": sessions,
-        "timeframes": timeframes,
-        "entries": entries[:8],
-        "exits": exits[:8],
+        "sessions": sessions[:MAX_BREAKDOWN],
+        "timeframes": timeframes[:MAX_BREAKDOWN],
+        "entries": entries[:MAX_BREAKDOWN],
+        "exits": exits[:MAX_BREAKDOWN],
+        "mistakes": _multi_group(trades, _rules)[:MAX_BREAKDOWN],
     }
 
 

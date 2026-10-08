@@ -59,7 +59,7 @@ export function PerformanceAnalytics({
       </div>
 
       <SectionLabel>{t("dashboard.section.insights")}</SectionLabel>
-      <TradingInsights data={data} currencySymbol={currencySymbol} />
+      <TradingInsights data={data} currencySymbol={currencySymbol} formatMoney={formatMoney} />
     </div>
   );
 }

@@ -184,6 +184,20 @@ def test_negative_month_rules_symbols_and_insights():
     assert insights["went_well"][0]["name"] == "Patient entry"
     assert {row["name"] for row in insights["sides"]} == {"Long", "Short"}
 
+    xau = symbols["XAUUSD"]
+    assert xau["gross_profit"] == 200.0
+    assert xau["avg_win"] == 200.0
+    assert xau["avg_loss"] == -80.0
+    assert xau["avg_pnl"] == 60.0
+    assert xau["profit_factor"] == 2.5
+
+    mistakes = {row["name"]: row for row in insights["mistakes"]}
+    assert mistakes["Maximum Risk"]["trades"] == 2
+    assert mistakes["Maximum Risk"]["pnl"] == -120.0
+    assert mistakes["Late entry"]["trades"] == 1
+    assert insights["entries"][0]["name"] == "Break of structure"
+    assert any(row["name"] == "Target hit" for row in insights["exits"])
+
 
 def test_missing_metadata_is_grouped_not_invented():
     trade = _trade(
@@ -205,5 +219,6 @@ def test_missing_metadata_is_grouped_not_invented():
     assert data["insights"]["best_timeframe"] is None
     assert data["insights"]["best_entry"] is None
     assert data["insights"]["most_common_mistake"] is None
+    assert data["insights"]["mistakes"] == []
     assert data["rule_discipline"]["by_strategy"]["__all__"]["followed"] == 1
     assert data["rule_discipline"]["by_strategy"]["__all__"]["most_violated_rule"] is None

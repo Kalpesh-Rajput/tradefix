@@ -403,6 +403,9 @@ export interface PerformanceCounts {
   pnl: number | null;
   avg_pnl: number | null;
   profit_factor: number | null;
+  gross_profit?: number | null;
+  avg_win?: number | null;
+  avg_loss?: number | null;
 }
 
 export interface WeeklyWinRatePoint extends PerformanceCounts {
@@ -497,6 +500,7 @@ export interface TradingInsightsBlock {
   timeframes: NamedPerformance[];
   entries: NamedPerformance[];
   exits: NamedPerformance[];
+  mistakes?: NamedPerformance[];
 }
 
 export interface DashboardPerformance {

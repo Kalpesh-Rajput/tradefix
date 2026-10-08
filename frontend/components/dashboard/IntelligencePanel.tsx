@@ -140,7 +140,7 @@ export function IntelligencePanel({
 
       <Link
         href="/agents"
-        className="fixed bottom-5 right-5 z-[60] flex h-12 w-12 items-center justify-center rounded-full bg-primary text-black shadow-lg shadow-primary/30 transition hover:opacity-90"
+        className="fixed bottom-5 right-5 z-[60] flex h-12 w-12 items-center justify-center rounded-full bg-primary text-on-accent shadow-lg shadow-primary/30 transition hover:opacity-90"
         title="AI Coach"
       >
         <MessageSquare className="h-5 w-5" />

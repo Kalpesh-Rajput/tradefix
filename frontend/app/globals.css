@@ -164,6 +164,25 @@ progress {
   outline: none;
 }
 
+.trade-log-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #b7b7c0 transparent;
+}
+
+.trade-log-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 10px;
+}
+
+.trade-log-scroll tbody > tr > td {
+  transition: background-color 150ms;
+}
+
+.trade-log-scroll tbody > tr:hover > td,
+.trade-log-scroll tbody > tr[data-active="true"] > td {
+  background-color: var(--color-primary-very-light);
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -250,21 +269,51 @@ html.light .bg-zinc-800\/80 {
   background-color: hsl(var(--surface-2)) !important;
 }
 
-html.light .text-white:not(.text-on-accent):not(.sidebar-chrome *) {
+html.light .text-white:not(.text-on-accent):not(.sidebar-chrome *):not(:is(.bg-primary, .bg-primary *, .bg-primary-hover, .bg-accent, .bg-accent *, .dash-btn-primary, .dash-btn-primary *, .bg-\[\#5B4696\], .bg-\[\#5b4696\], .bg-\[\#4F3C87\], .bg-\[\#4f3c87\], .bg-\[\#49377d\], .bg-\[\#6D5BFF\], .bg-\[\#6d5bff\], .bg-\[\#7C5CBF\], .bg-\[\#7c5cbf\], .bg-\[\#4B438B\], .bg-\[\#4b438b\], .bg-\[var\(--color-primary\)\], .bg-\[var\(--color-primary-hover\)\])) {
   color: hsl(var(--foreground)) !important;
 }
 
-html.light .text-white\/90:not(.text-on-accent):not(.sidebar-chrome *),
-html.light .text-white\/80:not(.text-on-accent):not(.sidebar-chrome *),
-html.light .text-white\/70:not(.text-on-accent):not(.sidebar-chrome *),
-html.light .text-white\/60:not(.text-on-accent):not(.sidebar-chrome *),
-html.light .text-white\/50:not(.text-on-accent):not(.sidebar-chrome *) {
+html.light .text-white\/90:not(.text-on-accent):not(.sidebar-chrome *):not(:is(.bg-primary, .bg-primary *, .dash-btn-primary, .dash-btn-primary *)),
+html.light .text-white\/80:not(.text-on-accent):not(.sidebar-chrome *):not(:is(.bg-primary, .bg-primary *, .dash-btn-primary, .dash-btn-primary *)),
+html.light .text-white\/70:not(.text-on-accent):not(.sidebar-chrome *):not(:is(.bg-primary, .bg-primary *, .dash-btn-primary, .dash-btn-primary *)),
+html.light .text-white\/60:not(.text-on-accent):not(.sidebar-chrome *):not(:is(.bg-primary, .bg-primary *, .dash-btn-primary, .dash-btn-primary *)),
+html.light .text-white\/50:not(.text-on-accent):not(.sidebar-chrome *):not(:is(.bg-primary, .bg-primary *, .dash-btn-primary, .dash-btn-primary *)) {
   color: hsl(var(--foreground) / 0.75) !important;
 }
 
-html.light .hover\:text-white:hover:not(.text-on-accent):not(.sidebar-chrome *),
+html.light .hover\:text-white:hover:not(.text-on-accent):not(.sidebar-chrome *):not(:is(.bg-primary, .bg-primary *, .bg-primary-hover, .bg-accent, .dash-btn-primary, .dash-btn-primary *)),
 html.light .hover\:text-zinc-200:hover:not(.sidebar-chrome *) {
   color: hsl(var(--foreground)) !important;
+}
+
+/* Solid brand fills: labels and icons stay white. Light tints (bg-primary/10 and similar) are different classes and keep their own text color. */
+html .bg-primary,
+html .bg-primary-hover,
+html .bg-accent,
+html .dash-btn-primary,
+html .text-on-accent,
+html .hover\:bg-primary:hover,
+html .hover\:bg-primary-hover:hover,
+html .hover\:bg-\[var\(--color-primary-hover\)\]:hover {
+  color: hsl(var(--primary-foreground));
+}
+
+html .bg-\[\#5B4696\],
+html .bg-\[\#5b4696\],
+html .bg-\[\#4F3C87\],
+html .bg-\[\#4f3c87\],
+html .bg-\[\#49377d\],
+html .bg-\[\#6D5BFF\],
+html .bg-\[\#6d5bff\],
+html .bg-\[\#7C5CBF\],
+html .bg-\[\#7c5cbf\],
+html .bg-\[\#4B438B\],
+html .bg-\[\#4b438b\],
+html .bg-\[var\(--color-primary\)\],
+html .bg-\[var\(--color-primary-hover\)\],
+html .hover\:bg-\[\#5B4696\]:hover,
+html .hover\:bg-\[\#5b4696\]:hover {
+  color: #fff;
 }
 
 html.light .text-zinc-100,
@@ -471,15 +520,42 @@ html.dark ::-webkit-scrollbar-thumb {
 
   .dash-time,
   .dash-pair,
-  .dash-triple {
+  .dash-triple,
+  .dash-insight-charts {
     display: grid;
     gap: 0.75rem;
     align-items: stretch;
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .insight-chart-scroll {
+    height: 188px;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-text-muted) 28%, transparent) transparent;
+  }
+
+  .insight-chart-scroll::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .insight-chart-scroll::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--color-text-muted) 26%, transparent);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+  }
+
+  .insight-chart-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--color-text-muted) 42%, transparent);
+  }
+
   @container dashboard (min-width: 720px) {
-    .dash-time {
+    .dash-time,
+    .dash-insight-charts {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
@@ -503,7 +579,8 @@ html.dark ::-webkit-scrollbar-thumb {
       grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.9fr);
     }
 
-    .dash-triple {
+    .dash-triple,
+    .dash-insight-charts {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
@@ -794,7 +871,7 @@ html.dark ::-webkit-scrollbar-thumb {
     padding: 0 12px;
     border-radius: var(--radius-md);
     background: var(--color-primary);
-    color: #fff;
+    color: #fff !important;
     font-size: 12px;
     font-weight: 500;
     border: none;

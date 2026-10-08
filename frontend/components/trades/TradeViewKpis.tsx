@@ -5,9 +5,12 @@ import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { TradeOutcomeCards } from "@/components/trades/TradeOutcomeCards";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 import { computeTradeViewKpis } from "@/lib/trades/viewKpis";
 import type { Trade } from "@/lib/types";
+
+const KPI_GRID = "grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6";
 
 const TRACK = "#E8E9ED";
 const BE_HEX = "#8B95B2";
@@ -22,11 +25,17 @@ function compactMoney(n: number) {
 
 export function TradeViewKpis({
   trades,
+  outcomeTrades,
+  outcome,
+  onOutcome,
   loading,
   formatMoney,
   displayPnl,
 }: {
   trades: Trade[];
+  outcomeTrades: Trade[];
+  outcome: "" | "profit" | "loss";
+  onOutcome: (next: "" | "profit" | "loss") => void;
   loading?: boolean;
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
   displayPnl?: (pnl: number | null, fees?: number) => number | null;
@@ -35,8 +44,8 @@ export function TradeViewKpis({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className={KPI_GRID}>
+        {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-[104px] rounded-[14px]" />
         ))}
       </div>
@@ -47,14 +56,14 @@ export function TradeViewKpis({
   const winBar = (Math.abs(stats.avgWin) / barTotal) * 100;
 
   return (
-    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-      <article className="dash-card flex h-[104px] flex-col overflow-hidden rounded-[14px] px-3.5 pb-1.5 pt-2.5">
+    <div className={KPI_GRID}>
+      <article className="dash-card flex h-[104px] min-w-0 flex-col overflow-hidden rounded-[14px] px-3.5 pb-1.5 pt-2.5">
         <KpiLabel
           label="Net cumulative P&L"
           hint="Shows the running total of net profit and loss for the trades in the current filters."
         />
         <p
-          className="mt-0.5 text-[18px] font-semibold leading-6 tracking-tight tabular-nums"
+          className="mt-0.5 truncate text-[18px] font-semibold leading-6 tracking-tight tabular-nums"
           style={{ color: stats.netPnl >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX }}
         >
           {formatMoney(stats.netPnl, { signed: false, digits: 2 })}
@@ -64,7 +73,7 @@ export function TradeViewKpis({
         </div>
       </article>
 
-      <article className="dash-card flex h-[104px] items-center justify-between gap-3 overflow-hidden rounded-[14px] px-3.5 py-2.5">
+      <article className="dash-card flex h-[104px] min-w-0 items-center justify-between gap-2 overflow-hidden rounded-[14px] px-3.5 py-2.5">
         <div className="min-w-0">
           <KpiLabel
             label="Profit factor"
@@ -77,20 +86,20 @@ export function TradeViewKpis({
         <SplitDonut wins={stats.grossWins} losses={stats.grossLosses} />
       </article>
 
-      <article className="dash-card flex h-[104px] items-center justify-between gap-3 overflow-hidden rounded-[14px] px-3.5 py-2.5">
+      <article className="dash-card flex h-[104px] min-w-0 items-center justify-between gap-2 overflow-hidden rounded-[14px] px-3.5 py-2.5">
         <div className="min-w-0">
           <KpiLabel
             label="Trade win %"
             hint="Shows the percentage of closed trades in the current filters that were profitable. Compare it with your average win and average loss."
           />
-          <p className="mt-0.5 text-[18px] font-semibold leading-6 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
+          <p className="mt-0.5 truncate text-[18px] font-semibold leading-6 tracking-tight tabular-nums text-[var(--color-text-kpi)]">
             {stats.winRate != null ? `${stats.winRate.toFixed(2)}%` : "—"}
           </p>
         </div>
         <WinGauge wins={stats.wins} breakeven={stats.breakeven} losses={stats.losses} />
       </article>
 
-      <article className="dash-card flex h-[104px] flex-col overflow-hidden rounded-[14px] px-3.5 pb-2.5 pt-2.5">
+      <article className="dash-card flex h-[104px] min-w-0 flex-col overflow-hidden rounded-[14px] px-3.5 pb-2.5 pt-2.5">
         <KpiLabel
           label="Avg win/loss trade"
           hint="Compares the size of your average winning trade with your average losing trade in the current filters."
@@ -109,6 +118,13 @@ export function TradeViewKpis({
           </div>
         </div>
       </article>
+      <TradeOutcomeCards
+        trades={outcomeTrades}
+        outcome={outcome}
+        onOutcome={onOutcome}
+        formatMoney={formatMoney}
+        displayPnl={displayPnl}
+      />
     </div>
   );
 }
@@ -212,8 +228,8 @@ function WinGauge({
   const gap = 2;
 
   return (
-    <div className="flex w-[72px] shrink-0 flex-col items-center">
-      <svg width="72" height="42" viewBox="0 0 88 52" aria-hidden>
+    <div className="flex shrink-0 flex-col items-center">
+      <svg width="64" height="36" viewBox="0 0 88 52" aria-hidden>
         <g transform="translate(44,48)">
           <circle
             r={r}
@@ -253,7 +269,7 @@ function WinGauge({
           />
         </g>
       </svg>
-      <div className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold tabular-nums leading-none">
+      <div className="mt-0.5 flex items-center gap-0.5 whitespace-nowrap text-[9px] font-semibold tabular-nums leading-none">
         <span style={{ color: PNL_PROFIT_HEX }}>{wins}</span>
         <span className="text-[#C5C7CE]">·</span>
         <span style={{ color: BE_HEX }}>{breakeven}</span>

@@ -6,7 +6,9 @@ import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import type { DashboardPerformance, NamedPerformance } from "@/lib/types";
 
-import { AnalyticsEmpty, compactMoney, formatPct, pnlClass, tradeLabel } from "./shared";
+import { InsightBarChart, InsightChartBoundary } from "./InsightBarChart";
+import { INSIGHT_METRICS, insightChartSources, insightMetricConfig } from "./insightMetrics";
+import { AnalyticsEmpty, compactMoney, formatPct, pnlClass, tradeLabel, type MoneyFormat } from "./shared";
 
 function InsightTile({
   label,
@@ -86,9 +88,11 @@ function RankList({ title, rows, currencySymbol }: { title: string; rows: NamedP
 export function TradingInsights({
   data,
   currencySymbol,
+  formatMoney,
 }: {
   data: DashboardPerformance;
   currencySymbol: string;
+  formatMoney: MoneyFormat;
 }) {
   const { t } = useLocale();
   const [open, setOpen] = useState(false);
@@ -207,6 +211,19 @@ export function TradingInsights({
               ) : (
                 <p className="text-[12px] text-[var(--color-text-muted)]">No “what went well” tags on these trades.</p>
               )}
+              <div className="dash-insight-charts">
+                {insightChartSources(data).map((chart) => (
+                  <InsightChartBoundary key={chart.id} title={chart.title} resetKey={`${chart.id}:${chart.rows.length}`}>
+                    <InsightBarChart
+                      title={chart.title}
+                      rows={chart.rows}
+                      metrics={insightMetricConfig[chart.id].map((id) => INSIGHT_METRICS[id])}
+                      currencySymbol={currencySymbol}
+                      formatMoney={formatMoney}
+                    />
+                  </InsightChartBoundary>
+                ))}
+              </div>
             </div>
           ) : null}
         </>

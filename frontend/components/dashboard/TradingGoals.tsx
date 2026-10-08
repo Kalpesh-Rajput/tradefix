@@ -76,7 +76,7 @@ export function TradingGoals({ journalDone }: { journalDone?: boolean }) {
                 <span
                   className={`flex h-5 w-5 items-center justify-center rounded-md border text-[10px] ${
                     g.done
-                      ? "border-accent bg-accent text-black"
+                      ? "border-accent bg-accent text-on-accent"
                       : "border-white/[0.12] bg-transparent text-transparent"
                   }`}
                 >

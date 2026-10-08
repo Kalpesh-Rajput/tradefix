@@ -15,6 +15,15 @@ export type TradeViewKpiStats = {
   avgWinLossRatio: number | null;
 };
 
+export type OutcomeCardStats = {
+  wins: number;
+  losses: number;
+  winPct: number;
+  lossPct: number;
+  avgWin: number;
+  avgLoss: number;
+};
+
 type DisplayPnl = (pnl: number | null, fees?: number) => number | null;
 
 function closedWithPnl(trades: Trade[], displayPnl?: DisplayPnl): { trade: Trade; pnl: number }[] {
@@ -68,5 +77,37 @@ export function computeTradeViewKpis(trades: Trade[], displayPnl?: DisplayPnl): 
     avgWin,
     avgLoss,
     avgWinLossRatio: avgLoss > 0 ? avgWin / avgLoss : null,
+  };
+}
+
+export function computeOutcomeCards(trades: Trade[], displayPnl?: DisplayPnl): OutcomeCardStats {
+  let wins = 0;
+  let losses = 0;
+  let flat = 0;
+  let winSum = 0;
+  let lossSum = 0;
+
+  for (const trade of trades) {
+    const pnl = displayPnl ? displayPnl(trade.pnl, trade.fees) : trade.pnl;
+    if (pnl == null) continue;
+    if (pnl > 0) {
+      wins += 1;
+      winSum += pnl;
+    } else if (pnl < 0) {
+      losses += 1;
+      lossSum += pnl;
+    } else {
+      flat += 1;
+    }
+  }
+
+  const rated = wins + losses + flat;
+  return {
+    wins,
+    losses,
+    winPct: rated ? (wins / rated) * 100 : 0,
+    lossPct: rated ? (losses / rated) * 100 : 0,
+    avgWin: wins ? winSum / wins : 0,
+    avgLoss: losses ? Math.abs(lossSum / losses) : 0,
   };
 }

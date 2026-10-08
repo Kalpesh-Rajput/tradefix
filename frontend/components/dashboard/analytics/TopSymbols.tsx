@@ -50,7 +50,7 @@ export function TopSymbols({
 
   return (
     <ChartCard
-      className="h-full min-h-0 overflow-hidden"
+      className="h-full min-h-0 overflow-hidden !p-3 [&>div:first-child]:mb-1"
       title={t("dashboard.topSymbols")}
       hint={t("dashboard.hint.topSymbols")}
       headerRight={

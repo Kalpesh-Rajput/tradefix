@@ -26,7 +26,7 @@ const SORTS: { id: StrategySort; label: string }[] = [
   { id: "profit_factor", label: "Profit factor" },
 ];
 
-const PREVIEW = 5;
+const PREVIEW = 4;
 
 function sortRows(rows: StrategyPerformanceRow[], sort: StrategySort): StrategyPerformanceRow[] {
   return [...rows].sort((a, b) => {
@@ -57,7 +57,7 @@ export function StrategyPerformance({
 
   return (
     <ChartCard
-      className="!h-auto !min-h-min"
+      className="!h-auto !min-h-min !p-3 [&>div:first-child]:mb-1"
       title={t("dashboard.strategyPerformance")}
       hint={t("dashboard.hint.strategyPerformance")}
       headerRight={
@@ -68,10 +68,10 @@ export function StrategyPerformance({
         <AnalyticsEmpty title={t("dashboard.empty.title")} body={t("dashboard.empty.strategy")} />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
-          <ul className="space-y-2">
+          <ul className="space-y-1">
             {visible.map((row) => (
               <li key={row.id} className="min-w-0">
-                <div className="mb-1 flex items-baseline justify-between gap-3">
+                <div className="mb-0.5 flex items-baseline justify-between gap-3">
                   <p className="truncate text-[13px] font-semibold text-[var(--color-text-primary)]" title={row.name}>
                     {row.name}
                   </p>
@@ -107,7 +107,7 @@ export function StrategyPerformance({
           {rows.length > PREVIEW ? (
             <button
               type="button"
-              className="mt-3 self-start text-[12px] font-semibold text-primary hover:underline"
+              className="mt-1.5 self-start text-[12px] font-semibold text-primary hover:underline"
               onClick={() => setExpanded((value) => !value)}
               aria-expanded={expanded}
             >

@@ -10,6 +10,9 @@ class PerformanceCounts(BaseModel):
     pnl: float | None = None
     avg_pnl: float | None = None
     profit_factor: float | None = None
+    gross_profit: float | None = None
+    avg_win: float | None = None
+    avg_loss: float | None = None
 
 
 class WeeklyWinRatePoint(PerformanceCounts):
@@ -105,6 +108,7 @@ class TradingInsights(BaseModel):
     timeframes: list[NamedPerformance] = Field(default_factory=list)
     entries: list[NamedPerformance] = Field(default_factory=list)
     exits: list[NamedPerformance] = Field(default_factory=list)
+    mistakes: list[NamedPerformance] = Field(default_factory=list)
 
 
 class DashboardPerformance(BaseModel):
