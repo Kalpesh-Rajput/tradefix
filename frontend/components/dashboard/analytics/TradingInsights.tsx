@@ -8,7 +8,7 @@ import type { DashboardPerformance, NamedPerformance } from "@/lib/types";
 
 import { InsightBarChart, InsightChartBoundary } from "./InsightBarChart";
 import { INSIGHT_METRICS, insightChartSources, insightMetricConfig } from "./insightMetrics";
-import { AnalyticsEmpty, compactMoney, formatPct, pnlClass, tradeLabel, type MoneyFormat } from "./shared";
+import { AnalyticsEmpty, compactMoney, formatPct, pnlClass, type MoneyFormat } from "./shared";
 
 function InsightTile({
   label,
@@ -63,28 +63,6 @@ function InsightTile({
   );
 }
 
-function RankList({ title, rows, currencySymbol }: { title: string; rows: NamedPerformance[]; currencySymbol: string }) {
-  if (rows.length === 0) return null;
-  return (
-    <div className="min-w-0">
-      <h4 className="mb-2 text-[12px] font-semibold text-[var(--color-text-primary)]">{title}</h4>
-      <ul className="space-y-1.5">
-        {rows.slice(0, 5).map((row) => (
-          <li key={row.name} className="flex items-center justify-between gap-3 text-[12px]">
-            <span className="truncate text-[var(--color-text-primary)]" title={row.name}>
-              {row.name}
-            </span>
-            <span className="shrink-0 tabular-nums text-[var(--color-text-muted)]">
-              {formatPct(row.win_rate)} · {tradeLabel(row.trades)} ·{" "}
-              <span className={pnlClass(row.pnl)}>{row.pnl == null ? "—" : compactMoney(row.pnl, currencySymbol, true)}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 export function TradingInsights({
   data,
   currencySymbol,
@@ -136,81 +114,7 @@ export function TradingInsights({
             <InsightTile label="Best exit condition" insight={insights.best_exit} currencySymbol={currencySymbol} empty="No exit condition is tagged on these trades." />
           </div>
           {open ? (
-            <div className="mt-4 space-y-4 border-t border-[var(--color-border)] pt-4">
-              {insights.sides.length > 0 ? (
-                <div>
-                  <h4 className="mb-2 text-[12px] font-semibold text-[var(--color-text-primary)]">Trade type performance</h4>
-                  <ul className="space-y-2">
-                    {insights.sides.map((side) => (
-                      <li key={side.name}>
-                        <div className="mb-1 flex items-center justify-between gap-3 text-[12px]">
-                          <span className="font-medium text-[var(--color-text-primary)]">{side.name}</span>
-                          <span className="tabular-nums text-[var(--color-text-muted)]">
-                            {formatPct(side.win_rate)} · {tradeLabel(side.trades)} ·{" "}
-                            <span className={pnlClass(side.pnl)}>
-                              {side.pnl == null ? "—" : compactMoney(side.pnl, currencySymbol, true)}
-                            </span>
-                          </span>
-                        </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-gauge-track)]">
-                          <div
-                            className="h-full rounded-full bg-[#40C79A]"
-                            style={{ width: `${Math.max(0, Math.min(100, side.win_rate ?? 0))}%` }}
-                          />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  {insights.trade_types.length > 0 ? (
-                    <div className="mt-3">
-                      <RankList title="Tagged trade types" rows={insights.trade_types} currencySymbol={currencySymbol} />
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-              {insights.moods.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <h4 className="mb-1 text-[12px] font-semibold text-[var(--color-text-primary)]">Mood and results</h4>
-                  <p className="mb-2 text-[10px] leading-4 text-[var(--color-text-muted)]">
-                    How trades tagged with each mood closed. This is a trading statistic, not a read on mood itself.
-                  </p>
-                  <table className="w-full min-w-[420px] text-left text-[12px]">
-                    <thead className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
-                      <tr>
-                        <th className="py-1 font-semibold">Mood</th>
-                        <th className="py-1 font-semibold">Trades</th>
-                        <th className="py-1 font-semibold">Win rate</th>
-                        <th className="py-1 text-right font-semibold">Net P&L</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {insights.moods.map((mood) => (
-                        <tr key={mood.name} className="border-t border-[var(--color-border)]">
-                          <td className="max-w-[180px] truncate py-1.5 font-medium text-[var(--color-text-primary)]">{mood.name}</td>
-                          <td className="py-1.5 tabular-nums">{mood.trades}</td>
-                          <td className="py-1.5 tabular-nums">{formatPct(mood.win_rate)}</td>
-                          <td className={`py-1.5 text-right tabular-nums ${pnlClass(mood.pnl)}`}>
-                            {mood.pnl == null ? "—" : compactMoney(mood.pnl, currencySymbol, true)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-[12px] text-[var(--color-text-muted)]">No mood is tagged on these trades.</p>
-              )}
-              <div className="grid gap-4 md:grid-cols-2">
-                <RankList title="Sessions" rows={insights.sessions} currencySymbol={currencySymbol} />
-                <RankList title="Timeframes" rows={insights.timeframes} currencySymbol={currencySymbol} />
-                <RankList title="Entry conditions" rows={insights.entries} currencySymbol={currencySymbol} />
-                <RankList title="Exit conditions" rows={insights.exits} currencySymbol={currencySymbol} />
-              </div>
-              {insights.went_well.length > 0 ? (
-                <RankList title="What went well" rows={insights.went_well} currencySymbol={currencySymbol} />
-              ) : (
-                <p className="text-[12px] text-[var(--color-text-muted)]">No “what went well” tags on these trades.</p>
-              )}
+            <div className="mt-4 border-t border-[var(--color-border)] pt-4">
               <div className="dash-insight-charts">
                 {insightChartSources(data).map((chart) => (
                   <InsightChartBoundary key={chart.id} title={chart.title} resetKey={`${chart.id}:${chart.rows.length}`}>

@@ -23,22 +23,16 @@ function cellValue(metric: YearMetric, row: PerformanceCounts, symbol: string): 
   return String(row.trades);
 }
 
-function cellTone(metric: YearMetric, row: PerformanceCounts): "profit" | "loss" | "neutral" | "empty" {
+function cellTone(row: PerformanceCounts): "profit" | "loss" | "neutral" | "empty" {
   if (!row.trades) return "empty";
-  if (metric === "trades") return "neutral";
-  if (metric === "win_rate") {
-    if ((row.win_rate ?? 0) >= 55) return "profit";
-    if ((row.win_rate ?? 0) <= 45) return "loss";
-    return "neutral";
-  }
   if ((row.pnl ?? 0) > 0) return "profit";
   if ((row.pnl ?? 0) < 0) return "loss";
   return "neutral";
 }
 
 const TONE_CLASS = {
-  profit: "border-transparent bg-[#2F9E6A] text-white",
-  loss: "border-transparent bg-[#D64545] text-white",
+  profit: "border-transparent bg-[#40C79A] text-white",
+  loss: "border-transparent bg-[#F26969] text-white",
   neutral: "border-[var(--color-border)] bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)]",
   empty: "border-[var(--color-border)] bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)]",
 } as const;
@@ -58,21 +52,24 @@ function MonthCell({
   formatMoney: MoneyFormat;
   emphasize?: boolean;
 }) {
-  const tone = cellTone(metric, row);
+  const tone = cellTone(row);
+  const colored = tone === "profit" || tone === "loss";
   const exact =
     row.trades > 0 && row.pnl != null ? formatMoney(row.pnl, { signed: true, digits: 2 }) : "No closed trades";
   return (
     <div
-      className={`flex min-h-[92px] min-w-[68px] flex-col justify-between rounded-[10px] border px-2 py-2 ${TONE_CLASS[tone]} ${
+      className={`flex min-h-[92px] min-w-[68px] flex-col items-center justify-between rounded-[10px] border px-2 py-2 text-center ${TONE_CLASS[tone]} ${
         emphasize ? "ring-1 ring-[var(--color-border)]" : ""
       }`}
       title={row.trades ? `${label}: ${exact} · ${formatPct(row.win_rate)} · ${tradeLabel(row.trades)}` : `${label}: no closed trades`}
     >
-      <span className={`text-[10px] font-medium ${tone === "profit" || tone === "loss" ? "text-white/80" : "text-[var(--color-text-muted)]"}`}>
+      <span className={colored ? "text-on-accent text-[12px] font-bold text-white" : "text-[10px] font-medium text-[var(--color-text-muted)]"}>
         {label}
       </span>
-      <span className="text-[13px] font-bold leading-4 tabular-nums">{cellValue(metric, row, symbol)}</span>
-      <span className={`text-[10px] tabular-nums ${tone === "profit" || tone === "loss" ? "text-white/80" : "text-[var(--color-text-muted)]"}`}>
+      <span className={colored ? "text-on-accent text-[16px] font-bold leading-5 tabular-nums text-white" : "text-[13px] font-bold leading-4 tabular-nums"}>
+        {cellValue(metric, row, symbol)}
+      </span>
+      <span className={colored ? "text-on-accent text-[12px] font-bold tabular-nums text-white" : "text-[10px] font-medium tabular-nums text-[var(--color-text-muted)]"}>
         {metric === "trades" || !row.trades ? (row.trades ? formatPct(row.win_rate) : "—") : tradeLabel(row.trades)}
       </span>
     </div>

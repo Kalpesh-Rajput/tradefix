@@ -7,7 +7,7 @@ import { CompactSelect } from "@/components/reports/CompactSelect";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import type { DashboardPerformance } from "@/lib/types";
 
-import { AnalyticsEmpty, PNL_LOSS_HEX, PNL_PROFIT_HEX, formatPct, tradeLabel } from "./shared";
+import { AnalyticsEmpty, BAR_LOSS_HEX, BAR_PROFIT_HEX, formatPct, tradeLabel } from "./shared";
 
 function DisciplineRing({ followed, violated }: { followed: number; violated: number }) {
   const total = followed + violated;
@@ -20,7 +20,7 @@ function DisciplineRing({ followed, violated }: { followed: number; violated: nu
   return (
     <svg viewBox="0 0 100 100" className="block h-full w-full" aria-hidden>
       {violated > 0 ? (
-        <circle cx={center} cy={center} r={radius} fill="none" stroke={PNL_LOSS_HEX} strokeWidth={stroke} />
+        <circle cx={center} cy={center} r={radius} fill="none" stroke={BAR_LOSS_HEX} strokeWidth={stroke} />
       ) : null}
       {followed > 0 ? (
         <circle
@@ -28,7 +28,7 @@ function DisciplineRing({ followed, violated }: { followed: number; violated: nu
           cy={center}
           r={radius}
           fill="none"
-          stroke={PNL_PROFIT_HEX}
+          stroke={BAR_PROFIT_HEX}
           strokeWidth={stroke}
           strokeLinecap="butt"
           strokeDasharray={violated > 0 ? `${followedLength} ${circumference}` : undefined}
@@ -85,11 +85,11 @@ export function RuleDiscipline({ data }: { data: DashboardPerformance }) {
             </div>
             <div className="rounded-lg bg-[var(--color-surface-secondary)] px-2.5 py-1">
               <dt className="text-[var(--color-text-muted)]">Rules followed</dt>
-              <dd className="font-semibold tabular-nums text-[#1F7A4D]">{stats.followed}</dd>
+              <dd className="font-semibold tabular-nums text-[#1B9A72]">{stats.followed}</dd>
             </div>
             <div className="rounded-lg bg-[var(--color-surface-secondary)] px-2.5 py-1">
               <dt className="text-[var(--color-text-muted)]">Rules violated</dt>
-              <dd className="font-semibold tabular-nums text-[#C23B3B]">{stats.violated}</dd>
+              <dd className="font-semibold tabular-nums text-[#E25555]">{stats.violated}</dd>
             </div>
             <div className="rounded-lg bg-[var(--color-surface-secondary)] px-2.5 py-1">
               <dt className="text-[var(--color-text-muted)]">Discipline rate</dt>

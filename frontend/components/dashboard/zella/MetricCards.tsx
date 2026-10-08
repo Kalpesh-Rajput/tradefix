@@ -5,7 +5,7 @@ import { Calculator } from "lucide-react";
 
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
-import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
+import { BAR_LOSS_HEX, BAR_PROFIT_HEX, PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 
 const BE_HEX = "#7B8DB8";
 const TRACK = "#E7E8EC";
@@ -73,7 +73,7 @@ function SegmentGauge({
           <circle
             r={r}
             fill="none"
-            stroke={PNL_PROFIT_HEX}
+            stroke={BAR_PROFIT_HEX}
             strokeWidth={stroke}
             strokeDasharray={`${Math.max(wLen - gap, 0)} ${c}`}
             strokeLinecap="round"
@@ -91,7 +91,7 @@ function SegmentGauge({
           <circle
             r={r}
             fill="none"
-            stroke={PNL_LOSS_HEX}
+            stroke={BAR_LOSS_HEX}
             strokeWidth={stroke}
             strokeDasharray={`${Math.max(lLen - gap, 0)} ${c}`}
             strokeLinecap="round"
@@ -100,9 +100,9 @@ function SegmentGauge({
         </g>
       </svg>
       <div className="mt-0.5 flex items-center gap-1.5 text-[8px] font-medium tabular-nums">
-        <span style={{ color: PNL_PROFIT_HEX }}>{wins}</span>
+        <span style={{ color: BAR_PROFIT_HEX }}>{wins}</span>
         <span style={{ color: BE_HEX }}>{breakeven}</span>
-        <span style={{ color: PNL_LOSS_HEX }}>{losses}</span>
+        <span style={{ color: BAR_LOSS_HEX }}>{losses}</span>
       </div>
     </div>
   );
@@ -113,7 +113,7 @@ function Donut({ value }: { value: number }) {
   const r = 18;
   const c = 2 * Math.PI * r;
   const filled = (pct / 100) * c;
-  const color = value >= 1 ? PNL_PROFIT_HEX : PNL_LOSS_HEX;
+  const color = value >= 1 ? BAR_PROFIT_HEX : BAR_LOSS_HEX;
 
   return (
     <svg width="44" height="44" viewBox="0 0 44 44" className="shrink-0" aria-hidden>
@@ -287,12 +287,12 @@ export function MetricCards({
         </div>
         <div className="mt-auto">
           <div className="mb-1 flex h-1.5 overflow-hidden rounded-[4px] bg-[var(--color-gauge-track)]">
-            <div style={{ width: `${winBar}%`, backgroundColor: PNL_PROFIT_HEX }} />
-            <div className="flex-1" style={{ backgroundColor: PNL_LOSS_HEX }} />
+            <div style={{ width: `${winBar}%`, backgroundColor: BAR_PROFIT_HEX }} />
+            <div className="flex-1" style={{ backgroundColor: BAR_LOSS_HEX }} />
           </div>
           <div className="flex justify-between text-[10px] font-medium tabular-nums">
-            <span style={{ color: PNL_PROFIT_HEX }}>{formatMoney(avgWin, { signed: false, digits: 0 })}</span>
-            <span style={{ color: PNL_LOSS_HEX }}>{formatMoney(-Math.abs(avgLoss), { signed: true, digits: 0 })}</span>
+            <span style={{ color: BAR_PROFIT_HEX }}>{formatMoney(avgWin, { signed: false, digits: 0 })}</span>
+            <span style={{ color: BAR_LOSS_HEX }}>{formatMoney(-Math.abs(avgLoss), { signed: true, digits: 0 })}</span>
           </div>
         </div>
       </KpiShell>

@@ -4,13 +4,13 @@ import { useMemo, useRef, useState } from "react";
 
 import { ChartCard } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
-import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
+import { BAR_LOSS_HEX, BAR_PROFIT_HEX } from "@/lib/appearance";
 import type { DashboardPerformance, HeatmapDay } from "@/lib/types";
 
 import { AnalyticsEmpty, formatPct, tradeLabel, type MoneyFormat } from "./shared";
 
-const PROFIT = ["#E7F6EE", "#B7E4C7", "#74C69D", "#2D9F6F", "#1B7A4E"];
-const LOSS = ["#FDECEC", "#F6C1C1", "#EE8B8B", "#E15B5B", "#C63636"];
+const PROFIT = ["#E5F8F2", "#C3EEDF", "#8FE0C4", "#5ED4A8", "#40C79A"];
+const LOSS = ["#FDECEC", "#F9C9C9", "#F6A3A3", "#F48686", "#F26969"];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const GAP = 3;
 const MONTH_H = 16;
@@ -204,9 +204,9 @@ export function ActivityHeatmap({
                     outsideActive || !activeDay?.trades
                       ? "text-[#A7ADBA]"
                       : (activeDay.pnl ?? 0) > 0
-                        ? "text-[#3DDC97]"
-                        : (activeDay.pnl ?? 0) < 0
-                          ? "text-[#FF8D8D]"
+                      ? "text-[#40C79A]"
+                      : (activeDay.pnl ?? 0) < 0
+                        ? "text-[#F26969]"
                           : "text-white"
                   }`}
                 >
@@ -239,7 +239,7 @@ export function ActivityHeatmap({
             ))}
             <span className="ml-0.5">Profit</span>
             <span className="sr-only">
-              Profit color {PNL_PROFIT_HEX}, loss color {PNL_LOSS_HEX}
+              Profit color {BAR_PROFIT_HEX}, loss color {BAR_LOSS_HEX}
             </span>
           </div>
         </div>

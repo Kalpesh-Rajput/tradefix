@@ -13,7 +13,7 @@ import {
 } from "recharts";
 
 import { CHART_BODY_H, ChartCard, EmptyChart, chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
-import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
+import { BAR_LOSS_HEX, BAR_PROFIT_HEX } from "@/lib/appearance";
 import { formatClock, formatDuration, type ScatterPoint } from "@/lib/dashboardSeries";
 
 export function TradeScatterChart({
@@ -67,7 +67,7 @@ export function TradeScatterChart({
               />
               <Scatter data={series} r={4}>
                 {series.map((p, i) => (
-                  <Cell key={`${p.symbol}-${i}`} fill={p.y >= 0 ? PNL_PROFIT_HEX : PNL_LOSS_HEX} />
+                  <Cell key={`${p.symbol}-${i}`} fill={p.y >= 0 ? BAR_PROFIT_HEX : BAR_LOSS_HEX} />
                 ))}
               </Scatter>
             </ScatterChart>

@@ -16,7 +16,7 @@ import { ChartCard } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import type { DashboardPerformance, DurationPnlPoint } from "@/lib/types";
 
-import { AXIS, AnalyticsEmpty, GRID, PNL_LOSS_HEX, PNL_PROFIT_HEX, ROW_CHART_H, type MoneyFormat } from "./shared";
+import { AXIS, AnalyticsEmpty, BAR_LOSS_HEX, BAR_PROFIT_HEX, GRID, ROW_CHART_H, type MoneyFormat } from "./shared";
 
 const BREAKEVEN = "#B4B7C2";
 
@@ -42,8 +42,8 @@ function formatHoldExact(totalSeconds: number): string {
 }
 
 function outcome(pnl: number): { label: string; fill: string } {
-  if (pnl > 0) return { label: "Profit", fill: PNL_PROFIT_HEX };
-  if (pnl < 0) return { label: "Loss", fill: PNL_LOSS_HEX };
+  if (pnl > 0) return { label: "Profit", fill: BAR_PROFIT_HEX };
+  if (pnl < 0) return { label: "Loss", fill: BAR_LOSS_HEX };
   return { label: "Break Even", fill: BREAKEVEN };
 }
 
