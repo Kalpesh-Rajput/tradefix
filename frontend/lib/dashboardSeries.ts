@@ -1,5 +1,5 @@
-import { addDays, localIso, parseLocalIso, startOfWeekSunday } from "@/lib/dateLocal";
-import type { CalendarDay, EquityPoint, Trade } from "@/lib/types";
+import { localIso, parseLocalIso } from "@/lib/dateLocal";
+import type { EquityPoint, Trade } from "@/lib/types";
 
 export type LinePoint = { date: string; value: number; baseline?: number };
 export type DrawdownPoint = { date: string; value: number };
@@ -104,49 +104,6 @@ export function formatClock(totalMinutes: number): string {
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
-export type ActivityCell = {
-  iso: string;
-  trades: number;
-  pnl: number;
-};
-
-export function progressGrid(days: CalendarDay[], weekCount = 20): {
-  weeks: ActivityCell[][];
-  monthLabels: { col: number; label: string }[];
-} {
-  const map = new Map<string, CalendarDay>();
-  for (const d of days) map.set(d.date.slice(0, 10), d);
-
-  const today = new Date();
-  const end = startOfWeekSunday(today);
-  end.setDate(end.getDate() + 6);
-  const start = addDays(end, -(weekCount * 7 - 1));
-
-  const weeks: ActivityCell[][] = [];
-  const monthLabels: { col: number; label: string }[] = [];
-  let lastMonth = -1;
-
-  for (let w = 0; w < weekCount; w++) {
-    const col: ActivityCell[] = [];
-    for (let dow = 0; dow < 7; dow++) {
-      const dt = addDays(start, w * 7 + dow);
-      const iso = localIso(dt);
-      const row = map.get(iso);
-      col.push({ iso, trades: row?.trades ?? 0, pnl: row?.pnl ?? 0 });
-      if (dt.getDate() <= 7 && dt.getMonth() !== lastMonth) {
-        lastMonth = dt.getMonth();
-        monthLabels.push({
-          col: w,
-          label: dt.toLocaleDateString("en-US", { month: "short" }),
-        });
-      }
-    }
-    weeks.push(col);
-  }
-
-  return { weeks, monthLabels };
 }
 
 export function parseLocalDay(iso: string): Date {

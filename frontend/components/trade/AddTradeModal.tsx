@@ -268,7 +268,6 @@ export function AddTradeModal() {
         closed_at,
         fees: Number(data.fees ?? defaultFee),
         risk_amount: data.risk_amount != null ? Number(data.risk_amount) : snapshot.riskAmount,
-        plan_compliance: data.plan_compliance != null ? Number(data.plan_compliance) : null,
         setup_tag: setupTags[0] ?? data.trade_type ?? null,
         setup_tags: setupTags,
         mood: data.mood.length ? data.mood.join(", ") : null,

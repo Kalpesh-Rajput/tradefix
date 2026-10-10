@@ -191,7 +191,7 @@ export const en = {
   "dashboard.hint.drawdown": "Shows the decline from your account’s previous peak. Use this to understand the size and duration of your losing periods.",
   "dashboard.hint.tradeTime": "Plots each closed trade by the time of day you entered it and the P&L that followed, so you can see which hours you trade best.",
   "dashboard.hint.tradeDuration": "Shows how long your trades typically stay open and the P&L that followed, so you can check whether your holding time matches your strategy.",
-  "dashboard.hint.progressTracker": "Each square is a trading day. Darker blue means you took more trades that day.",
+  "dashboard.hint.progressTracker": "Each square is a trading day. Darker purple means you followed more of your rules that day. Click a day to open its checklist.",
   "dashboard.hint.marketSessions": "Shows whether the major FX cash sessions are open or closed in your selected timezone, so you can see which session you are trading.",
   "dashboard.hint.tradeFixScore": "Your overall trading-performance score based on profitability, consistency, risk management, and discipline.",
   "dashboard.hint.positions": "Open positions are trades that are still open. Recent trades are the latest closed trades in this account.",

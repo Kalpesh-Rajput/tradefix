@@ -63,6 +63,36 @@ const MAP_FIELDS = [
   },
 ] as const;
 
+const EXTRA_FIELDS = [
+  { field: "notes", label: "Notes", help: "Journal note stored on the trade.\nExample: Waited for the London open" },
+  { field: "emotions", label: "Emotions", help: "How the trade felt. Separate several with commas.\nExample: FOMO, Anxious" },
+  { field: "mood", label: "Mood", help: "Mood recorded with the trade.\nExample: Calm" },
+  { field: "strategy", label: "Strategy", help: "Playbook or strategy name.\nExample: Breakout" },
+  { field: "setup", label: "Setup", help: "Setup tags, separated by commas.\nExample: Order block, FVG" },
+  { field: "pnl", label: "P&L", help: "Profit or loss from the file. A negative number is a loss.\nExample: 25.50, -10" },
+  { field: "gross_pnl", label: "Gross P&L", help: "Profit before fees.\nExample: 27.00" },
+  { field: "stop_loss", label: "Stop loss", help: "Stop price on the trade.\nExample: 1.0980" },
+  { field: "profit_target", label: "Take profit", help: "Target price on the trade.\nExample: 1.1100" },
+  { field: "risk_amount", label: "Risk", help: "Amount risked on the trade.\nExample: 50" },
+  { field: "swap", label: "Swap", help: "Overnight swap or rollover.\nExample: -0.20" },
+  { field: "funding", label: "Funding", help: "Funding payment.\nExample: 0.15" },
+  { field: "session", label: "Session", help: "Market session.\nExample: London" },
+  { field: "rules_broken", label: "Rules broken", help: "Mistakes, separated by commas.\nExample: FOMO Entry" },
+  { field: "rating", label: "Rating", help: "Trade rating from 1 to 10.\nExample: 4" },
+  { field: "entry_condition", label: "Entry condition", help: "Why the trade was opened.\nExample: Broke the high" },
+  { field: "exit_condition", label: "Exit condition", help: "Why the trade was closed.\nExample: Hit target" },
+  { field: "asset_type", label: "Asset type", help: "Market class.\nExample: forex, stock, crypto" },
+  { field: "leverage", label: "Leverage", help: "Leverage used.\nExample: 100, 1:100" },
+  { field: "strike_price", label: "Strike", help: "Option strike.\nExample: 190" },
+  { field: "expiry_date", label: "Expiry", help: "Option or contract expiry.\nExample: 2026-12-18" },
+  { field: "analysis_timeframe", label: "Timeframe", help: "Chart timeframe.\nExample: 15m, 1h" },
+  { field: "entry_timeframe", label: "Entry timeframe", help: "Timeframe used for the entry.\nExample: 5m" },
+  { field: "option_type", label: "Option type", help: "Call or put.\nExample: call" },
+  { field: "trade_type", label: "Trade type", help: "How the trade was managed.\nExample: Swing" },
+] as const;
+
+const ALL_FIELDS = [...MAP_FIELDS, ...EXTRA_FIELDS];
+
 interface FileImportPreviewProps {
   accountId?: string | null;
   accept: string;
@@ -281,63 +311,14 @@ export function FileImportPreview({
           ) : null}
           {accountControl}
           {headers.length > 0 ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {MAP_FIELDS.map((item) => (
-                <MappingField
-                  key={item.field}
-                  field={item.field}
-                  label={item.label}
-                  help={item.help}
-                  headers={headers}
-                  mapping={mapping}
-                  disabled={busy || imported}
-                  onChange={(column) => void onMap(item.field, column)}
-                />
-              ))}
-            </div>
+            <ColumnMapping
+              headers={headers}
+              mapping={mapping}
+              disabled={busy || imported}
+              onMap={(field, column) => void onMap(field, column)}
+            />
           ) : null}
-          <div className="max-h-64 overflow-auto rounded-xl border border-border">
-            <table className="w-full min-w-[640px] text-left text-xs">
-              <thead className="sticky top-0 bg-surface-2 text-muted">
-                <tr>
-                  <th className="px-2 py-2 font-medium">Symbol</th>
-                  <th className="px-2 py-2 font-medium">Side</th>
-                  <th className="px-2 py-2 font-medium">Qty</th>
-                  <th className="px-2 py-2 font-medium">Entry</th>
-                  <th className="px-2 py-2 font-medium">Exit</th>
-                  <th className="px-2 py-2 font-medium">Open time</th>
-                  <th className="px-2 py-2 font-medium">Close time</th>
-                  <th className="px-2 py-2 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {batch.rows.map((row) => {
-                  const exitFill = row.normalized.side === "sell" && !row.normalized.price && !!row.normalized.exit_price;
-                  return (
-                    <tr key={row.row_number} className="border-t border-border align-top">
-                      <td className="px-2 py-1.5">{row.normalized.symbol || "—"}</td>
-                      <td className="px-2 py-1.5">{row.normalized.side || "—"}</td>
-                      <td className="px-2 py-1.5">{row.normalized.quantity || "—"}</td>
-                      <td className="px-2 py-1.5">{row.normalized.price || "—"}</td>
-                      <td className={clsx("px-2 py-1.5", exitFill && "font-medium text-foreground")}>
-                        {row.normalized.exit_price || "—"}
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-1.5">{shortTime(row.normalized.executed_at)}</td>
-                      <td className={clsx("whitespace-nowrap px-2 py-1.5", exitFill && "font-medium text-foreground")}>
-                        {shortTime(row.normalized.closed_at)}
-                      </td>
-                      <td className="px-2 py-1.5">
-                        <span className={statusClass(row.status)}>{statusLabel(row.status)}</span>
-                        {row.errors?.length ? (
-                          <span className="mt-0.5 block text-[11px] text-muted">{row.errors.join(" · ")}</span>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <PreviewTable headers={headers} mapping={mapping} rows={batch.rows} />
           {batch.row_count > batch.rows.length ? (
             <p className="text-xs text-muted">Showing the first {batch.rows.length} of {batch.row_count} rows.</p>
           ) : null}
@@ -386,6 +367,199 @@ export function FileImportPreview({
       </div>
     </div>
   );
+}
+
+function ColumnMapping({
+  headers,
+  mapping,
+  disabled,
+  onMap,
+}: {
+  headers: string[];
+  mapping: Record<string, string>;
+  disabled: boolean;
+  onMap: (field: string, column: string) => void;
+}) {
+  const extra = EXTRA_FIELDS.filter((item) => mapping[item.field]);
+  const taken = new Set(Object.values(mapping).filter(Boolean));
+  const leftover = headers.filter((column) => !taken.has(column));
+  const openFields = ALL_FIELDS.filter((item) => !mapping[item.field]);
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {MAP_FIELDS.map((item) => (
+          <MappingField
+            key={item.field}
+            field={item.field}
+            label={item.label}
+            help={item.help}
+            headers={headers}
+            mapping={mapping}
+            disabled={disabled}
+            onChange={(column) => onMap(item.field, column)}
+          />
+        ))}
+      </div>
+      {extra.length > 0 ? (
+        <div>
+          <p className="text-xs text-muted">Also mapped from this file</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {extra.map((item) => (
+              <MappingField
+                key={item.field}
+                field={item.field}
+                label={item.label}
+                help={item.help}
+                headers={headers}
+                mapping={mapping}
+                disabled={disabled}
+                onChange={(column) => onMap(item.field, column)}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {leftover.length > 0 ? (
+        <div>
+          <p className="text-xs text-muted">These columns did not match a journal field. Choose one if they belong on the trade.</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {leftover.map((column, index) => (
+              <div key={`${column}-${index}`} className="text-xs text-muted">
+                <label htmlFor={`import-extra-${index}`}>{column}</label>
+                <select
+                  id={`import-extra-${index}`}
+                  className="mt-1 h-9 w-full rounded-lg border border-border bg-surface px-2 text-sm text-foreground"
+                  value=""
+                  aria-label={`Assign ${column}`}
+                  disabled={disabled || openFields.length === 0}
+                  onChange={(event) => {
+                    if (event.target.value) onMap(event.target.value, column);
+                  }}
+                >
+                  <option value="">Choose a field</option>
+                  {openFields.map((item) => (
+                    <option key={item.field} value={item.field}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PreviewTable({
+  headers,
+  mapping,
+  rows,
+}: {
+  headers: string[];
+  mapping: Record<string, string>;
+  rows: ImportBatch["rows"];
+}) {
+  const columns = previewColumns(headers, mapping);
+  return (
+    <div className="max-h-64 overflow-auto rounded-xl border border-border [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
+      <div className="pb-4">
+      <table className="w-max min-w-full border-separate border-spacing-0 text-left text-xs">
+        <thead>
+          <tr>
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                title={column.source}
+                className="sticky top-0 z-10 whitespace-nowrap bg-surface-2 px-3 py-2 font-medium text-muted"
+              >
+                {column.label}
+              </th>
+            ))}
+            <th className="sticky top-0 z-10 whitespace-nowrap bg-surface-2 px-3 py-2 font-medium text-muted">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const exitFill = row.normalized.side === "sell" && !row.normalized.price && !!row.normalized.exit_price;
+            return (
+              <tr key={row.row_number}>
+                {columns.map((column) => {
+                  const text = previewCell(column, row);
+                  const emphasize = exitFill && (column.field === "exit_price" || column.field === "closed_at");
+                  return (
+                    <td
+                      key={column.key}
+                      title={text === "—" ? undefined : text}
+                      className={clsx(
+                        "max-w-[14rem] truncate whitespace-nowrap border-t border-border px-3 py-1.5",
+                        emphasize && "font-medium text-foreground"
+                      )}
+                    >
+                      {text}
+                    </td>
+                  );
+                })}
+                <td className="whitespace-nowrap border-t border-border px-3 py-1.5">
+                  <span className={statusClass(row.status)}>{statusLabel(row.status)}</span>
+                  {row.errors?.length ? (
+                    <span className="mt-0.5 block max-w-[12rem] truncate text-[11px] text-muted" title={row.errors.join(" · ")}>
+                      {row.errors.join(" · ")}
+                    </span>
+                  ) : null}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  );
+}
+
+const SHORT_LABEL: Record<string, string> = {
+  quantity: "Qty",
+  price: "Entry",
+  exit_price: "Exit",
+};
+
+function previewColumns(headers: string[], mapping: Record<string, string>): PreviewColumn[] {
+  const used = new Set(Object.values(mapping).filter(Boolean));
+  const mapped: PreviewColumn[] = ALL_FIELDS.filter((item) => mapping[item.field]).map((item) => ({
+    key: item.field,
+    field: item.field,
+    label: SHORT_LABEL[item.field] ?? item.label,
+    source: mapping[item.field],
+  }));
+  const unmatched: PreviewColumn[] = headers
+    .filter((header) => header && !used.has(header))
+    .map((header) => ({
+      key: `raw:${header}`,
+      field: null,
+      label: header,
+      source: header,
+    }));
+  return [...mapped, ...unmatched];
+}
+
+function previewCell(column: PreviewColumn, row: ImportBatch["rows"][number]): string {
+  if (!column.field) {
+    const raw = row.raw?.[column.source];
+    return raw == null || String(raw).trim() === "" ? "—" : String(raw);
+  }
+  const value = row.normalized[column.field];
+  if (!value) return "—";
+  if (column.field === "executed_at" || column.field === "closed_at") return shortTime(value);
+  return value;
+}
+
+interface PreviewColumn {
+  key: string;
+  field: string | null;
+  label: string;
+  source: string;
 }
 
 function MappingField({
@@ -451,7 +625,7 @@ function formatLabel(kind: string): string {
 }
 
 function fieldLabel(field: string): string {
-  return MAP_FIELDS.find((item) => item.field === field)?.label ?? field;
+  return ALL_FIELDS.find((item) => item.field === field)?.label ?? field;
 }
 
 function tally(count: number, singular: string, plural: string): string {

@@ -83,7 +83,6 @@ export const addTradeSchema = z
     strategies: z.array(z.string()).default([]),
     mistakes: z.array(z.string()).default([]),
     wentWell: z.array(z.string()).default([]),
-    plan_compliance: z.any().optional().nullable(),
     risk_amount: z.any().optional().nullable(),
     notes: z.string().max(5000).optional().nullable(),
     exits: z.array(fillSchema).default([]),
@@ -93,7 +92,6 @@ export const addTradeSchema = z
     const qty = num(data.quantity);
     const fees = num(data.fees) ?? 0;
     const risk = num(data.risk_amount);
-    const compliance = num(data.plan_compliance);
     const stop = num(data.stop_loss);
 
     const qtyMsg =
@@ -155,14 +153,6 @@ export const addTradeSchema = z
         ctx.addIssue({ code: "custom", message: "Short stop loss should be above entry", path: ["stop_loss"] });
       }
     }
-    if (compliance != null && (compliance < 1 || compliance > 10)) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Plan compliance must be 1–10",
-        path: ["plan_compliance"],
-      });
-    }
-
     const nowMs = Date.now();
     const entryStamp = localDateTimeMs(data.entryDate, data.entryTime);
     if (entryStamp != null && entryStamp > nowMs) {
@@ -231,7 +221,6 @@ export const addTradeSchema = z
     tick_value: num(data.tick_value),
     stop_loss: num(data.stop_loss),
     risk_amount: num(data.risk_amount),
-    plan_compliance: num(data.plan_compliance),
     expiry: data.expiry_date || data.expiry || null,
     expiry_date: data.expiry_date || data.expiry || null,
     notes: data.notes || "",
@@ -292,7 +281,6 @@ export type AddTradeFormValues = {
   playbook_id?: string | null;
   mood: string[];
   risk_amount?: number | null;
-  plan_compliance?: number | null;
   expiry?: string | null;
   strategies: string[];
   mistakes: string[];
@@ -346,7 +334,6 @@ export function defaultAddTradeValues(opts?: {
     playbook_id: "",
     mood: [],
     risk_amount: null,
-    plan_compliance: null,
     expiry: null,
     strategies: [...(opts?.defaultStrategies ?? [])],
     mistakes: [],
@@ -538,7 +525,6 @@ export function mapTradeToForm(trade: Trade): AddTradeFormValues {
     playbook_id: trade.playbook_id || "",
     mood: moodsFromTrade(trade),
     risk_amount: trade.risk_amount != null ? Number(trade.risk_amount) : null,
-    plan_compliance: trade.plan_compliance != null ? Number(trade.plan_compliance) : null,
     expiry: trade.expiry_date ? String(trade.expiry_date).slice(0, 10) : null,
     strategies: trade.setup_tags?.length ? trade.setup_tags : trade.setup_tag ? [trade.setup_tag] : [],
     mistakes: trade.rules_broken ?? [],

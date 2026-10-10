@@ -95,16 +95,6 @@ export function RiskPlanFields({
       <FieldSlot name="stop_loss">
         <NumField label="Stop loss" error={errors.stop_loss?.message} placeholder="Optional" {...register("stop_loss")} />
       </FieldSlot>
-      <FieldSlot name="plan_compliance">
-        <NumField
-          label="Plan 1–10"
-          error={errors.plan_compliance?.message}
-          placeholder="8"
-          min={1}
-          max={10}
-          {...register("plan_compliance")}
-        />
-      </FieldSlot>
     </div>
   );
 }

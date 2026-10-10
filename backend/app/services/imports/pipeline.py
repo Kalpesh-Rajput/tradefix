@@ -45,7 +45,8 @@ def reprocess_rows(
     source = parsed.records
     if parsed.prebuilt is not None and not source:
         source = [(row["row_number"], row["raw"]) for row in parsed.prebuilt]
-    mapping = map_columns(parsed.headers, override)
+    samples = [raw for _, raw in source[:40]]
+    mapping = map_columns(parsed.headers, override, None if override is not None else samples)
     rows: list[dict] = []
     for row_number, raw in source:
         normalized, errors = normalize_values(raw, mapping)

@@ -15,13 +15,10 @@ import { useLiveTradeCalc } from "@/components/trade/useLiveTradeCalc";
 import { fmtMoney } from "@/lib/format";
 
 export function hasDeepEntryData(values: AddTradeFormValues, screenshotCount = 0) {
-  const plan = values.plan_compliance;
-  const hasPlan = plan != null && String(plan) !== "";
   const hasStop = values.stop_loss != null && String(values.stop_loss) !== "";
   return Boolean(
     hasStop ||
       values.entry_condition ||
-      hasPlan ||
       values.mood.length ||
       values.precheck_list_id ||
       values.playbook_id ||
@@ -124,7 +121,7 @@ export function DeepEntryPanel({
               </div>
             </FormSection>
 
-            <FormSection title="Risk & plan">
+            <FormSection title="Risk">
               <RiskPlanFields
                 register={register}
                 errors={errors}

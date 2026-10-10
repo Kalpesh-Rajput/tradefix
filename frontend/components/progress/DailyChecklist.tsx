@@ -5,25 +5,27 @@ import { Check, Circle, Minus } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { isoDay } from "@/lib/progress-tracker/discipline";
 import type { DailyProgress, RuleResult, RuleStatus } from "@/lib/progress-tracker/types";
 
-function StatusIcon({ status, kind }: { status: RuleStatus; kind: RuleResult["kind"] }) {
+const STATUS_RANK: Record<RuleStatus, number> = {
+  pending: 0,
+  failed: 1,
+  passed: 2,
+  not_applicable: 3,
+};
+
+function StatusIcon({ status }: { status: RuleStatus }) {
   if (status === "passed") {
     return (
-      <span
-        className={clsx(
-          "inline-flex h-[18px] w-[18px] items-center justify-center rounded-full",
-          kind === "manual" ? "bg-primary text-on-accent" : "bg-[#2F9E6A] text-white"
-        )}
-        aria-hidden
-      >
+      <span className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-primary text-on-accent" aria-hidden>
         <Check className="h-3 w-3" strokeWidth={3} />
       </span>
     );
   }
   if (status === "failed") {
     return (
-      <span className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#D64545] text-white" aria-hidden>
+      <span className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[var(--color-danger)] text-white" aria-hidden>
         <Minus className="h-3 w-3" strokeWidth={3} />
       </span>
     );
@@ -49,27 +51,44 @@ function statusLabel(status: RuleStatus) {
   return "Pending";
 }
 
+function detailClass(status: RuleStatus) {
+  if (status === "failed") return "text-[var(--color-danger-dark)]";
+  if (status === "pending") return "text-[var(--color-text-secondary)]";
+  return "text-[var(--color-text-muted)]";
+}
+
 export function DailyChecklist({
   title,
   day,
+  today,
   loading,
   items,
   onToggleManual,
+  onStartDay,
+  starting,
   togglingId,
   compact,
   footer,
 }: {
   title: string;
   day: DailyProgress | undefined;
+  today?: string;
   loading?: boolean;
   items?: RuleResult[];
   onToggleManual?: (ruleId: string, completed: boolean) => void;
+  onStartDay?: () => void;
+  starting?: boolean;
   togglingId?: string | null;
   compact?: boolean;
   footer?: ReactNode;
 }) {
   const rules = items ?? day?.rules ?? [];
-  const visible = rules.filter((r) => r.status !== "not_applicable" || r.kind === "manual");
+  const ranked = [...rules].sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status]);
+  const visible = ranked.filter((rule) => rule.status !== "not_applicable" || rule.kind === "manual");
+  const skipped = ranked.filter((rule) => rule.status === "not_applicable" && rule.kind === "builtin");
+  const future = !!day && !!today && isoDay(day.date) > isoDay(today);
+  const scoreLabel =
+    day && day.is_trading_day && day.score != null ? `${Math.round(day.score)}%` : null;
 
   return (
     <section className={clsx("dash-card flex h-full flex-col p-4", !compact && "min-h-[220px]")}>
@@ -77,10 +96,13 @@ export function DailyChecklist({
         <div className="flex min-w-0 items-center gap-1">
           <h2 className="truncate text-[13px] font-semibold text-[var(--color-text-primary)]">{title}</h2>
           <InfoTooltip
-            content="Shows whether you followed each rule for this day. Passed rules count toward your discipline score."
+            content="Open habits come first, then misses, then rules you already followed. Manual habits can be checked here."
             label={title}
           />
         </div>
+        {scoreLabel ? (
+          <span className="shrink-0 text-[13px] font-semibold tabular-nums text-primary">{scoreLabel}</span>
+        ) : null}
       </div>
       {loading ? (
         <div className="space-y-2">
@@ -90,24 +112,68 @@ export function DailyChecklist({
         </div>
       ) : !day?.tracking ? (
         <p className="text-[12px] leading-5 text-[var(--color-text-muted)]">
-          No discipline tracking for this date. Open Edit rules to start tracking from today forward.
+          Tracking has not started for this date. Rules apply from the day you save them.
+        </p>
+      ) : future ? (
+        <p className="text-[12px] leading-5 text-[var(--color-text-muted)]">
+          This day has not arrived. Rules are scored when it does.
         </p>
       ) : !day.is_trading_day ? (
         <p className="text-[12px] leading-5 text-[var(--color-text-muted)]">
-          This is not one of your configured trading days, so it does not affect your streak.
+          This is outside your trading days, so it stays out of the streak and the score.
+        </p>
+      ) : rules.length === 0 ? (
+        <p className="text-[12px] leading-5 text-[var(--color-text-muted)]">
+          No active rules for this day. Turn on a built-in rule or add a habit.
         </p>
       ) : visible.length === 0 ? (
-        <p className="text-[12px] leading-5 text-[var(--color-text-muted)]">
-          No active rules for this day. Enable built-in rules or add a manual habit to build a checklist.
-        </p>
+        <div>
+          <p className="text-[12px] leading-5 text-[var(--color-text-muted)]">
+            No trades on this day, so the trade rules do not apply.
+          </p>
+          {skipped.length > 0 ? (
+            <ul className="mt-2 space-y-1">
+              {skipped.map((rule) => (
+                <li key={rule.rule_key} className="text-[12px] text-[var(--color-text-secondary)]">
+                  {rule.name}
+                  {rule.detail ? <span className="text-[var(--color-text-muted)]"> · {rule.detail}</span> : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       ) : (
-        <ul className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
+        <ul className="flex flex-1 flex-col gap-1 overflow-y-auto">
           {visible.map((rule) => {
+            const canStart = rule.rule_key === "start_day" && rule.status === "pending" && !!onStartDay;
             const canToggle = rule.kind === "manual" && rule.rule_id && onToggleManual && rule.status !== "not_applicable";
             const completed = rule.status === "passed";
+            const row = (
+              <>
+                <StatusIcon status={rule.status} />
+                <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-text-primary)]">{rule.name}</span>
+                {canStart ? (
+                  <span className="shrink-0 text-[11px] font-medium text-primary">Start</span>
+                ) : rule.detail ? (
+                  <span className={clsx("max-w-[46%] shrink-0 truncate text-right text-[11px]", detailClass(rule.status))}>
+                    {rule.detail}
+                  </span>
+                ) : null}
+              </>
+            );
             return (
               <li key={rule.rule_key}>
-                {canToggle ? (
+                {canStart ? (
+                  <button
+                    type="button"
+                    disabled={starting}
+                    onClick={() => onStartDay?.()}
+                    className="flex w-full items-center gap-2.5 rounded-md px-1 py-1.5 text-left transition-colors hover:bg-[var(--color-primary-very-light)] disabled:opacity-60"
+                    aria-label={`${rule.name}, start today`}
+                  >
+                    {row}
+                  </button>
+                ) : canToggle ? (
                   <button
                     type="button"
                     disabled={togglingId === rule.rule_id}
@@ -116,26 +182,28 @@ export function DailyChecklist({
                     aria-pressed={completed}
                     aria-label={`${rule.name}, ${statusLabel(rule.status)}`}
                   >
-                    <StatusIcon status={rule.status} kind={rule.kind} />
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-text-primary)]">{rule.name}</span>
-                    {rule.detail ? (
-                      <span className="shrink-0 text-[11px] text-[var(--color-text-muted)]">{rule.detail}</span>
-                    ) : null}
+                    {row}
                   </button>
                 ) : (
-                  <div className="flex items-center gap-2.5 rounded-md px-1 py-1.5">
-                    <StatusIcon status={rule.status} kind={rule.kind} />
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-text-primary)]">{rule.name}</span>
-                    {rule.detail ? (
-                      <span className="max-w-[42%] shrink-0 truncate text-right text-[11px] text-[var(--color-text-muted)]">
-                        {rule.detail}
-                      </span>
-                    ) : null}
-                  </div>
+                  <div className="flex items-center gap-2.5 rounded-md px-1 py-1.5">{row}</div>
                 )}
               </li>
             );
           })}
+          {skipped.length > 0 ? (
+            <li className="mt-2 border-t border-[var(--color-border)] pt-2">
+              <p className="px-1 text-[10px] font-medium text-[var(--color-text-muted)]">Does not apply</p>
+              <ul className="mt-1 space-y-1">
+                {skipped.map((rule) => (
+                  <li key={rule.rule_key} className="flex items-center gap-2 px-1 text-[11px] text-[var(--color-text-muted)]">
+                    <StatusIcon status={rule.status} />
+                    <span className="min-w-0 flex-1 truncate">{rule.name}</span>
+                    {rule.detail ? <span className="shrink-0 truncate">{rule.detail}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ) : null}
         </ul>
       )}
       {footer}

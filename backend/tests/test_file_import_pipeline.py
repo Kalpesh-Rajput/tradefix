@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 from openpyxl import Workbook
 
-from app.services.imports.confirm import executions_for_row
+from app.services.imports.confirm import apply_journal, executions_for_row
 from app.services.imports.duplicates import mark_duplicates
 from app.services.imports.mapper import map_columns, unmapped_required
 from app.services.imports.parser import ImportFileError, parse_file
@@ -189,6 +189,92 @@ def test_round_trip_row_still_opens_and_closes():
     assert fills[0].price == Decimal("190.5")
     assert fills[1].price == Decimal("191")
     assert fills[0].external_position_id == fills[1].external_position_id
+
+
+def test_notes_and_emotions_are_mapped_with_the_required_columns():
+    payload = """Symbol,Type,Quantity,Buy Price,Entry Date/Time,Fees,Notes,Emotions
+GBPJPY,buy,10,100,2026-10-09 08:07:00,1.25,Waited for the level,"FOMO, Anxious"
+""".encode()
+    preview = build_preview("trades.csv", payload)
+    assert preview.mapping["symbol"] == "Symbol"
+    assert preview.mapping["notes"] == "Notes"
+    assert preview.mapping["emotions"] == "Emotions"
+    assert preview.mapping["commission"] == "Fees"
+    row = preview.rows[0]
+    assert row["status"] == "valid"
+    assert row["normalized"]["notes"] == "Waited for the level"
+    assert row["normalized"]["emotions"] == "FOMO, Anxious"
+
+
+def test_unknown_headers_map_from_the_cell_values():
+    payload = """Pair,Action,Lots,Open,Exit,Opened,Closed,Journal,State,Play,Account
+GBPJPY,buy,10,100,105,2026-10-09 08:07:00,2026-10-09 09:15:00,Waited for the London open,FOMO,Breakout,AvaTrade
+EURUSD,sell,1,1.1000,1.1050,2026-10-09 10:00:00,2026-10-09 11:00:00,Took the second test,Anxious,Breakout,AvaTrade
+""".encode()
+    preview = build_preview("trades.csv", payload)
+    assert preview.mapping["symbol"] == "Pair"
+    assert preview.mapping["side"] == "Action"
+    assert preview.mapping["quantity"] == "Lots"
+    assert preview.mapping["price"] == "Open"
+    assert preview.mapping["exit_price"] == "Exit"
+    assert preview.mapping["executed_at"] == "Opened"
+    assert preview.mapping["closed_at"] == "Closed"
+    assert preview.mapping["notes"] == "Journal"
+    assert preview.mapping["emotions"] == "State"
+    assert preview.mapping["strategy"] == "Play"
+    assert "Account" not in preview.mapping.values()
+    row = preview.rows[0]
+    assert row["status"] == "valid"
+    assert row["normalized"]["notes"] == "Waited for the London open"
+    assert row["normalized"]["emotions"] == "FOMO"
+    assert row["normalized"]["strategy"] == "Breakout"
+    assert row["normalized"]["price"] == "100"
+
+
+def test_a_broker_name_column_stays_unmapped():
+    payload = b"Symbol,Side,Quantity,Price,Open Time,Broker\nEURUSD,buy,1,1.1,2024-01-02 10:00:00,AvaTrade\n"
+    preview = build_preview("trades.csv", payload)
+    assert "Broker" not in preview.mapping.values()
+    assert preview.rows[0]["status"] == "valid"
+
+
+def test_journal_columns_are_copied_onto_the_trade():
+    trade = SimpleNamespace(
+        notes=None,
+        emotion_tags=[],
+        strategy_name=None,
+        setup_tag=None,
+        setup_tags=[],
+        pnl=None,
+        funding=None,
+        commission=Decimal("1"),
+        swap=Decimal("0"),
+        fees=Decimal("1"),
+        leverage=None,
+        stop_loss=None,
+        asset_type=None,
+    )
+    apply_journal(
+        trade,
+        [
+            {
+                "notes": "Waited for the level",
+                "emotions": "FOMO, Anxious",
+                "strategy": "Breakout",
+                "pnl": "-12.5",
+                "leverage": "1:100",
+                "stop_loss": "99",
+                "asset_type": "forex",
+            }
+        ],
+    )
+    assert trade.notes == "Waited for the level"
+    assert trade.emotion_tags == ["FOMO", "Anxious"]
+    assert trade.strategy_name == "Breakout"
+    assert trade.pnl == Decimal("-12.5")
+    assert trade.leverage == Decimal("100")
+    assert trade.stop_loss == Decimal("99")
+    assert trade.asset_type.value == "forex"
 
 
 def test_exit_only_sell_becomes_one_fill():

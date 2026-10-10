@@ -68,7 +68,6 @@ export default function TradeDetailPage() {
   const deleteShot = useDeleteTradeScreenshot();
 
   const [notes, setNotes] = useState("");
-  const [planCompliance, setPlanCompliance] = useState(5);
   const [setupTags, setSetupTags] = useState<string[]>([]);
   const [emotionTags, setEmotionTags] = useState<string[]>([]);
   const [mistakes, setMistakes] = useState<string[]>([]);
@@ -85,7 +84,6 @@ export default function TradeDetailPage() {
   useEffect(() => {
     if (!trade) return;
     setNotes(trade.notes ?? "");
-    setPlanCompliance(trade.plan_compliance ?? 5);
     setSetupTags(trade.setup_tags?.length ? trade.setup_tags : trade.setup_tag ? [trade.setup_tag] : []);
     setEmotionTags(trade.emotion_tags ?? []);
     setMistakes(trade.rules_broken ?? []);
@@ -153,7 +151,6 @@ export default function TradeDetailPage() {
         id: trade.id,
         data: {
           notes: notes.trim() || null,
-          plan_compliance: planCompliance,
           setup_tags: setupTags,
           setup_tag: setupTags[0] ?? null,
           emotion_tags: emotionTags,
@@ -292,22 +289,6 @@ export default function TradeDetailPage() {
           onChange={(e) => setNotes(e.target.value)}
           placeholder="What happened? What will you repeat or avoid?"
           className="border-white/10 bg-zinc-900"
-        />
-      </section>
-
-      {/* Plan compliance */}
-      <section className="rounded-xl border border-white/[0.06] bg-zinc-950/80 p-5">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white">Plan compliance</h2>
-          <span className="font-mono text-sm text-primary">{planCompliance}/10</span>
-        </div>
-        <input
-          type="range"
-          min={1}
-          max={10}
-          value={planCompliance}
-          onChange={(e) => setPlanCompliance(Number(e.target.value))}
-          className="w-full accent-primary"
         />
       </section>
 

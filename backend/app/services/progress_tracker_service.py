@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, delete, or_, select
+from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.account import Account
@@ -221,6 +221,99 @@ def _versions(db: Session, user_id: uuid.UUID) -> list[ProgressTrackerConfigVers
     )
 
 
+_TRADE_RULE_FLAGS = (
+    "trading_hours_enabled",
+    "link_playbook_enabled",
+    "stop_loss_required",
+    "max_loss_per_trade_enabled",
+    "max_loss_per_day_enabled",
+)
+
+
+def _snapshot_has_trade_rules(snapshot: dict | None) -> bool:
+    if not snapshot:
+        return False
+    return any(bool(snapshot.get(key)) for key in _TRADE_RULE_FLAGS)
+
+
+def _snapshot_has_rules(snapshot: dict | None) -> bool:
+    if _snapshot_has_trade_rules(snapshot):
+        return True
+    if not snapshot:
+        return False
+    if snapshot.get("start_day_enabled"):
+        return True
+    for rule in snapshot.get("manual_rules") or []:
+        if rule.get("is_active") is not False and str(rule.get("name") or "").strip():
+            return True
+    return False
+
+
+def _trade_only_snapshot(snapshot: dict) -> dict:
+    trimmed = dict(snapshot)
+    trimmed["start_day_enabled"] = False
+    trimmed["reminder_enabled"] = False
+    trimmed["manual_rules"] = []
+    return trimmed
+
+
+def _earliest_trade_day(db: Session, user: User) -> date | None:
+    opened = db.scalar(select(func.min(Trade.opened_at)).where(Trade.user_id == user.id, Trade.is_deleted.is_(False)))
+    if opened is None:
+        return None
+    return local_date(opened, _tz(user))
+
+
+def ensure_trade_history(db: Session, user: User) -> bool:
+    """Score trades already in the journal the first time trade rules are turned on.
+
+    Habits and start-my-day stay on the current version, so past days are not
+    failed for checkboxes that did not exist yet. Later edits still start today.
+    """
+    today = today_in_tz(_tz(user))
+    versions = _versions(db, user.id)
+    if not versions:
+        return False
+    current = versions[-1]
+    snapshot = current.snapshot or {}
+    if not _snapshot_has_trade_rules(snapshot):
+        return False
+    earlier = [version for version in versions if version.id != current.id and version.effective_from < current.effective_from]
+    if any(_snapshot_has_rules(version.snapshot or {}) for version in earlier):
+        return False
+    trade_day = _earliest_trade_day(db, user)
+    if trade_day is None:
+        return False
+    start = max(trade_day, today - timedelta(days=400))
+    if start >= current.effective_from:
+        return False
+
+    for version in earlier:
+        db.delete(version)
+    db.flush()
+    row = db.scalar(
+        select(ProgressTrackerConfigVersion).where(
+            ProgressTrackerConfigVersion.user_id == user.id,
+            ProgressTrackerConfigVersion.effective_from == start,
+        )
+    )
+    trade_snapshot = _trade_only_snapshot(snapshot)
+    if row is None:
+        db.add(
+            ProgressTrackerConfigVersion(
+                user_id=user.id,
+                effective_from=start,
+                snapshot=trade_snapshot,
+            )
+        )
+    elif row.id != current.id:
+        row.snapshot = trade_snapshot
+    _delete_results_from(db, user.id, start)
+    db.flush()
+    logger.info("Backfilled Progress Tracker trade rules user=%s from=%s", user.id, start)
+    return True
+
+
 def version_for_date(
     versions: list[ProgressTrackerConfigVersion], day: date
 ) -> ProgressTrackerConfigVersion | None:
@@ -340,6 +433,7 @@ def update_settings(db: Session, user: User, payload: ProgressTrackerSettingsUpd
     db.flush()
     rules = list_manual_rules(db, user.id)
     _write_version(db, user, settings, rules)
+    ensure_trade_history(db, user)
     today = today_in_tz(_tz(user))
     _delete_results_from(db, user.id, today)
     evaluate_day(db, user, today, persist=True)
@@ -898,6 +992,7 @@ def get_summary(
     # Keep heatmap queries bounded even if the picker is set to all-time.
     if (date_to - date_from).days > 400:
         date_from = date_to - timedelta(days=400)
+    ensure_trade_history(db, user)
     focus = focus_date or today
     eval_start = min(date_from, focus, today)
     eval_end = max(date_to, focus, today)

@@ -11,6 +11,10 @@ const OPTIONAL_COLUMNS = [
   { name: "Close time", hint: "Date and time", example: "2024-01-02 12:00" },
   { name: "Commission", hint: "Broker fee", example: "1.25" },
   { name: "Ticket", hint: "Order or deal id", example: "1001" },
+  { name: "Notes", hint: "Journal note", example: "Waited for London" },
+  { name: "Emotions", hint: "How it felt", example: "FOMO" },
+  { name: "Strategy", hint: "Playbook name", example: "Breakout" },
+  { name: "P&L", hint: "Profit or loss", example: "25.50" },
 ] as const;
 
 const ALL_COLUMNS = [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS];
@@ -102,7 +106,8 @@ function SheetDescription() {
   return (
     <p className="mt-2.5 text-[10px] leading-relaxed text-muted">
       First row, any order: {HEADER_LINE}. A closing sell can leave Entry price and Open time blank. Ticker, Qty,
-      Price, and Date work too. CSV, Excel, or XML.
+      Price, and Date work too. Stop loss, session, mood, and the other journal columns are matched when the file
+      includes them. CSV, Excel, or XML.
     </p>
   );
 }

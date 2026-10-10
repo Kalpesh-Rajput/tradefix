@@ -213,7 +213,7 @@ export function EditRulesModal({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
           <p className="mb-3 text-[12px] text-[var(--color-text-muted)]">
-            Changes apply to today and future days. Historical scores keep the rules that were active then.
+            The first time trade rules are turned on, they also score trades already in your journal. Later edits apply from today forward. Habits and start-my-day begin today.
           </p>
 
           <p className="text-[12px] font-medium text-[var(--color-text-primary)]">Trading days</p>

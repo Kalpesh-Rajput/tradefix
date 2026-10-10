@@ -43,23 +43,37 @@ export function ProgressMetrics({
   periodScore,
   todayPassed,
   todayTotal,
+  scoredDays,
+  cleanDays,
   loading,
+  streakNote,
+  onStartToday,
+  starting,
 }: {
   streak: number;
   periodScore: number | null;
   todayPassed: number;
   todayTotal: number;
+  scoredDays: number;
+  cleanDays: number;
   loading?: boolean;
+  streakNote: string;
+  onStartToday?: () => void;
+  starting?: boolean;
 }) {
   const progressPct = todayTotal > 0 ? Math.round((todayPassed / todayTotal) * 100) : 0;
+  const periodNote =
+    scoredDays > 0
+      ? `${cleanDays} of ${scoredDays} scored days were fully followed.`
+      : "Scored days show up once a rule applies.";
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-3">
       <section className="dash-card flex min-h-[148px] flex-col p-4">
         <p className="flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)]">
           <span>Current streak</span>
           <InfoTooltip
-            content="Consecutive trading days you started. Weekends you skipped in your rules do not break the streak."
+            content="Consecutive trading days you started, from a day start, check-in, recap, or day note. Weekends you left out of your rules do not break it."
             label="Current streak"
           />
         </p>
@@ -71,20 +85,26 @@ export function ProgressMetrics({
               {streak}
             </p>
             <p className="pb-1 text-[13px] text-[var(--color-text-secondary)]">{streak === 1 ? "day" : "days"}</p>
-            <Flame className="mb-0.5 h-5 w-5 text-[#F59E0B]" strokeWidth={2} aria-hidden />
+            <Flame className="mb-0.5 h-5 w-5 text-[#C4841D]" strokeWidth={2} aria-hidden />
           </div>
         )}
-        <p className="mt-auto pt-3 text-[11px] leading-4 text-[var(--color-text-muted)]">
-          Consecutive trading days you started. Weekends you skipped in rules do not break it.
-        </p>
+        <div className="mt-auto pt-3">
+          {onStartToday ? (
+            <button type="button" className="dash-btn-primary h-7 px-2.5 text-[11px]" disabled={starting} onClick={onStartToday}>
+              {starting ? "Starting…" : "Start today"}
+            </button>
+          ) : (
+            <p className="text-[11px] leading-4 text-[var(--color-text-muted)]">{streakNote}</p>
+          )}
+        </div>
       </section>
 
       <section className="dash-card flex min-h-[148px] flex-col p-4">
         <p className="flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)]">
-          <span>Current period score</span>
+          <span>Period score</span>
           <InfoTooltip
-            content="Average of your daily rule-follow scores for the selected date range."
-            label="Current period score"
+            content="Average of daily rule-follow scores for trading days in the selected range. Days with no applicable rules are left out."
+            label="Period score"
           />
         </p>
         <div className="mt-2 flex flex-1 items-center gap-3">
@@ -93,9 +113,7 @@ export function ProgressMetrics({
           ) : (
             <ScoreRing value={periodScore} />
           )}
-          <p className="text-[11px] leading-4 text-[var(--color-text-muted)]">
-            Average rule-follow score for the selected date range.
-          </p>
+          <p className="text-[11px] leading-4 text-[var(--color-text-muted)]">{loading ? "" : periodNote}</p>
         </div>
       </section>
 
@@ -103,7 +121,7 @@ export function ProgressMetrics({
         <p className="flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)]">
           <span>Today&apos;s progress</span>
           <InfoTooltip
-            content="How many of today’s rules you have already passed."
+            content="Rules that apply today and how many you have already passed. Pending and missed rules stay in the total."
             label="Today's progress"
           />
         </p>
@@ -122,6 +140,9 @@ export function ProgressMetrics({
               style={{ width: `${progressPct}%` }}
             />
           </div>
+          <p className="mt-2 text-[11px] leading-4 text-[var(--color-text-muted)]">
+            {todayTotal === 0 ? "No rules apply yet today." : `${progressPct}% of today’s rules are followed.`}
+          </p>
         </div>
       </section>
     </div>

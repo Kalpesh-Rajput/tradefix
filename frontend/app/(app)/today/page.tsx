@@ -26,7 +26,6 @@ import {
   accountBalanceSeries,
   drawdownSeries,
   equityFromClosedTrades,
-  progressGrid,
   tradeDurationPoints,
   tradeTimePoints,
 } from "@/lib/dashboardSeries";
@@ -89,21 +88,10 @@ export default function TodayPage() {
   );
   const tradesTruncated = trades.length >= TRADE_LIST_LIMIT;
 
-  const progressRange = useMemo(() => {
-    const to = new Date();
-    const from = new Date();
-    from.setDate(from.getDate() - 20 * 7);
-    return { from: localIso(from), to: localIso(to) };
-  }, []);
-
   const { data: calendar } = useCalendar(calStart, calEnd, accountId, { enabled: accountReady });
   const { data: rangeCalendar } = useCalendar(dateFrom, dateTo, accountId, {
     enabled: accountReady,
   });
-  const { data: progressCalendar } = useCalendar(progressRange.from, progressRange.to, accountId, {
-    enabled: accountReady && widgets.progress,
-  });
-
   const overview = analytics?.overview;
   const netPnl = overview?.total_pnl ?? 0;
   const winRate = overview?.win_rate ?? 0;
@@ -168,11 +156,6 @@ export default function TodayPage() {
     () => tradeDurationPoints(closed, (t) => displayPnl(t.pnl, t.fees) ?? 0),
     [closed, displayPnl]
   );
-  const progress = useMemo(
-    () => progressGrid(progressCalendar?.days ?? rangeCalendar?.days ?? []),
-    [progressCalendar?.days, rangeCalendar?.days]
-  );
-
   const dailySeries = useMemo(() => {
     const days = rangeCalendar?.days ?? [];
     return days
@@ -418,7 +401,7 @@ export default function TodayPage() {
               <div className="dash-charts">
                 {widgets.progress && (
                   <div className={`min-w-0 ${widgets.marketSessions ? "dash-span-2" : "dash-span-3"}`}>
-                    <ProgressTracker weeks={progress.weeks} monthLabels={progress.monthLabels} />
+                    <ProgressTracker accountId={accountId} enabled={!accountsLoading} />
                   </div>
                 )}
                 {widgets.marketSessions && (

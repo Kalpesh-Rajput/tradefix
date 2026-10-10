@@ -59,11 +59,51 @@ def normalize_values(raw: dict[str, str], mapping: dict[str, str]) -> tuple[dict
         "closed_at": _optional_time(_cell(raw, mapping, "closed_at"), "close time", errors),
         "commission": _optional_number(_cell(raw, mapping, "commission"), "commission", errors),
         "swap": _optional_number(_cell(raw, mapping, "swap"), "swap", errors),
+        "funding": _optional_number(_cell(raw, mapping, "funding"), "funding", errors),
         "external_id": _text(_cell(raw, mapping, "external_id")),
         "notes": _text(_cell(raw, mapping, "notes")),
+        "emotions": _text(_cell(raw, mapping, "emotions")),
+        "mood": _text(_cell(raw, mapping, "mood")),
+        "strategy": _text(_cell(raw, mapping, "strategy")),
+        "setup": _text(_cell(raw, mapping, "setup")),
+        "rules_broken": _text(_cell(raw, mapping, "rules_broken")),
+        "session": _text(_cell(raw, mapping, "session")),
+        "trade_type": _text(_cell(raw, mapping, "trade_type")),
+        "entry_condition": _text(_cell(raw, mapping, "entry_condition")),
+        "exit_condition": _text(_cell(raw, mapping, "exit_condition")),
+        "asset_type": _text(_cell(raw, mapping, "asset_type")),
+        "analysis_timeframe": _text(_cell(raw, mapping, "analysis_timeframe")),
+        "entry_timeframe": _text(_cell(raw, mapping, "entry_timeframe")),
+        "option_type": _text(_cell(raw, mapping, "option_type")),
+        "leverage": _text(_cell(raw, mapping, "leverage")),
         "pnl": _optional_number(_cell(raw, mapping, "pnl"), "p&l", errors),
+        "gross_pnl": _optional_number(_cell(raw, mapping, "gross_pnl"), "gross p&l", errors),
+        "stop_loss": _optional_number(_cell(raw, mapping, "stop_loss"), "stop loss", errors),
+        "profit_target": _optional_number(_cell(raw, mapping, "profit_target"), "take profit", errors),
+        "risk_amount": _optional_number(_cell(raw, mapping, "risk_amount"), "risk", errors),
+        "strike_price": _optional_number(_cell(raw, mapping, "strike_price"), "strike", errors),
+        "rating": _rating(_cell(raw, mapping, "rating")),
+        "expiry_date": _soft_date(_cell(raw, mapping, "expiry_date")),
     }
     return normalized, errors
+
+
+def is_datetime_text(value: str) -> bool:
+    if value.strip().lower() in _BLANK:
+        return False
+    try:
+        _parse_dt(value)
+    except ValueError:
+        return False
+    return True
+
+
+def is_number_text(value: str) -> bool:
+    return _decimal(value) is not None
+
+
+def number_text(value: str) -> Decimal | None:
+    return _decimal(value)
 
 
 def _cell(raw: dict[str, str], mapping: dict[str, str], field: str) -> str:
@@ -120,6 +160,24 @@ def _optional_time(value: str, label: str, errors: list[str]) -> str | None:
 def _text(value: str) -> str | None:
     text = value.strip()
     return text or None
+
+
+def _rating(value: str) -> str | None:
+    if value.strip().lower() in _BLANK:
+        return None
+    number = _decimal(value)
+    if number is None or number != int(number) or number < 1 or number > 10:
+        return None
+    return str(int(number))
+
+
+def _soft_date(value: str) -> str | None:
+    if value.strip().lower() in _BLANK:
+        return None
+    try:
+        return _parse_dt(value).date().isoformat()
+    except ValueError:
+        return None
 
 
 def _decimal(value: str) -> Decimal | None:

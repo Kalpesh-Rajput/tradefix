@@ -3,9 +3,10 @@
 import clsx from "clsx";
 
 import { DailyChecklist } from "@/components/progress/DailyChecklist";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { useToast } from "@/components/ui/Toast";
 import { ApiError } from "@/lib/api";
-import { useDailyProgress, useManualRuleCompletion } from "@/lib/hooks/useProgressTracker";
+import { useDailyProgress, useManualRuleCompletion, useStartProgressDay } from "@/lib/hooks/useProgressTracker";
 
 export function GamePlanCard({
   date,
@@ -19,8 +20,12 @@ export function GamePlanCard({
   compact?: boolean;
 }) {
   const toast = useToast();
+  const { dateKey } = useLocale();
   const daily = useDailyProgress(date, accountId);
   const complete = useManualRuleCompletion();
+  const startDay = useStartProgressDay();
+  const today = dateKey(new Date());
+  const isToday = date === today;
 
   if (daily.isLoading) {
     return (
@@ -38,6 +43,19 @@ export function GamePlanCard({
         title="Today's game plan"
         compact={compact}
         day={daily.data}
+        today={today}
+        starting={startDay.isPending}
+        onStartDay={
+          isToday
+            ? async () => {
+                try {
+                  await startDay.mutateAsync(date);
+                } catch (err) {
+                  toast.error(err instanceof ApiError ? err.message : "Could not start today");
+                }
+              }
+            : undefined
+        }
         onToggleManual={async (ruleId, completed) => {
           try {
             await complete.mutateAsync({ ruleId, date, completed });
