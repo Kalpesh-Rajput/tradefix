@@ -38,14 +38,15 @@ export function TradeIdentityFields({
   return (
     <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       <FieldSlot name="account_id">
-        <PlainFieldLabel>Account</PlainFieldLabel>
+        <PlainFieldLabel error={errors.account_id?.message}>Account</PlainFieldLabel>
         <AccountPicker
           accounts={accounts}
           value={accountId || ""}
-          onChange={(id) => setValue("account_id", id, { shouldDirty: true })}
+          onChange={(id) => setValue("account_id", id, { shouldDirty: true, shouldValidate: true })}
           tone="trade"
           size="sm"
           placeholder="Select account"
+          invalid={Boolean(errors.account_id)}
         />
       </FieldSlot>
       <AssetSelector control={control} error={errors.asset_type?.message} onSegmentChange={onSegmentChange} presentation="dropdown" />
@@ -143,7 +144,9 @@ export function TradeIdentityFields({
                     className={`h-9 min-w-[4.5rem] flex-1 rounded-lg border text-[13px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
                       selected
                         ? "border-primary bg-primary text-primary-foreground text-on-accent"
-                        : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-secondary)]"
+                        : errors.option_type
+                          ? "border-destructive/70 bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
+                          : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-secondary)]"
                     }`}
                   >
                     {label}
@@ -206,12 +209,13 @@ export function TradeIdentityFields({
           name="session"
           render={({ field }) => (
             <div>
-              <PlainFieldLabel>Session</PlainFieldLabel>
+              <PlainFieldLabel error={errors.session?.message}>Session</PlainFieldLabel>
               <MasterCombobox
                 category="session"
                 label="Session"
                 value={field.value || ""}
                 onChange={field.onChange}
+                error={errors.session?.message}
                 placeholder="Select session"
                 compact
                 hideLabel
@@ -226,12 +230,13 @@ export function TradeIdentityFields({
           name="trade_type"
           render={({ field }) => (
             <div>
-              <PlainFieldLabel>Trade type</PlainFieldLabel>
+              <PlainFieldLabel error={errors.trade_type?.message}>Trade type</PlainFieldLabel>
               <MasterCombobox
                 category="trade_type"
                 label="Trade type"
                 value={field.value || ""}
                 onChange={field.onChange}
+                error={errors.trade_type?.message}
                 placeholder="Select trade type"
                 compact
                 hideLabel

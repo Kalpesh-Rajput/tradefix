@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 
 import { ChartCard } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { BAR_LOSS_HEX, BAR_PROFIT_HEX } from "@/lib/appearance";
 import type { DashboardPerformance, HeatmapDay } from "@/lib/types";
 
-import { AnalyticsEmpty, formatPct, tradeLabel, type MoneyFormat } from "./shared";
+import { AnalyticsEmpty, FloatingTip, formatPct, pnlTone, tradeLabel, useFloatingTip, type MoneyFormat, type TipRow } from "./shared";
 
 const PROFIT = ["#E5F8F2", "#C3EEDF", "#8FE0C4", "#5ED4A8", "#40C79A"];
 const LOSS = ["#FDECEC", "#F9C9C9", "#F6A3A3", "#F48686", "#F26969"];
@@ -36,6 +36,22 @@ function addDays(iso: string, days: number): string {
 
 function formatDay(iso: string): string {
   return fromIso(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function heatmapRows(day: HeatmapDay | undefined, outside: boolean, formatMoney: MoneyFormat): TipRow[] {
+  if (outside) return [{ label: "Range", value: "Outside selected range" }];
+  if (!day?.trades) return [{ label: "Closed trades", value: "None" }];
+  return [
+    {
+      label: "Net P&L",
+      value: formatMoney(day.pnl ?? 0, { signed: true, digits: 2 }),
+      tone: pnlTone(day.pnl),
+    },
+    { label: "Winning trades", value: String(day.wins) },
+    { label: "Losing trades", value: String(day.losses) },
+    { label: "Total trades", value: tradeLabel(day.trades) },
+    { label: "Win rate", value: formatPct(day.win_rate) },
+  ];
 }
 
 function cellColor(day: HeatmapDay | undefined, maxAbs: number): string {
@@ -83,34 +99,14 @@ export function ActivityHeatmap({
     () => Math.max(0, ...heatmap.days.map((day) => Math.abs(day.pnl ?? 0))),
     [heatmap.days]
   );
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [tip, setTip] = useState<{
-    iso: string;
-    left: number;
-    caret: number;
-    top: number;
-    height: number;
-    above: boolean;
-  } | null>(null);
-  const activeDay = tip ? byDate.get(tip.iso) : undefined;
-  const outsideActive = tip != null && (tip.iso < heatmap.range_start || tip.iso > heatmap.range_end);
+  const hover = useFloatingTip();
+  const activeDay = hover.tip ? byDate.get(hover.tip.key) : undefined;
+  const outsideActive = hover.tip != null && (hover.tip.key < heatmap.range_start || hover.tip.key > heatmap.range_end);
 
   function placeTip(iso: string, element: HTMLElement) {
-    const wrap = wrapRef.current?.getBoundingClientRect();
-    const cell = element.getBoundingClientRect();
-    if (!wrap) return;
-    const top = cell.top - wrap.top;
-    const anchor = cell.left - wrap.left + cell.width / 2;
-    const boxWidth = 148;
-    const left = Math.min(Math.max(anchor - 18, 4), Math.max(4, wrap.width - boxWidth));
-    setTip({
-      iso,
-      left,
-      caret: Math.min(Math.max(anchor - left, 14), boxWidth - 14),
-      top,
-      height: cell.height,
-      above: top > 36,
-    });
+    const day = byDate.get(iso);
+    const inRange = iso >= heatmap.range_start && iso <= heatmap.range_end;
+    hover.show(iso, element, inRange && day?.trades ? 156 : 72);
   }
 
   return (
@@ -121,8 +117,8 @@ export function ActivityHeatmap({
       {!data.has_trades ? (
         <AnalyticsEmpty title={t("dashboard.empty.title")} body={t("dashboard.empty.heatmap")} />
       ) : (
-        <div ref={wrapRef} className="relative min-w-0" onMouseLeave={() => setTip(null)}>
-          <div className="heatmap-scroll min-w-0 overflow-x-auto overflow-y-hidden" onScroll={() => setTip(null)}>
+        <div className="relative min-w-0" onMouseLeave={hover.hide}>
+          <div className="heatmap-scroll min-w-0 overflow-x-auto overflow-y-hidden">
             <div
               className="grid w-full"
               style={{
@@ -173,7 +169,7 @@ export function ActivityHeatmap({
                       aria-label={label}
                       onMouseEnter={(event) => placeTip(iso, event.currentTarget)}
                       onFocus={(event) => placeTip(iso, event.currentTarget)}
-                      onBlur={() => setTip(null)}
+                      onBlur={hover.hide}
                       className="aspect-square w-full min-w-0 rounded-[3px] outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       style={{
                         ...place,
@@ -186,48 +182,11 @@ export function ActivityHeatmap({
               )}
             </div>
           </div>
-          {tip ? (
-            <div
-              className="pointer-events-none absolute z-30"
-              style={{
-                left: tip.left,
-                top: tip.above ? tip.top - 6 : tip.top + tip.height + 6,
-                transform: tip.above ? "translateY(-100%)" : undefined,
-              }}
-            >
-              <div className="rounded-lg bg-[#1B1E28] px-3 py-2 text-left shadow-[0_8px_20px_rgba(16,18,28,0.22)]">
-                <p className="whitespace-nowrap text-[13px] font-semibold leading-[18px] text-[#FFFFFF]">
-                  {formatDay(tip.iso)}
-                </p>
-                <p
-                  className={`mt-0.5 whitespace-nowrap text-[12px] font-medium leading-4 ${
-                    outsideActive || !activeDay?.trades
-                      ? "text-[#A7ADBA]"
-                      : (activeDay.pnl ?? 0) > 0
-                      ? "text-[#40C79A]"
-                      : (activeDay.pnl ?? 0) < 0
-                        ? "text-[#F26969]"
-                          : "text-[#FFFFFF]"
-                  }`}
-                >
-                  {outsideActive
-                    ? "Outside selected range"
-                    : activeDay?.trades
-                      ? formatMoney(activeDay.pnl ?? 0, { signed: true, digits: 2 })
-                      : "No trades"}
-                </p>
-              </div>
-              <span
-                aria-hidden
-                className="absolute h-0 w-0 -translate-x-1/2 border-x-[5px] border-x-transparent"
-                style={
-                  tip.above
-                    ? { left: tip.caret, bottom: -5, borderTop: "6px solid #1B1E28" }
-                    : { left: tip.caret, top: -5, borderBottom: "6px solid #1B1E28" }
-                }
-              />
-            </div>
-          ) : null}
+          <FloatingTip
+            tip={hover.tip}
+            title={hover.tip ? formatDay(hover.tip.key) : ""}
+            rows={heatmapRows(activeDay, outsideActive, formatMoney)}
+          />
           <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] text-[var(--color-text-muted)]">
             <span className="mr-0.5">Loss</span>
             {[...LOSS].reverse().map((color) => (

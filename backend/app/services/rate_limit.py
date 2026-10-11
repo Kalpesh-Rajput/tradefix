@@ -82,6 +82,21 @@ giphy_proxy_limiter = SlidingWindowRateLimiter(
 )
 
 
+# Module-level instances: one shared window per process (per worker when run with
+# multiple uvicorn workers). Keys are scoped per user.
+advanced_analytics_limiter = SlidingWindowRateLimiter(
+    max_calls=60,
+    window_seconds=60,
+    detail="Too many analytics requests. Please wait a moment and try again.",
+)
+
+analytics_drilldown_limiter = SlidingWindowRateLimiter(
+    max_calls=120,
+    window_seconds=60,
+    detail="Too many drill-down requests. Please wait a moment and try again.",
+)
+
+
 _ai_hourly: SlidingWindowRateLimiter | None = None
 _ai_daily: SlidingWindowRateLimiter | None = None
 _ai_hourly_max: int | None = None

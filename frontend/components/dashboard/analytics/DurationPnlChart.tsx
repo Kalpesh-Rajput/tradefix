@@ -16,7 +16,17 @@ import { ChartCard } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import type { DashboardPerformance, DurationPnlPoint } from "@/lib/types";
 
-import { AXIS, AnalyticsEmpty, BAR_LOSS_HEX, BAR_PROFIT_HEX, GRID, ROW_CHART_H, type MoneyFormat } from "./shared";
+import {
+  AXIS,
+  AnalyticsEmpty,
+  BAR_LOSS_HEX,
+  BAR_PROFIT_HEX,
+  GRID,
+  ROW_CHART_H,
+  TipCard,
+  pnlTone,
+  type MoneyFormat,
+} from "./shared";
 
 const BREAKEVEN = "#B4B7C2";
 
@@ -110,11 +120,13 @@ export function DurationPnlChart({
                       ? formatMoney(0, { signed: false, digits: 2 })
                       : formatMoney(point.pnl, { signed: true, digits: 2 });
                   return (
-                    <div className="rounded-md bg-[#1B1C21] px-2.5 py-1.5 text-[11px] font-medium text-white shadow-lg">
-                      <span className="text-[#C8C8D0]">{kind.label}: </span>
-                      {money}
-                      <span className="text-[#C8C8D0]"> ({formatHoldExact(point.seconds)})</span>
-                    </div>
+                    <TipCard
+                      title={formatHoldExact(point.seconds)}
+                      rows={[
+                        { label: "Net P&L", value: money, tone: pnlTone(point.pnl) },
+                        { label: "Outcome", value: kind.label },
+                      ]}
+                    />
                   );
                 }}
               />

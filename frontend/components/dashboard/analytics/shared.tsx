@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { BAR_LOSS_HEX, BAR_PROFIT_HEX, PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 
@@ -123,4 +124,65 @@ export function TipCard({
 export function pnlTone(value: number | null | undefined): "pos" | "neg" | "neutral" {
   if (value == null || value === 0) return "neutral";
   return value > 0 ? "pos" : "neg";
+}
+
+export type TipRow = { label: string; value: string; tone?: "pos" | "neg" | "neutral" };
+
+export function placeChartTip(element: HTMLElement, estimatedHeight = 148, estimatedWidth = 210) {
+  const rect = element.getBoundingClientRect();
+  const left = Math.min(
+    Math.max(8, rect.left + rect.width / 2 - estimatedWidth / 2),
+    Math.max(8, window.innerWidth - estimatedWidth - 8)
+  );
+  const below = rect.bottom + 8;
+  const top = below + estimatedHeight > window.innerHeight ? Math.max(8, rect.top - estimatedHeight - 8) : below;
+  return { top, left };
+}
+
+export function useFloatingTip() {
+  const anchorRef = useRef<HTMLElement | null>(null);
+  const heightRef = useRef(148);
+  const [tip, setTip] = useState<{ key: string; top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!tip) return;
+    const sync = () => {
+      const anchor = anchorRef.current;
+      if (!anchor?.isConnected) {
+        setTip(null);
+        return;
+      }
+      const next = placeChartTip(anchor, heightRef.current);
+      setTip((current) => (current ? { ...current, ...next } : current));
+    };
+    window.addEventListener("scroll", sync, true);
+    window.addEventListener("resize", sync);
+    return () => {
+      window.removeEventListener("scroll", sync, true);
+      window.removeEventListener("resize", sync);
+    };
+  }, [tip?.key]);
+
+  return {
+    tip,
+    show(key: string, element: HTMLElement, estimatedHeight = 148) {
+      anchorRef.current = element;
+      heightRef.current = estimatedHeight;
+      setTip({ key, ...placeChartTip(element, estimatedHeight) });
+    },
+    hide() {
+      anchorRef.current = null;
+      setTip(null);
+    },
+  };
+}
+
+export function FloatingTip({ tip, title, rows }: { tip: { top: number; left: number } | null; title: string; rows: TipRow[] }) {
+  if (!tip || typeof document === "undefined") return null;
+  return createPortal(
+    <div className="pointer-events-none fixed z-[230]" style={{ top: tip.top, left: tip.left }}>
+      <TipCard title={title} rows={rows} />
+    </div>,
+    document.body
+  );
 }

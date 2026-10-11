@@ -4,13 +4,16 @@ import clsx from "clsx";
 import Link from "next/link";
 import { useMemo } from "react";
 
+import { FloatingTip, useFloatingTip } from "@/components/dashboard/analytics/shared";
 import { ChartCard } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import {
   DISCIPLINE_LEVELS,
   buildHeatmapWeeks,
   disciplineLevel,
+  formatHeatmapDay,
   heatmapCaption,
+  heatmapTipRows,
   isoDay,
   rollingDisciplineWindow,
   rulesAreActive,
@@ -43,6 +46,8 @@ export function ProgressTracker({
   const passed = data?.today_passed ?? 0;
   const total = data?.today_total ?? 0;
   const pct = total > 0 ? Math.round((passed / total) * 100) : 0;
+  const hover = useFloatingTip();
+  const activeCell = data?.heatmap.find((cell) => cell.date === hover.tip?.key);
 
   return (
     <ChartCard
@@ -88,7 +93,7 @@ export function ProgressTracker({
               );
             })}
           </div>
-          <div className="flex min-h-0 flex-1 gap-0.5">
+          <div className="flex min-h-0 flex-1 gap-0.5" onMouseLeave={hover.hide}>
             <div className="flex w-6 shrink-0 flex-col justify-between py-px text-[8px] leading-none text-[var(--color-text-muted)]">
               {DAYS.map((day, i) => (
                 <span key={day} className={i % 2 === 1 ? "invisible" : ""}>
@@ -108,11 +113,14 @@ export function ProgressTracker({
                     const caption = heatmapCaption(cell);
                     const background =
                       level < 0 ? "color-mix(in srgb, var(--color-text-muted) 16%, transparent)" : DISCIPLINE_LEVELS[level];
+                    const tipHeight = heatmapTipRows(cell).length > 1 ? 112 : 72;
+                    const showTip = (element: HTMLElement) => hover.show(cell.date, element, tipHeight);
                     if (cell.future) {
                       return (
                         <div
                           key={cell.date}
-                          title={caption}
+                          aria-label={caption}
+                          onMouseEnter={(event) => showTip(event.currentTarget)}
                           className="min-h-[10px] max-h-[18px] w-full flex-1 rounded-[2px]"
                           style={{ background }}
                         />
@@ -122,9 +130,11 @@ export function ProgressTracker({
                       <Link
                         key={cell.date}
                         href={`/progress-tracker?date=${isoDay(cell.date)}`}
-                        title={caption}
                         aria-label={caption}
-                        className="min-h-[10px] max-h-[18px] w-full flex-1 rounded-[2px]"
+                        onMouseEnter={(event) => showTip(event.currentTarget)}
+                        onFocus={(event) => showTip(event.currentTarget)}
+                        onBlur={hover.hide}
+                        className="min-h-[10px] max-h-[18px] w-full flex-1 rounded-[2px] outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         style={{ background }}
                       />
                     );
@@ -133,6 +143,11 @@ export function ProgressTracker({
               ))}
             </div>
           </div>
+          <FloatingTip
+            tip={hover.tip}
+            title={activeCell ? formatHeatmapDay(activeCell.date) : ""}
+            rows={activeCell ? heatmapTipRows(activeCell) : []}
+          />
           <div className="mt-1.5 flex items-center justify-end gap-1 text-[9px] text-[var(--color-text-muted)]">
             <span>Less</span>
             {DISCIPLINE_LEVELS.map((color) => (

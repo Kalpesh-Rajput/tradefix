@@ -21,6 +21,7 @@ interface AccountPickerProps {
   className?: string;
   tone?: "settings" | "trade";
   size?: "md" | "sm";
+  invalid?: boolean;
 }
 
 export function AccountPicker({
@@ -34,6 +35,7 @@ export function AccountPicker({
   className,
   tone = "settings",
   size = "md",
+  invalid = false,
 }: AccountPickerProps) {
   const [open, setOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
@@ -163,15 +165,22 @@ export function AccountPicker({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
+        aria-invalid={invalid || undefined}
         onClick={() => setOpen((v) => !v)}
         className={clsx(
           "flex w-full items-center justify-between gap-2 rounded-lg border px-3 text-left text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-40",
           tone === "trade"
             ? clsx(
-                "border-[var(--color-border)] bg-[var(--color-surface)] font-medium text-[var(--color-text-primary)] hover:border-[var(--color-text-secondary)] focus-visible:border-primary focus-visible:shadow-[var(--focus-ring)]",
+                "bg-[var(--color-surface)] font-medium text-[var(--color-text-primary)] focus-visible:shadow-[var(--focus-ring)]",
+                invalid
+                  ? "border-destructive/70 focus-visible:border-destructive/70"
+                  : "border-[var(--color-border)] hover:border-[var(--color-text-secondary)] focus-visible:border-primary",
                 size === "sm" ? "h-9 rounded-lg px-2.5 text-[13px]" : "h-12 rounded-xl"
               )
-            : "py-2.5 border-border bg-background text-foreground hover:border-primary/40 focus-visible:border-primary/40"
+            : clsx(
+                "py-2.5 bg-background text-foreground",
+                invalid ? "border-destructive/70" : "border-border hover:border-primary/40 focus-visible:border-primary/40"
+              )
         )}
       >
         <span className={clsx("min-w-0 truncate", tone === "trade" && selectedAccount ? "font-medium" : "", tone === "trade" && !selectedAccount && !extra && "font-normal text-[var(--color-text-muted)]")}>

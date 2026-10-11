@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { BarChart3, CalendarDays, ChartLine, ChevronDown, LayoutDashboard } from "lucide-react";
+import { CalendarDays, ChartLine, ChevronDown, LayoutDashboard, Sparkles } from "lucide-react";
 import Link from "next/link";
 import {
   useCallback,
@@ -59,11 +59,11 @@ export function ReportsTabs({
         aria-label="Reports sections"
       >
         <TabButton
-          active={tab === "performance"}
-          onClick={() => onChange("performance")}
-          icon={<BarChart3 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />}
+          active={tab === "insights"}
+          onClick={() => onChange("insights")}
+          icon={<Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />}
         >
-          Performance
+          Insights
           <NewBadge />
         </TabButton>
         <TabButton

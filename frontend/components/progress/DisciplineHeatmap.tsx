@@ -1,14 +1,17 @@
 "use client";
 
 import clsx from "clsx";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
+import { FloatingTip, useFloatingTip } from "@/components/dashboard/analytics/shared";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import {
   DISCIPLINE_LEVELS,
   buildHeatmapWeeks,
   disciplineLevel,
+  formatHeatmapDay,
   heatmapCaption,
+  heatmapTipRows,
   isoDay,
 } from "@/lib/progress-tracker/discipline";
 import type { HeatmapCell } from "@/lib/progress-tracker/types";
@@ -26,7 +29,8 @@ export function DisciplineHeatmap({
   onSelectDate?: (date: string) => void;
   selectedDate?: string | null;
 }) {
-  const [hover, setHover] = useState<HeatmapCell | null>(null);
+  const hover = useFloatingTip();
+  const activeCell = cells.find((cell) => cell.date === hover.tip?.key);
   const { weeks, monthLabels } = useMemo(() => buildHeatmapWeeks(cells), [cells]);
   const selected = cells.find((cell) => isoDay(cell.date) === selectedDate);
 
@@ -73,7 +77,7 @@ export function DisciplineHeatmap({
                 );
               })}
             </div>
-            <div className="flex gap-[3px]">
+            <div className="flex gap-[3px]" onMouseLeave={hover.hide}>
               <div className="flex w-7 shrink-0 flex-col justify-between py-0.5 text-[9px] text-[var(--color-text-muted)]">
                 {DAYS.map((day, i) => (
                   <span key={day} className={i % 2 === 1 ? "invisible" : ""}>
@@ -89,16 +93,17 @@ export function DisciplineHeatmap({
                       const level = disciplineLevel(cell);
                       const selectedCell = selectedDate === isoDay(cell.date);
                       const caption = heatmapCaption(cell);
+                      const showTip = (element: HTMLElement) =>
+                        hover.show(cell.date, element, heatmapTipRows(cell).length > 1 ? 112 : 72);
                       return (
                         <button
                           key={cell.date}
                           type="button"
-                          title={caption}
                           aria-label={caption}
                           aria-pressed={selectedCell}
-                          onMouseEnter={() => setHover(cell)}
-                          onMouseLeave={() => setHover((current) => (current?.date === cell.date ? null : current))}
-                          onFocus={() => setHover(cell)}
+                          onMouseEnter={(event) => showTip(event.currentTarget)}
+                          onFocus={(event) => showTip(event.currentTarget)}
+                          onBlur={hover.hide}
                           onClick={() => onSelectDate?.(isoDay(cell.date))}
                           className={clsx(
                             "h-3.5 w-3.5 rounded-[2px] border border-black/5",
@@ -117,8 +122,13 @@ export function DisciplineHeatmap({
                 ))}
               </div>
             </div>
+            <FloatingTip
+              tip={hover.tip}
+              title={activeCell ? formatHeatmapDay(activeCell.date) : ""}
+              rows={activeCell ? heatmapTipRows(activeCell) : []}
+            />
             <p className="mt-2 min-h-[16px] text-[11px] text-[var(--color-text-muted)]">
-              {hover ? heatmapCaption(hover) : "Hover a day for the score. Click it to open that day’s checklist."}
+              Hover a day for the score. Click it to open that day’s checklist.
             </p>
           </div>
         </div>

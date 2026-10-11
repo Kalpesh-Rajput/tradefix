@@ -103,6 +103,27 @@ export function heatmapCaption(cell: HeatmapCell): string {
   return `${day} · ${cell.passed} of ${cell.total_applicable} rules followed · ${Math.round(cell.score)}%`;
 }
 
+export function formatHeatmapDay(value: string): string {
+  const [year, month, day] = isoDay(value).split("-").map(Number);
+  return new Date(year, (month || 1) - 1, day || 1).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export function heatmapTipRows(cell: HeatmapCell): { label: string; value: string }[] {
+  if (cell.future) return [{ label: "Status", value: "Upcoming" }];
+  if (!cell.tracking) return [{ label: "Status", value: "Before tracking started" }];
+  if (!cell.is_trading_day) return [{ label: "Status", value: "Outside trading days" }];
+  if (cell.score == null || cell.total_applicable <= 0) return [{ label: "Status", value: "No applicable rules" }];
+  return [
+    { label: "Score", value: `${Math.round(cell.score)}%` },
+    { label: "Rules followed", value: `${cell.passed} of ${cell.total_applicable}` },
+    { label: "Missed", value: String(cell.failed) },
+  ];
+}
+
 export function buildHeatmapWeeks(cells: HeatmapCell[]): {
   weeks: (HeatmapCell | null)[][];
   monthLabels: { col: number; label: string }[];

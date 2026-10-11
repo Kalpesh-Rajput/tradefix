@@ -7,12 +7,11 @@ import { OverviewTab } from "@/components/reports/OverviewTab";
 import { ReportChartGrid } from "@/components/reports/ReportChartGrid";
 import { GoalsProgressCard } from "@/components/dashboard/GoalsProgressCard";
 import { ReportsHeader } from "@/components/reports/ReportsHeader";
-import { ReportsOverview } from "@/components/reports/ReportsOverview";
+import { InsightsTab } from "@/components/reports/insights/InsightsTab";
 import { ReportsTabs } from "@/components/reports/ReportsTabs";
 import { ReportWorkspace } from "@/components/reports/ReportWorkspace";
 import { ShareCard } from "@/components/share/ShareCard";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
-import { useAppearance } from "@/components/providers/AppearanceProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -27,6 +26,7 @@ import {
   type ReportsView,
 } from "@/lib/reports/catalog";
 import { filterReportTrades } from "@/lib/reports/filter";
+import type { AdvancedFilters } from "@/lib/reports/advanced/query";
 import { displayPnlForMode } from "@/lib/reports/pnlMode";
 import type { ReportPnlMode } from "@/lib/reports/types";
 import { usePublishAssistantScope } from "@/lib/ai/assistant-scope";
@@ -46,7 +46,6 @@ function AnalyticsReports() {
   const { user } = useAuth();
   const { activeAccount, displayPnl, formatMoney, loading: accountsLoading } = useAccountPrefs();
   const { formatChartDate, dateKey, timezone } = useLocale();
-  const { accentHex } = useAppearance();
   const accountId = activeAccount?.id;
   const router = useRouter();
   const pathname = usePathname();
@@ -86,7 +85,7 @@ function AnalyticsReports() {
   const setView = useCallback(
     (next: ReportsView) => {
       if (next === view) return;
-      if (next === "performance") {
+      if (next === "insights") {
         replaceParams({ view: null, sub: null, top: null, bucket: null, time: null });
         return;
       }
@@ -155,7 +154,31 @@ function AnalyticsReports() {
     [user, reportTrades, displayPnl]
   );
 
-  const waiting = accountsLoading || tradesLoading || (!isReport && isLoading);
+  const advancedFilters = useMemo<AdvancedFilters | null>(
+    () =>
+      accountId
+        ? {
+            accountId,
+            dateFrom: dateFrom || undefined,
+            dateTo: dateTo || undefined,
+            symbols: symbol.trim() ? [symbol.trim()] : undefined,
+            sessions: session ? [session] : undefined,
+            pnlMode,
+          }
+        : null,
+    [accountId, dateFrom, dateTo, symbol, session, pnlMode]
+  );
+
+  const isInsights = view === "insights";
+  const waiting = accountsLoading || (!isInsights && (tradesLoading || (!isReport && isLoading)));
+
+  const truncationNotice = tradesTruncated ? (
+    <p className="mb-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-secondary)] px-3 py-2 text-[12px] text-[var(--color-text-secondary)]">
+      {isInsights
+        ? `Custom charts use the latest ${TRADE_LIST_LIMIT.toLocaleString()} trades in this range. Every Insights section above uses your full history for the range.`
+        : `Charts and dimension reports use the latest ${TRADE_LIST_LIMIT.toLocaleString()} trades in this range. Performance summary KPIs still use the full selected period.`}
+    </p>
+  ) : null;
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-background)]">
@@ -195,14 +218,48 @@ function AnalyticsReports() {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto py-4">
-          {tradesTruncated ? (
-            <p className="mb-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-secondary)] px-3 py-2 text-[12px] text-[var(--color-text-secondary)]">
-              Charts and dimension reports use the latest {TRADE_LIST_LIMIT.toLocaleString()} trades
-              in this range. Performance summary KPIs still use the full selected period.
-            </p>
-          ) : null}
+          {!isInsights ? truncationNotice : null}
           {waiting ? (
             <ReportsSkeleton />
+          ) : isInsights ? (
+            advancedFilters ? (
+              <InsightsTab
+                filters={advancedFilters}
+                formatMoney={formatMoney}
+                onPnlMode={setPnlMode}
+                goals={<GoalsProgressCard items={goalItems} title="Goals" emptyHint />}
+                customCharts={
+                  tradesLoading ? (
+                    <Skeleton className="h-[360px] rounded-[12px]" />
+                  ) : tradesError ? (
+                    <div className="dash-card border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-[var(--color-text-primary)]">
+                      Unable to load trades for custom charts.{" "}
+                      <button type="button" onClick={() => refetchTrades()} className="text-primary hover:underline">
+                        Retry
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {truncationNotice}
+                      <ReportChartGrid
+                        trades={reportTrades}
+                        displayPnl={displayPnl}
+                        formatMoney={formatMoney}
+                        dateKey={dateKey}
+                        formatChartDate={formatChartDate}
+                        dateFrom={dateFrom || undefined}
+                        dateTo={dateTo || undefined}
+                        initialBalance={Number(activeAccount?.initial_balance ?? 0)}
+                      />
+                    </>
+                  )
+                }
+              />
+            ) : (
+              <div className="dash-card px-4 py-6 text-sm text-[var(--color-text-secondary)]">
+                Select or create a trading account to see insights.
+              </div>
+            )
           ) : isReport && tradesError ? (
             <div className="dash-card border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-[var(--color-text-primary)]">
               Unable to load report data.{" "}
@@ -235,7 +292,7 @@ function AnalyticsReports() {
                 Try again
               </button>
             </div>
-          ) : view === "overview" ? (
+          ) : (
             <OverviewTab
               trades={reportTrades}
               displayPnl={overviewDisplayPnl}
@@ -248,26 +305,6 @@ function AnalyticsReports() {
               dateTo={dateTo || undefined}
               initialBalance={Number(activeAccount?.initial_balance ?? 0)}
             />
-          ) : (
-            <div className="space-y-3">
-              <ReportChartGrid
-                trades={reportTrades}
-                displayPnl={displayPnl}
-                formatMoney={formatMoney}
-                dateKey={dateKey}
-                formatChartDate={formatChartDate}
-                dateFrom={dateFrom || undefined}
-                dateTo={dateTo || undefined}
-                initialBalance={Number(activeAccount?.initial_balance ?? 0)}
-              />
-              <ReportsOverview
-                data={data}
-                formatMoney={formatMoney}
-                accentHex={accentHex}
-                empty={data.overview.total_trades === 0}
-                goals={<GoalsProgressCard items={goalItems} title="Goals" emptyHint={false} />}
-              />
-            </div>
           )}
         </div>
       </div>

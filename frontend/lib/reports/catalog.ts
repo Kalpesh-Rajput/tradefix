@@ -9,7 +9,7 @@ export type AnalyticsReportId =
   | "dte"
   | "wins-vs-losses";
 
-export type ReportsView = "performance" | "overview" | AnalyticsReportId;
+export type ReportsView = "insights" | "overview" | AnalyticsReportId;
 
 export type ReportSubId = string;
 
@@ -269,9 +269,9 @@ export function isAnalyticsReportId(value: string | null | undefined): value is 
 }
 
 export function parseReportsView(value: string | null | undefined): ReportsView {
-  if (value === "overview" || value === "performance") return value;
+  if (value === "overview") return value;
   if (isAnalyticsReportId(value)) return value;
-  return "performance";
+  return "insights";
 }
 
 export function parseReportSub(report: AnalyticsReportId, value: string | null | undefined): ReportSubId {

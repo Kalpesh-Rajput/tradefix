@@ -1,12 +1,13 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import type { ReactNode } from "react";
-import { Controller, UseFormReturn, useFieldArray, useFormState, useWatch } from "react-hook-form";
+import { useEffect, useRef, type ReactNode } from "react";
+import { Controller, UseFormReturn, useFieldArray, useFormState, useWatch, type FieldPath } from "react-hook-form";
 
 import { currentClock } from "@/components/trade/DateTimePicker";
 import { DirectionSelector } from "@/components/trade/DirectionSelector";
 import { DateTimeMomentField } from "@/components/trade/EntryMomentPicker";
+import { entryGateIssues } from "@/components/trade/entryGate";
 import { MasterCombobox } from "@/components/trade/MasterCombobox";
 import { AddTradeFormValues } from "@/components/trade/schema";
 import { PlainFieldLabel, tableCellClass, tableNumClass } from "@/components/trade/ui";
@@ -35,10 +36,21 @@ function RowIndex({ n }: { n: number }) {
   );
 }
 
+function focusTradeField(path: string) {
+  const root = document.querySelector<HTMLElement>(`[data-field="${CSS.escape(path)}"]`);
+  if (!root) return;
+  root.scrollIntoView({ block: "center", behavior: "smooth" });
+  const target = root.querySelector<HTMLElement>("button[aria-haspopup], button[aria-pressed], input:not([type='hidden']), textarea, select");
+  target?.focus();
+}
+
 export function ExecutionBoard({ form }: { form: UseFormReturn<AddTradeFormValues> }) {
-  const { control, register } = form;
+  const { control, register, getValues, setError, clearErrors } = form;
   const { errors } = useFormState({ control });
   const { fields, append, remove } = useFieldArray({ control, name: "exits" });
+  const watched = useWatch({ control });
+  const armed = useRef(false);
+  const flagged = useRef<string[]>([]);
   const { calc } = useLiveTradeCalc(control);
   const asset = useWatch({ control, name: "asset_type" });
   const side = useWatch({ control, name: "side" });
@@ -54,6 +66,45 @@ export function ExecutionBoard({ form }: { form: UseFormReturn<AddTradeFormValue
   const qtyPlaceholder = asset === "forex" ? "e.g. 10" : asset === "option" ? "e.g. 10" : asset === "future" ? "e.g. 2" : asset === "crypto" ? "e.g. 1" : "e.g. 100";
   const pricePlaceholder =
     asset === "forex" ? "e.g. 1.10000" : asset === "option" ? "e.g. 2.50" : asset === "future" ? "e.g. 4700.50" : asset === "crypto" ? "e.g. 30000" : "e.g. 150.25";
+
+  function syncGate(values: AddTradeFormValues) {
+    const issues = entryGateIssues(values);
+    const next = new Set(issues.map((issue) => issue.path));
+    for (const path of flagged.current) {
+      if (!next.has(path as FieldPath<AddTradeFormValues>)) clearErrors(path as FieldPath<AddTradeFormValues>);
+    }
+    for (const issue of issues) {
+      if (!flagged.current.includes(issue.path)) setError(issue.path, { type: "required", message: issue.message });
+    }
+    flagged.current = issues.map((issue) => issue.path);
+    return issues;
+  }
+
+  useEffect(() => {
+    if (!armed.current) return;
+    syncGate(getValues());
+    // Re-check only when the form values change after Add Execution was clicked.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watched]);
+
+  function addExecution() {
+    const issues = syncGate(getValues());
+    if (issues.length) {
+      armed.current = true;
+      focusTradeField(issues[0].path);
+      return;
+    }
+    armed.current = false;
+    flagged.current = [];
+    append({
+      quantity: "" as unknown as number,
+      price: "" as unknown as number,
+      date: localDate(),
+      time: currentClock(),
+      condition: "",
+      fees: 0,
+    });
+  }
 
   return (
     <section className="space-y-2" data-field="exits">
@@ -186,45 +237,53 @@ export function ExecutionBoard({ form }: { form: UseFormReturn<AddTradeFormValue
                               onTimeChange={timeField.onChange}
                               label="Date & time"
                               error={dateError}
+                              slotName={`exits.${index}.date`}
+                              timeSlotName={`exits.${index}.time`}
                               compact
                             />
                           )}
                         />
                       )}
                     />
-                    <input
-                      type="number"
-                      step="any"
-                      inputMode="decimal"
-                      placeholder={qtyPlaceholder}
-                      aria-label={exitQtyLabel}
-                      aria-invalid={qtyError ? true : undefined}
-                      title={qtyError}
-                      className={tableNumClass(qtyError)}
-                      {...register(`exits.${index}.quantity`)}
-                    />
-                    <input
-                      type="number"
-                      step="any"
-                      inputMode="decimal"
-                      placeholder={pricePlaceholder}
-                      aria-label="Exit price"
-                      aria-invalid={priceError ? true : undefined}
-                      title={priceError}
-                      className={tableNumClass(priceError)}
-                      {...register(`exits.${index}.price`)}
-                    />
-                    <input
-                      type="number"
-                      step="any"
-                      inputMode="decimal"
-                      placeholder="0"
-                      aria-label="Fees"
-                      aria-invalid={errors.exits?.[index]?.fees ? true : undefined}
-                      title={errors.exits?.[index]?.fees?.message as string | undefined}
-                      className={tableNumClass(errors.exits?.[index]?.fees?.message as string | undefined)}
-                      {...register(`exits.${index}.fees`)}
-                    />
+                    <FieldCell name={`exits.${index}.quantity`}>
+                      <input
+                        type="number"
+                        step="any"
+                        inputMode="decimal"
+                        placeholder={qtyPlaceholder}
+                        aria-label={exitQtyLabel}
+                        aria-invalid={qtyError ? true : undefined}
+                        title={qtyError}
+                        className={tableNumClass(qtyError)}
+                        {...register(`exits.${index}.quantity`)}
+                      />
+                    </FieldCell>
+                    <FieldCell name={`exits.${index}.price`}>
+                      <input
+                        type="number"
+                        step="any"
+                        inputMode="decimal"
+                        placeholder={pricePlaceholder}
+                        aria-label="Exit price"
+                        aria-invalid={priceError ? true : undefined}
+                        title={priceError}
+                        className={tableNumClass(priceError)}
+                        {...register(`exits.${index}.price`)}
+                      />
+                    </FieldCell>
+                    <FieldCell name={`exits.${index}.fees`}>
+                      <input
+                        type="number"
+                        step="any"
+                        inputMode="decimal"
+                        placeholder="0"
+                        aria-label="Fees"
+                        aria-invalid={errors.exits?.[index]?.fees ? true : undefined}
+                        title={errors.exits?.[index]?.fees?.message as string | undefined}
+                        className={tableNumClass(errors.exits?.[index]?.fees?.message as string | undefined)}
+                        {...register(`exits.${index}.fees`)}
+                      />
+                    </FieldCell>
                     <button
                       type="button"
                       onClick={() => remove(index)}
@@ -271,16 +330,7 @@ export function ExecutionBoard({ form }: { form: UseFormReturn<AddTradeFormValue
       <div className="flex justify-center pt-2">
         <button
           type="button"
-          onClick={() =>
-            append({
-              quantity: "" as unknown as number,
-              price: "" as unknown as number,
-              date: localDate(),
-              time: currentClock(),
-              condition: "",
-              fees: 0,
-            })
-          }
+          onClick={addExecution}
           className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground text-on-accent transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
           <Plus className="h-3.5 w-3.5" />

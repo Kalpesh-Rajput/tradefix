@@ -105,7 +105,8 @@ function uploadWithProgress<T>(
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>(path, { method: "GET" }),
+  get: <T>(path: string, init?: Pick<RequestInit, "signal">) =>
+    request<T>(path, { method: "GET", signal: init?.signal }),
   post: <T>(path: string, body?: unknown, init?: Pick<RequestInit, "signal">) =>
     request<T>(path, {
       method: "POST",
