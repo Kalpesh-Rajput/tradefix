@@ -13,7 +13,8 @@ export function Card({
     <div
       className={clsx(
         "rounded-xl border border-border bg-card p-5 shadow-card",
-        hover && "transition-shadow duration-150 hover:shadow-card-md",
+        hover &&
+          "transition-[border-color,box-shadow] duration-150 hover:border-primary/30 hover:shadow-card-md motion-reduce:transition-none",
         className
       )}
     >

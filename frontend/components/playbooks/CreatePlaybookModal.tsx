@@ -37,12 +37,12 @@ export function CreatePlaybookModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-black/40" aria-label="Close" onClick={onClose} />
+      <button type="button" className="overlay-scrim-enter absolute inset-0 bg-black/40" aria-label="Close" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative w-full max-w-[440px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-dropdown)]"
+        className="overlay-panel-enter relative w-full max-w-[440px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-dropdown)]"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 id={titleId} className="text-[16px] font-semibold text-[var(--color-text-primary)]">

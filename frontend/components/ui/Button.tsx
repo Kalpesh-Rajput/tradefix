@@ -10,8 +10,8 @@ export function Button({ variant = "primary", size = "md", className, ...props }
   return (
     <button
       className={clsx(
-        "relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40",
-        "active:scale-[0.98]",
+        "relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg font-medium transition-all duration-200 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-40",
+        "active:scale-[0.98] motion-reduce:active:scale-100",
         size === "sm" && "px-3 py-1.5 text-xs",
         size === "md" && "px-3.5 py-2 text-sm",
         size === "lg" && "px-5 py-2.5 text-sm",

@@ -19,7 +19,7 @@ import { ANALYTICS_REPORTS, isAnalyticsReportId, type ReportsView } from "@/lib/
 export type ReportsTab = ReportsView;
 
 const TAB_BASE =
-  "relative inline-flex h-full shrink-0 items-center gap-1.5 px-3 text-[13px] font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0";
+  "relative inline-flex h-full shrink-0 items-center gap-1.5 px-3 text-[13px] font-medium whitespace-nowrap transition-colors outline-none motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0";
 
 function tabTone(active: boolean) {
   return active
@@ -28,8 +28,15 @@ function tabTone(active: boolean) {
 }
 
 function TabUnderline({ show }: { show: boolean }) {
-  if (!show) return null;
-  return <span className="absolute inset-x-3 bottom-0 z-[1] h-0.5 bg-primary" aria-hidden />;
+  return (
+    <span
+      className={clsx(
+        "absolute inset-x-3 bottom-0 z-[1] h-0.5 bg-primary transition-opacity duration-200 motion-reduce:transition-none",
+        show ? "opacity-100" : "opacity-0"
+      )}
+      aria-hidden
+    />
+  );
 }
 
 function NewBadge() {
@@ -205,7 +212,7 @@ function ReportsMenu({
             id={menuId}
             role="menu"
             aria-label="Reports"
-            className="fixed z-[220] overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-[var(--shadow-dropdown)]"
+            className="menu-enter fixed z-[220] overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-[var(--shadow-dropdown)]"
             style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight }}
           >
             {ANALYTICS_REPORTS.map((item, i) => {

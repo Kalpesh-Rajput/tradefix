@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { TradeFizAIComposer, tradefizPromptPillClass } from "@/components/ai/TradeFizAIComposer";
+import { RevealGroup } from "@/components/motion/RevealGroup";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
@@ -212,7 +213,7 @@ export function HomeHub() {
 
         <section>
           <h2 className="mb-3 text-[15px] font-semibold text-[var(--color-text-primary)]">{t("home.shortcuts")}</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <RevealGroup className="grid grid-cols-1 gap-3 sm:grid-cols-2" itemClassName="h-full">
             {shortcuts.map((item) => {
               const Icon = item.icon;
               const inner = (
@@ -239,7 +240,7 @@ export function HomeHub() {
                 </Link>
               );
             })}
-          </div>
+          </RevealGroup>
         </section>
 
         <section>

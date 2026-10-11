@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AccountBalanceChart } from "@/components/dashboard/zella/AccountBalanceChart";
 import { DASH_CALENDAR_H } from "@/components/dashboard/zella/ChartCard";
@@ -190,6 +190,11 @@ export default function TodayPage() {
         : "dashboard.greeting.evening";
 
   const loading = accountsLoading || (accountReady && analyticsLoading);
+  const metricsEntered = useRef(false);
+  const playMetricsEnter = !metricsEntered.current;
+  useEffect(() => {
+    if (!loading && widgets.metrics) metricsEntered.current = true;
+  }, [loading, widgets.metrics]);
   const hasError = analyticsError;
 
   return (
@@ -256,6 +261,7 @@ export default function TodayPage() {
             <div className="space-y-3">
             {widgets.metrics && (
               <MetricCards
+                animate={playMetricsEnter}
                 netPnl={netPnl}
                 winRate={winRate}
                 profitFactor={profitFactor}

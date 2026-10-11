@@ -83,7 +83,7 @@ export function ColumnPickerDialog({
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/25 backdrop-blur-[6px]"
+        className="overlay-scrim-enter absolute inset-0 bg-black/25 backdrop-blur-[6px]"
         aria-label="Close"
         onClick={onClose}
       />
@@ -91,7 +91,7 @@ export function ColumnPickerDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="select-columns-title"
-        className="relative z-10 flex max-h-[min(720px,calc(100vh-2rem))] w-full max-w-[760px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]"
+        className="overlay-panel-enter relative z-10 flex max-h-[min(720px,calc(100vh-2rem))] w-full max-w-[760px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]"
       >
         <div className="flex items-start justify-between gap-4 px-6 pb-2 pt-5">
           <div>

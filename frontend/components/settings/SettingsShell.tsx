@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { RevealGroup } from "@/components/motion/RevealGroup";
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 import { useLocale } from "@/components/providers/LocaleProvider";
@@ -63,7 +65,7 @@ export function SettingsShell({ children }: { children: ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={clsx(
-                  "flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                  "flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors motion-reduce:transition-none",
                   active
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-muted hover:bg-foreground/5 hover:text-foreground"
@@ -78,7 +80,9 @@ export function SettingsShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="min-w-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-[900px] px-5 py-8 sm:px-8">{children}</div>
+        <div className="mx-auto w-full max-w-[900px] px-5 py-8 sm:px-8">
+          <RevealGroup>{children}</RevealGroup>
+        </div>
       </div>
     </div>
   );

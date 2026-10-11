@@ -1138,3 +1138,141 @@ html.dark ::-webkit-scrollbar-thumb {
     opacity: 0.45;
   }
 }
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-enter {
+  animation: page-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes reveal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.reveal-item {
+  animation: reveal-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes overlay-scrim-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.overlay-scrim-enter {
+  animation: overlay-scrim-enter 160ms ease-out both;
+}
+
+@keyframes overlay-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.overlay-panel-enter {
+  animation: overlay-panel-enter 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes overlay-drawer-enter {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.overlay-drawer-enter {
+  animation: overlay-drawer-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.menu-enter {
+  transform-origin: top center;
+  animation: menu-enter 140ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.menu-enter-up {
+  transform-origin: bottom left;
+}
+
+@keyframes auth-blob-a {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateX(18px);
+    opacity: 0.55;
+  }
+}
+
+@keyframes auth-blob-b {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translateX(-14px);
+    opacity: 0.45;
+  }
+}
+
+.auth-blob-a {
+  animation: auth-blob-a 9s ease-in-out infinite;
+}
+
+.auth-blob-b {
+  animation: auth-blob-b 11s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .reveal-item,
+  .overlay-scrim-enter,
+  .overlay-panel-enter,
+  .overlay-drawer-enter,
+  .menu-enter,
+  .auth-blob-a,
+  .auth-blob-b {
+    animation: none;
+  }
+}

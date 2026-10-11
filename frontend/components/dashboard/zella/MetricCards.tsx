@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { Calculator } from "lucide-react";
 
+import { RevealGroup } from "@/components/motion/RevealGroup";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { BAR_LOSS_HEX, BAR_PROFIT_HEX, PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
@@ -202,6 +203,7 @@ export function MetricCards({
   avgR,
   expectancySeries,
   formatMoney,
+  animate = true,
 }: {
   netPnl: number;
   winRate: number;
@@ -219,6 +221,7 @@ export function MetricCards({
   avgR: number | null;
   expectancySeries: number[];
   formatMoney: (n: number, opts?: { signed?: boolean; digits?: number }) => string;
+  animate?: boolean;
 }) {
   const { t } = useLocale();
   const avgRatio = avgLoss !== 0 ? Math.abs(avgWin / avgLoss) : avgWin > 0 ? avgWin : 0;
@@ -226,7 +229,7 @@ export function MetricCards({
   const winBar = (Math.abs(avgWin) / barTotal) * 100;
 
   return (
-    <div className="dash-metrics">
+    <RevealGroup className="dash-metrics" itemClassName="h-full" animate={animate}>
       <KpiShell className="relative justify-start">
         <div className="min-w-0">
           <LabelRow label={t("dashboard.netPnl")} hint={t("dashboard.hint.netPnl")} />
@@ -324,6 +327,6 @@ export function MetricCards({
           <ExpectancySpark values={expectancySeries} />
         </div>
       </KpiShell>
-    </div>
+    </RevealGroup>
   );
 }

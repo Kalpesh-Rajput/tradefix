@@ -75,12 +75,12 @@ export function MonthlyGoalPrompt() {
 
   return createPortal(
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-black/45" aria-label="Dismiss" onClick={() => ack(user?.monthly_goal ?? null)} />
+      <button type="button" className="overlay-scrim-enter absolute inset-0 bg-black/45" aria-label="Dismiss" onClick={() => ack(user?.monthly_goal ?? null)} />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="monthly-goal-title"
-        className="relative z-10 w-full max-w-[440px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_24px_80px_rgba(20,16,40,0.22)]"
+        className="overlay-panel-enter relative z-10 w-full max-w-[440px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_24px_80px_rgba(20,16,40,0.22)]"
       >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] px-5 py-4">
           <div className="flex items-start gap-3">

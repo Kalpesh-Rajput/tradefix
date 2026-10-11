@@ -92,11 +92,11 @@ export function TradePreviewDrawer({
     <div className="fixed inset-0 z-[60] flex justify-end" role="dialog" aria-modal="true" aria-labelledby="trade-preview-title">
       <button
         type="button"
-        className="absolute inset-0 bg-black/35"
+        className="overlay-scrim-enter absolute inset-0 bg-black/35"
         aria-label="Close trade preview"
         onClick={onClose}
       />
-      <aside className="relative flex h-full w-full flex-col overflow-hidden rounded-l-2xl bg-white shadow-[-8px_0_24px_rgba(20,20,30,0.12)] sm:w-[min(80vw,480px)] md:w-[460px]">
+      <aside className="overlay-drawer-enter relative flex h-full w-full flex-col overflow-hidden rounded-l-2xl bg-white shadow-[-8px_0_24px_rgba(20,20,30,0.12)] sm:w-[min(80vw,480px)] md:w-[460px]">
         <header className="shrink-0 border-b border-[#EFEFF2] px-4 pb-3 pt-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 id="trade-preview-title" className="text-[16px] font-semibold text-[var(--color-text-primary)]">

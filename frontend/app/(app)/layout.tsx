@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { AppHeader } from "@/components/layout/AppHeader";
+import { PageTransition } from "@/components/motion/PageTransition";
 import { AppNavigationProvider } from "@/components/layout/AppNavigation";
 import { HeaderActionsProvider } from "@/components/layout/HeaderActions";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -183,7 +184,7 @@ function AppShell({
                     : "overflow-y-auto p-6 sm:p-8"
                 } ${isSettings || isHome ? "overflow-y-auto" : ""}`}
               >
-                {children}
+                <PageTransition className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</PageTransition>
               </main>
               <TradeFixAIWidget />
             </div>

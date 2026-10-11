@@ -157,7 +157,7 @@ export function ExportTradesDialog({
     <div className="fixed inset-0 z-[80] flex items-end justify-center p-4 sm:items-center">
       <button
         type="button"
-        className="absolute inset-0 bg-black/25 backdrop-blur-[6px]"
+        className="overlay-scrim-enter absolute inset-0 bg-black/25 backdrop-blur-[6px]"
         aria-label="Close"
         disabled={busy}
         onClick={() => {
@@ -169,7 +169,7 @@ export function ExportTradesDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         className={clsx(
-          "relative z-10 flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]",
+          "overlay-panel-enter relative z-10 flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]",
           scope === "custom" ? "max-w-[760px]" : "max-w-[440px]"
         )}
       >

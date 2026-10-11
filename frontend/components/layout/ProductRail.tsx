@@ -135,7 +135,7 @@ export function ProductRail({
     >
       <aside
         className={clsx(
-          "sidebar-chrome flex h-full flex-col overflow-hidden bg-sidebar py-3 text-sidebar-foreground transition-[width] duration-200 ease-out",
+          "sidebar-chrome flex h-full flex-col overflow-hidden bg-sidebar py-3 text-sidebar-foreground transition-[width] duration-200 ease-out motion-reduce:transition-none",
           forceExpanded ? "relative w-full" : "absolute inset-y-0 left-0 z-50",
           !forceExpanded && expanded && "shadow-xl"
         )}
@@ -216,7 +216,7 @@ function RailNavLink({
       data-testid={item.testId}
       onClick={onNavigate}
       className={clsx(
-        "relative flex h-9 items-center rounded-md text-[13px] font-medium transition-colors duration-150",
+        "relative flex h-9 items-center rounded-md text-[13px] font-medium transition-colors duration-150 motion-reduce:transition-none",
         expanded ? "px-2.5" : "justify-center px-0",
         active
           ? "bg-[#7dcec4] text-[#12312e]"
@@ -226,7 +226,7 @@ function RailNavLink({
       <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={active ? 2 : 1.75} />
       <span
         className={clsx(
-          "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-200",
+          "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-200 motion-reduce:transition-none",
           expanded ? "ml-2.5 max-w-[148px] opacity-100" : "ml-0 max-w-0 opacity-0"
         )}
       >

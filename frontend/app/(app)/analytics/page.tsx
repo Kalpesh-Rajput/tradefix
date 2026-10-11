@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
+import { RevealGroup } from "@/components/motion/RevealGroup";
 import { OverviewTab } from "@/components/reports/OverviewTab";
 import { ReportChartGrid } from "@/components/reports/ReportChartGrid";
 import { GoalsProgressCard } from "@/components/dashboard/GoalsProgressCard";
@@ -218,6 +219,8 @@ function AnalyticsReports() {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto py-4">
+          <RevealGroup>
+          <div className="min-w-0">
           {!isInsights ? truncationNotice : null}
           {waiting ? (
             <ReportsSkeleton />
@@ -306,6 +309,8 @@ function AnalyticsReports() {
               initialBalance={Number(activeAccount?.initial_balance ?? 0)}
             />
           )}
+          </div>
+          </RevealGroup>
         </div>
       </div>
     </div>

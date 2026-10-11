@@ -110,13 +110,13 @@ export function QuickLogModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-4 sm:items-center">
+    <div className="overlay-scrim-enter fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-4 sm:items-center">
       <button type="button" className="absolute inset-0" aria-label="Close" onClick={onClose} />
       <div
         role="dialog"
         aria-modal
         aria-labelledby="quick-log-title"
-        className="relative z-10 w-full max-w-md rounded-xl border border-white/10 bg-zinc-950 p-5 shadow-2xl"
+        className="overlay-panel-enter relative z-10 w-full max-w-md rounded-xl border border-white/10 bg-zinc-950 p-5 shadow-2xl"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>

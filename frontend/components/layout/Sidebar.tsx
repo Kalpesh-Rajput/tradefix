@@ -123,7 +123,7 @@ export function Sidebar({
               aria-current={active ? "page" : undefined}
               onClick={() => setMobileOpen(false)}
               className={clsx(
-                "relative flex w-full items-center gap-2 rounded-md px-2 py-[6px] text-left text-[13px] font-medium transition-[color,background-color,box-shadow] duration-200 ease-out",
+                "relative flex w-full items-center gap-2 rounded-md px-2 py-[6px] text-left text-[13px] font-medium transition-[color,background-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
                 active
                   ? "bg-[#7C5CBF]/25 font-semibold text-white shadow-[inset_2px_0_0_#A78BFA]"
                   : "text-[#b8b4d4] hover:bg-white/[0.06] hover:text-white"

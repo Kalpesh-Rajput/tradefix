@@ -132,7 +132,7 @@ export function DayDetailModal({
       <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-8">
         <button
           type="button"
-          className="absolute inset-0 bg-black/25 backdrop-blur-[6px]"
+          className="overlay-scrim-enter absolute inset-0 bg-black/25 backdrop-blur-[6px]"
           aria-label={t("common.close")}
           onClick={onClose}
         />
@@ -140,7 +140,7 @@ export function DayDetailModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="day-detail-title"
-          className="relative z-10 my-auto flex max-h-[min(560px,calc(100dvh-4rem))] w-full max-w-[920px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]"
+          className="overlay-panel-enter relative z-10 my-auto flex max-h-[min(560px,calc(100dvh-4rem))] w-full max-w-[920px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]"
         >
           <div className="flex shrink-0 items-start justify-between gap-3 px-5 py-4 sm:px-6">
             <div className="min-w-0">

@@ -91,7 +91,7 @@ export function RailProfile() {
             ref={menuRef}
             role="menu"
             style={{ left: menuPos.left, bottom: menuPos.bottom }}
-            className="fixed z-[80] w-56 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-dropdown"
+            className="menu-enter menu-enter-up fixed z-[80] w-56 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-dropdown"
           >
             <div className="border-b border-[var(--color-border)] px-3 py-2">
               <p className="truncate text-[13px] font-medium text-[var(--color-text-primary)]">

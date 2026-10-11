@@ -225,7 +225,7 @@ export function SearchableSelect({
       ? createPortal(
           <div
             ref={panelRef}
-            className="fixed z-[200] flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl shadow-black/20"
+            className="menu-enter fixed z-[200] flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl shadow-black/20"
             style={{
               top: pos.top,
               left: pos.left,

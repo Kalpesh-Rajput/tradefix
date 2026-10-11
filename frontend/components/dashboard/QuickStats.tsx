@@ -1,10 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import { fmtMoney, fmtPct } from "@/lib/format";
+import { REVEAL_MS, REVEAL_STAGGER_MS } from "@/lib/motion";
 
 type Stat = {
   label: string;
@@ -28,6 +29,7 @@ export function QuickStats({
   totalTrades: number;
   todaysTrades: number;
 }) {
+  const reduce = useReducedMotion();
   const stats: Stat[] = [
     { label: "YTD Return", value: fmtMoney(ytd), trend: ytd >= 0 ? 2.4 : -1.2, tone: ytd >= 0 ? "accent" : "danger" },
     { label: "Win Rate", value: fmtPct(winRate), trend: 1.1, tone: "neutral" },
@@ -42,9 +44,13 @@ export function QuickStats({
       {stats.map((s, i) => (
         <motion.div
           key={s.label}
-          initial={{ opacity: 0, y: 12 }}
+          initial={reduce ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 * i, duration: 0.4 }}
+          transition={{
+            delay: reduce ? 0 : (i * REVEAL_STAGGER_MS) / 1000,
+            duration: reduce ? 0 : REVEAL_MS / 1000,
+            ease: [0.22, 1, 0.36, 1],
+          }}
         >
           <Card hover className="h-full !p-4">
             <p className="text-[11px] font-medium uppercase tracking-wider text-muted">{s.label}</p>

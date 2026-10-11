@@ -1,0 +1,15 @@
+---
+alwaysApply: false
+---
+# TradeFix Core Project Rules
+
+- Inspect the actual code, conventions, versions, routes, tests, and package scripts before editing. Never invent repository structure or claim unsupported functionality.
+- Preserve existing business logic, financial calculations, API contracts, authentication/authorization, data ownership, URL behavior, and user workflows unless explicitly asked to change them.
+- Treat trade/journal/broker/account data as private. Enforce server-side user ownership checks for every read, write, export, background task, and AI retrieval.
+- Never fabricate trading data, analytics, broker status, AI findings, or test/deployment results.
+- Reuse existing dependencies, components, design tokens, architecture, and tooling; avoid adding a parallel system without a demonstrated need.
+- Build accessible, responsive UI with loading/empty/error/success/disabled states where applicable; respect keyboard operation and reduced motion.
+- For money and trading metrics, verify the canonical definition, currency, fees, precision, time zone, and edge cases before changing calculations.
+- Add or update tests for meaningful behavior changes. Run relevant checks and report exactly which commands ran and what happened.
+- Avoid destructive data changes and production infrastructure changes without explicit authorization and a recovery/rollback plan.
+- In final summaries, list changed areas, decisions, checks actually performed, and remaining limitations. Be precise and honest.
