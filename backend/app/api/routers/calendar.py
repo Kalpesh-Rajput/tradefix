@@ -4,6 +4,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.api.dashboard_filters import DashboardFilterQuery, dashboard_filter_query
 from app.api.deps import get_current_user
 from app.core.db import get_db
 from app.models.user import User
@@ -18,7 +19,16 @@ def get_calendar(
     start: date = Query(...),
     end: date = Query(...),
     account_id: uuid.UUID | None = Query(None),
+    scope: DashboardFilterQuery = Depends(dashboard_filter_query),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return stats_service.calendar_days(db, current_user.id, start, end, account_id=account_id)
+    return stats_service.calendar_days(
+        db,
+        current_user.id,
+        start,
+        end,
+        account_id=account_id,
+        journal_filters=scope.filters,
+        pnl_display_mode=scope.pnl_mode,
+    )

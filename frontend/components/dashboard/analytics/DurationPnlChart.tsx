@@ -28,7 +28,7 @@ import {
   type MoneyFormat,
 } from "./shared";
 
-const BREAKEVEN = "#B4B7C2";
+const BREAKEVEN = "var(--color-chart-axis)";
 
 function formatHoldAxis(totalSeconds: number): string {
   const seconds = Math.max(0, Math.round(totalSeconds));

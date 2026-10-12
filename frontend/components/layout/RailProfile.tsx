@@ -63,7 +63,7 @@ export function RailProfile() {
         ref={buttonRef}
         type="button"
         onClick={() => setMenuOpen((v) => !v)}
-        className="flex items-center rounded-full p-0.5 ring-1 ring-white/20 transition hover:ring-white/45"
+        className="flex items-center rounded-full p-0.5 ring-1 ring-sidebar-border transition hover:ring-primary"
         aria-haspopup="menu"
         aria-expanded={menuOpen}
         aria-label={t("common.profile")}

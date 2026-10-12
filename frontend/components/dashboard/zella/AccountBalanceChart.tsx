@@ -34,7 +34,7 @@ export function AccountBalanceChart({
             Account Balance
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#E8A0A0" }} />
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--color-chart-loss)" }} />
             Deposits / Withdrawals
           </span>
         </div>
@@ -49,16 +49,16 @@ export function AccountBalanceChart({
           <div className="absolute inset-0">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ECEDEF" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" vertical={false} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 9, fill: "#85868E" }}
+                  tick={{ fontSize: 9, fill: "var(--color-chart-axis)" }}
                   tickLine={false}
                   axisLine={false}
                   minTickGap={28}
                 />
                 <YAxis
-                  tick={{ fontSize: 9, fill: "#85868E" }}
+                  tick={{ fontSize: 9, fill: "var(--color-chart-axis)" }}
                   tickLine={false}
                   axisLine={false}
                   width={48}
@@ -74,7 +74,7 @@ export function AccountBalanceChart({
                 <Line
                   type="monotone"
                   dataKey="baseline"
-                  stroke="#E8A0A0"
+                  stroke="var(--color-chart-loss)"
                   strokeWidth={1.5}
                   dot={false}
                   name="baseline"

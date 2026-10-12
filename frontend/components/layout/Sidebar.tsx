@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { NavCollapseButton } from "@/components/layout/NavCollapseButton";
+import { useAppearance } from "@/components/providers/AppearanceProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { useSidebar } from "@/components/providers/SidebarProvider";
 import { useAddTradeModal } from "@/components/trade/useAddTradeModal";
@@ -28,7 +29,6 @@ import type { MessageKey } from "@/lib/i18n";
 import { isSidebarNavActive } from "@/lib/nav";
 
 const NAV_WIDTH = "w-[188px]";
-
 const ACTIVE_ICON = "#A78BFA";
 
 const NAV: {
@@ -39,13 +39,7 @@ const NAV: {
   iconColor: string;
 }[] = [
   { href: "/today", labelKey: "nav.today", icon: LayoutDashboard, testId: "nav-today", iconColor: "#7C5CBF" },
-  {
-    href: "/tradefiz-ai",
-    labelKey: "nav.tradefizAi",
-    icon: Sparkles,
-    testId: "nav-tradefiz-ai",
-    iconColor: "#A78BFA",
-  },
+  { href: "/tradefiz-ai", labelKey: "nav.tradefizAi", icon: Sparkles, testId: "nav-tradefiz-ai", iconColor: "#A78BFA" },
   { href: "/day", labelKey: "nav.dayView", icon: Sun, testId: "nav-dayView", iconColor: "#F59E0B" },
   { href: "/trades", labelKey: "nav.tradeLog", icon: ClipboardList, testId: "nav-tradeLog", iconColor: "#EC4899" },
   { href: "/notebook", labelKey: "nav.notebook", icon: BookOpen, testId: "nav-notebook", iconColor: "#8B5CF6" },
@@ -72,6 +66,8 @@ export function Sidebar({
   const { t } = useLocale();
   const { openFlow } = useAddTradeModal();
   const { setMobileOpen } = useSidebar();
+  const { resolvedTheme } = useAppearance();
+  const original = resolvedTheme === "tradefix-purple";
 
   void forceExpanded;
   void showEdgeToggle;
@@ -79,16 +75,24 @@ export function Sidebar({
   return (
     <aside
       className={clsx(
-        "sidebar-chrome nav-column flex h-full shrink-0 flex-col overflow-hidden border-r border-white/[0.06] bg-sidebar py-3 text-white",
+        "sidebar-chrome nav-column flex h-full shrink-0 flex-col overflow-hidden border-r bg-sidebar py-3",
+        original ? "border-white/[0.06] text-white" : "border-sidebar-border text-sidebar-foreground",
         NAV_WIDTH
       )}
     >
       <div className="mb-2 flex items-center justify-between gap-2 px-2.5">
-        <span className="truncate text-[18px] font-bold leading-none tracking-tight text-white">
+        <span
+          className={clsx(
+            "truncate text-[18px] font-bold leading-none tracking-tight",
+            original ? "text-white" : "text-sidebar-foreground"
+          )}
+        >
           Trade
-          <span className="bg-gradient-to-r from-[#A78BFA] to-[#7C5CBF] bg-clip-text text-transparent">
-            Fix
-          </span>
+          {original ? (
+            <span className="bg-gradient-to-r from-[#A78BFA] to-[#7C5CBF] bg-clip-text text-transparent">Fix</span>
+          ) : (
+            <span className="spectrum-wordmark text-primary">Fix</span>
+          )}
         </span>
         <NavCollapseButton />
       </div>
@@ -125,13 +129,17 @@ export function Sidebar({
               className={clsx(
                 "relative flex w-full items-center gap-2 rounded-md px-2 py-[6px] text-left text-[13px] font-medium transition-[color,background-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
                 active
-                  ? "bg-[#7C5CBF]/25 font-semibold text-white shadow-[inset_2px_0_0_#A78BFA]"
-                  : "text-[#b8b4d4] hover:bg-white/[0.06] hover:text-white"
+                  ? original
+                    ? "bg-[#7C5CBF]/25 font-semibold text-white shadow-[inset_2px_0_0_#A78BFA]"
+                    : "bg-sidebar-active font-semibold text-sidebar-foreground shadow-[inset_2px_0_0_var(--color-sidebar-indicator,var(--color-primary))]"
+                  : original
+                    ? "text-[#b8b4d4] hover:bg-white/[0.06] hover:text-white"
+                    : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground"
               )}
             >
               <Icon
                 className="h-[17px] w-[17px] shrink-0 transition-colors duration-200 ease-out"
-                style={{ color: active ? ACTIVE_ICON : item.iconColor }}
+                style={original ? { color: active ? ACTIVE_ICON : item.iconColor } : undefined}
                 strokeWidth={active ? 2 : 1.75}
                 aria-hidden
               />

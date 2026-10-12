@@ -10,7 +10,7 @@ export function Badge({ tone = "neutral", children }: { tone?: BadgeTone; childr
         tone === "gold" && "bg-gold/15 text-gold",
         tone === "positive" && "bg-positive/15 text-positive",
         tone === "negative" && "bg-negative/15 text-negative",
-        tone === "warning" && "bg-amber-500/15 text-amber-400",
+        tone === "warning" && "bg-warning-bg text-[var(--color-warning-text)]",
         tone === "neutral" && "bg-surface-2 text-muted"
       )}
     >

@@ -18,9 +18,8 @@ import {
 } from "recharts";
 
 import { Card } from "@/components/ui/Card";
-import { useAppearance } from "@/components/providers/AppearanceProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
-import { NEGATIVE_HEX } from "@/lib/appearance";
+import { BAR_LOSS_HEX, BAR_PROFIT_HEX, CHART_LINE_HEX, COUNT_SERIES_HEX } from "@/lib/appearance";
 import { Trade } from "@/lib/types";
 
 type Tab = "weekly" | "monthly" | "equity" | "distribution" | "ratio" | "strategy";
@@ -42,7 +41,6 @@ export function PerformanceCharts({
   bySetup: { setup_tag: string; pnl: number; trades: number }[];
 }) {
   const { formatChartDate } = useLocale();
-  const { accentHex } = useAppearance();
   const [tab, setTab] = useState<Tab>("equity");
 
   const closed = useMemo(
@@ -81,10 +79,10 @@ export function PerformanceCharts({
     const wins = closed.filter((t) => (t.pnl ?? 0) > 0).length;
     const losses = closed.filter((t) => (t.pnl ?? 0) < 0).length;
     return [
-      { name: "Wins", value: wins, color: accentHex },
-      { name: "Losses", value: losses, color: NEGATIVE_HEX },
+      { name: "Wins", value: wins, color: BAR_PROFIT_HEX },
+      { name: "Losses", value: losses, color: BAR_LOSS_HEX },
     ];
-  }, [closed, accentHex]);
+  }, [closed]);
 
   const strategy = useMemo(
     () =>
@@ -131,15 +129,15 @@ export function PerformanceCharts({
                 <AreaChart data={equity}>
                   <defs>
                     <linearGradient id="eq" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={accentHex} stopOpacity={0.35} />
-                      <stop offset="100%" stopColor={accentHex} stopOpacity={0} />
+                      <stop offset="0%" stopColor={CHART_LINE_HEX} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={CHART_LINE_HEX} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                  <XAxis dataKey="i" stroke="#A1A1AA" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#A1A1AA" fontSize={11} tickLine={false} axisLine={false} />
+                  <CartesianGrid stroke="var(--color-chart-grid)" vertical={false} />
+                  <XAxis dataKey="i" stroke="var(--color-chart-axis)" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--color-chart-axis)" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Area type="monotone" dataKey="equity" stroke={accentHex} fill="url(#eq)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="equity" stroke={CHART_LINE_HEX} fill="url(#eq)" strokeWidth={2} />
                 </AreaChart>
               ) : tab === "ratio" ? (
                 <PieChart>
@@ -152,33 +150,42 @@ export function PerformanceCharts({
                 </PieChart>
               ) : tab === "strategy" ? (
                 <BarChart data={strategy}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                  <XAxis dataKey="name" stroke="#A1A1AA" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#A1A1AA" fontSize={11} tickLine={false} axisLine={false} />
+                  <CartesianGrid stroke="var(--color-chart-grid)" vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--color-chart-axis)" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--color-chart-axis)" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="pnl" radius={[8, 8, 0, 0]}>
                     {strategy.map((s) => (
-                      <Cell key={s.name} fill={s.pnl >= 0 ? accentHex : NEGATIVE_HEX} />
+                      <Cell key={s.name} fill={s.pnl >= 0 ? BAR_PROFIT_HEX : BAR_LOSS_HEX} />
                     ))}
                   </Bar>
                 </BarChart>
               ) : (
                 <BarChart data={tab === "weekly" ? weekly : tab === "monthly" ? monthly : distribution}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <CartesianGrid stroke="var(--color-chart-grid)" vertical={false} />
                   <XAxis
                     dataKey="name"
-                    stroke="#A1A1AA"
+                    stroke="var(--color-chart-axis)"
                     fontSize={11}
                     tickLine={false}
                     axisLine={false}
                   />
-                  <YAxis stroke="#A1A1AA" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--color-chart-axis)" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Bar
-                    dataKey={tab === "distribution" ? "count" : "pnl"}
-                    fill={accentHex}
-                    radius={[8, 8, 0, 0]}
-                  />
+                  <Bar dataKey={tab === "distribution" ? "count" : "pnl"} radius={[8, 8, 0, 0]}>
+                    {(tab === "weekly" ? weekly : tab === "monthly" ? monthly : distribution).map((row) => (
+                      <Cell
+                        key={row.name}
+                        fill={
+                          tab === "distribution"
+                            ? COUNT_SERIES_HEX
+                            : "pnl" in row && row.pnl < 0
+                              ? BAR_LOSS_HEX
+                              : BAR_PROFIT_HEX
+                        }
+                      />
+                    ))}
+                  </Bar>
                 </BarChart>
               )}
             </ResponsiveContainer>
@@ -190,10 +197,11 @@ export function PerformanceCharts({
 }
 
 const tooltipStyle = {
-  background: "#0F1115",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "var(--color-tooltip-bg)",
+  border: "1px solid var(--color-tooltip-border)",
   borderRadius: 12,
   fontSize: 12,
+  color: "var(--color-tooltip-text)",
 };
 
 function bucketBy(

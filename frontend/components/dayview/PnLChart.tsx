@@ -16,7 +16,7 @@ import {
 import { chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 
-const LINE = "#4A4D57";
+const LINE = "var(--color-chart-axis)";
 
 export function PnLChart({
   values,
@@ -44,16 +44,16 @@ export function PnLChart({
               <stop offset="100%" stopColor={PNL_LOSS_HEX} stopOpacity={0.26} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke="#ECEDEF" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke="var(--color-chart-grid)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="x" hide type="number" domain={["dataMin", "dataMax"]} />
           <YAxis
-            tick={{ fontSize: 9, fill: "#85868E", fontWeight: 400 }}
+            tick={{ fontSize: 9, fill: "var(--color-chart-axis)", fontWeight: 400 }}
             tickLine={false}
             axisLine={false}
             width={44}
             tickFormatter={axisMoney}
           />
-          <ReferenceLine y={0} stroke="#C8CAD1" strokeDasharray="4 4" />
+          <ReferenceLine y={0} stroke="var(--color-border-strong)" strokeDasharray="4 4" />
           <Tooltip
             contentStyle={chartTooltipStyle}
             formatter={(v) => [formatMoney(Number(v), { signed: true, digits: 2 }), "P&L"]}

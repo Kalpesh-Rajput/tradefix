@@ -60,11 +60,9 @@ export function BrandLockup({
         priority
       />
       {!collapsed && (
-        <span className="text-[18px] font-bold leading-none tracking-tight text-white">
+        <span className="text-[18px] font-bold leading-none tracking-tight text-sidebar-foreground">
           Trade
-          <span className="bg-gradient-to-r from-[#A78BFA] to-[#7C5CBF] bg-clip-text text-transparent">
-            Fix
-          </span>
+          <span className="spectrum-wordmark text-primary">Fix</span>
         </span>
       )}
     </div>

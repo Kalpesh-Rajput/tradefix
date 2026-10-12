@@ -30,16 +30,16 @@ export function DrawdownChart({
                   <stop offset="100%" stopColor={PNL_LOSS_HEX} stopOpacity={0.42} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ECEDEF" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" vertical={false} />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 9, fill: "#85868E" }}
+                tick={{ fontSize: 9, fill: "var(--color-chart-axis)" }}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={28}
               />
               <YAxis
-                tick={{ fontSize: 9, fill: "#85868E" }}
+                tick={{ fontSize: 9, fill: "var(--color-chart-axis)" }}
                 tickLine={false}
                 axisLine={false}
                 width={48}

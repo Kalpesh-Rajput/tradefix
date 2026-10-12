@@ -15,6 +15,7 @@ import { ProgressTracker } from "@/components/dashboard/zella/ProgressTracker";
 import { TradeScatterChart } from "@/components/dashboard/zella/TradeScatterChart";
 import { ZellaDashboardHeader } from "@/components/dashboard/zella/ZellaDashboardHeader";
 import { useDashboardWidgets } from "@/components/dashboard/zella/useDashboardWidgets";
+import { AdvancedFilterDialog } from "@/components/trades/AdvancedFilterDialog";
 import { DayDetailModal } from "@/components/dayview/DayDetailModal";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -34,13 +35,21 @@ import { usePublishAssistantScope } from "@/lib/ai/assistant-scope";
 import { localIso } from "@/lib/dateLocal";
 import { TRADE_LIST_LIMIT } from "@/lib/trades/limits";
 import { PerformanceAnalytics } from "@/components/dashboard/analytics/PerformanceAnalytics";
+import { useDashboardAdvancedFilters } from "@/lib/hooks/useDashboardFilters";
 import { useAnalytics, useCalendar } from "@/lib/hooks/useAnalytics";
 import { useTrades } from "@/lib/hooks/useTrades";
+import type { DashboardJournalQuery } from "@/lib/trades/dashboardFilters";
+import {
+  DEFAULT_FILTERS,
+  matchesTrade,
+  type LocalFilters,
+} from "@/lib/trades/logFilters";
 
 export default function TodayPage() {
   const { t, formatChartDate } = useLocale();
   const { user } = useAuth();
-  const { displayPnl, formatMoney, currencySymbol, activeAccount, loading: accountsLoading } = useAccountPrefs();
+  const { displayPnl, formatMoney, currencySymbol, activeAccount, loading: accountsLoading, pnlDisplayMode } =
+    useAccountPrefs();
   const { openFlow } = useAddTradeModal();
   const name = firstName(user?.name, user?.email);
   const { widgets, editing, setEditing, toggle, labels } = useDashboardWidgets();
@@ -50,7 +59,37 @@ export default function TodayPage() {
   const initial = useMemo(() => rangeForPreset("30d"), []);
   const [dateFrom, setDateFrom] = useState(initial.from);
   const [dateTo, setDateTo] = useState(initial.to);
-  usePublishAssistantScope({ dateFrom, dateTo });
+  const dashboardFilters = useDashboardAdvancedFilters(user?.save_filters);
+  const todayKey = localIso(new Date());
+  const journalQuery = useMemo<DashboardJournalQuery | null>(() => {
+    if (!dashboardFilters.active) return null;
+    return {
+      ...dashboardFilters.filters,
+      today: todayKey,
+      pnl_mode: pnlDisplayMode === "gross" ? "gross" : "net",
+    };
+  }, [dashboardFilters.active, dashboardFilters.filters, todayKey, pnlDisplayMode]);
+  const tradeFilters = useMemo<LocalFilters>(
+    () => ({ ...DEFAULT_FILTERS, ...dashboardFilters.filters }),
+    [dashboardFilters.filters]
+  );
+  const filterDetail = useMemo(() => {
+    if (!dashboardFilters.active) return null;
+    const selected = dashboardFilters.filters;
+    const named = [
+      selected.symbol && `Symbol ${selected.symbol}`,
+      selected.setup_tag && `Strategy ${selected.setup_tag}`,
+      selected.session && `Session ${selected.session}`,
+      selected.side && `Side ${selected.side}`,
+      selected.status !== "all" && `Status ${selected.status}`,
+      selected.pnl && `P&L ${selected.pnl}`,
+    ].filter(Boolean);
+    const summary = named.join(", ");
+    return summary
+      ? `Advance filter (${dashboardFilters.count}): ${summary}`
+      : `Advance filter (${dashboardFilters.count})`;
+  }, [dashboardFilters.active, dashboardFilters.count, dashboardFilters.filters]);
+  usePublishAssistantScope({ dateFrom, dateTo, detail: filterDetail });
 
   const monthBounds = useMemo(() => {
     const d = new Date();
@@ -69,7 +108,7 @@ export default function TodayPage() {
     isError: analyticsError,
     refetch: refetchAnalytics,
   } = useAnalytics(
-    { account_id: accountId, date_from: dateFrom, date_to: dateTo },
+    { account_id: accountId, date_from: dateFrom, date_to: dateTo, journal: journalQuery },
     { enabled: accountReady }
   );
 
@@ -88,9 +127,13 @@ export default function TodayPage() {
   );
   const tradesTruncated = trades.length >= TRADE_LIST_LIMIT;
 
-  const { data: calendar } = useCalendar(calStart, calEnd, accountId, { enabled: accountReady });
+  const { data: calendar } = useCalendar(calStart, calEnd, accountId, {
+    enabled: accountReady,
+    journal: journalQuery,
+  });
   const { data: rangeCalendar } = useCalendar(dateFrom, dateTo, accountId, {
     enabled: accountReady,
+    journal: journalQuery,
   });
   const overview = analytics?.overview;
   const netPnl = overview?.total_pnl ?? 0;
@@ -102,11 +145,15 @@ export default function TodayPage() {
   const wins = overview?.win_count ?? 0;
   const losses = overview?.loss_count ?? 0;
   const breakeven = overview?.breakeven_count ?? 0;
-  const closed = useMemo(
-    () => trades.filter((t) => t.status === "closed" && t.pnl != null),
-    [trades]
+  const visibleTrades = useMemo(
+    () => trades.filter((trade) => matchesTrade(trade, tradeFilters, displayPnl)),
+    [trades, tradeFilters, displayPnl]
   );
-  const openTrades = useMemo(() => trades.filter((t) => t.status === "open"), [trades]);
+  const closed = useMemo(
+    () => visibleTrades.filter((t) => t.status === "closed" && t.pnl != null),
+    [visibleTrades]
+  );
+  const openTrades = useMemo(() => visibleTrades.filter((t) => t.status === "open"), [visibleTrades]);
 
   const tradingDays = rangeCalendar?.days?.filter((d) => d.trades > 0) ?? [];
   const dayWins = tradingDays.filter((d) => d.pnl > 0).length;
@@ -121,6 +168,7 @@ export default function TodayPage() {
         value: p.value,
       }));
     }
+    if (dashboardFilters.active) return [];
     let sum = 0;
     return [...closed]
       .sort(
@@ -135,12 +183,13 @@ export default function TodayPage() {
           value: sum,
         };
       });
-  }, [analytics?.equity_curve, closed, formatChartDate, displayPnl]);
+  }, [analytics?.equity_curve, closed, formatChartDate, displayPnl, dashboardFilters.active]);
 
   const equityPoints = useMemo(() => {
     if (analytics?.equity_curve?.length) return analytics.equity_curve;
+    if (dashboardFilters.active) return [];
     return equityFromClosedTrades(closed, (t) => displayPnl(t.pnl, t.fees) ?? 0);
-  }, [analytics?.equity_curve, closed, displayPnl]);
+  }, [analytics?.equity_curve, closed, displayPnl, dashboardFilters.active]);
   const initialBalance = Number(activeAccount?.initial_balance ?? 0);
 
   const balanceSeries = useMemo(
@@ -210,6 +259,9 @@ export default function TodayPage() {
         editing={editing}
         onToggleEdit={() => setEditing((v) => !v)}
         onImport={() => openFlow()}
+        filterCount={dashboardFilters.count}
+        filtersOpen={dashboardFilters.open}
+        onOpenFilters={() => dashboardFilters.setOpen(true)}
       />
 
       <div className="dash-board min-h-0 flex-1 space-y-3 overflow-x-hidden overflow-y-auto px-3 pt-3 pb-3.5 sm:px-4 lg:px-5">
@@ -259,6 +311,11 @@ export default function TodayPage() {
         ) : (
           <>
             <div className="space-y-3">
+            {dashboardFilters.active && (overview?.total_trades ?? 0) === 0 && openTrades.length === 0 ? (
+              <div className="dash-card px-4 py-3 text-sm text-[var(--color-text-secondary)]">
+                No trades match these filters.
+              </div>
+            ) : null}
             {widgets.metrics && (
               <MetricCards
                 animate={playMetricsEnter}
@@ -433,7 +490,18 @@ export default function TodayPage() {
       <DayDetailModal
         date={openDate}
         day={calendar?.days.find((d) => d.date.slice(0, 10) === openDate)}
+        journal={journalQuery}
         onClose={() => setOpenDate(null)}
+      />
+      <AdvancedFilterDialog
+        open={dashboardFilters.open}
+        filters={tradeFilters}
+        trades={trades}
+        onClose={() => dashboardFilters.setOpen(false)}
+        onApply={(next) => {
+          dashboardFilters.setFilters(next);
+          dashboardFilters.setOpen(false);
+        }}
       />
     </div>
   );

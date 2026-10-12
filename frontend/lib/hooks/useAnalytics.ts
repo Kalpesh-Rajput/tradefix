@@ -4,6 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import { AnalyticsResponse, CalendarResponse } from "@/lib/types";
+import {
+  appendDashboardFilters,
+  dashboardFilterKey,
+  type DashboardJournalQuery,
+} from "@/lib/trades/dashboardFilters";
 
 export interface AnalyticsFilters {
   account_id?: string | null;
@@ -13,6 +18,7 @@ export interface AnalyticsFilters {
   emotion_tag?: string;
   symbol?: string;
   session?: string;
+  journal?: DashboardJournalQuery | null;
 }
 
 function buildAnalyticsQuery(filters: AnalyticsFilters = {}): string {
@@ -24,6 +30,7 @@ function buildAnalyticsQuery(filters: AnalyticsFilters = {}): string {
   if (filters.emotion_tag) params.set("emotion_tag", filters.emotion_tag);
   if (filters.symbol) params.set("symbol", filters.symbol);
   if (filters.session) params.set("session", filters.session);
+  appendDashboardFilters(params, filters.journal);
   const qs = params.toString();
   return qs ? `?${qs}` : "";
 }
@@ -47,6 +54,7 @@ export function useAnalytics(
       filters.emotion_tag ?? "",
       filters.symbol ?? "",
       filters.session ?? "",
+      dashboardFilterKey(filters.journal),
     ],
     queryFn: () => api.get<AnalyticsResponse>(`/api/analytics${buildAnalyticsQuery(filters)}`),
     enabled: options?.enabled ?? true,
@@ -57,13 +65,15 @@ export function useCalendar(
   start: string,
   end: string,
   accountId?: string | null,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean; journal?: DashboardJournalQuery | null }
 ) {
+  const journal = options?.journal ?? null;
   return useQuery({
-    queryKey: ["calendar", start, end, accountId ?? "all"],
+    queryKey: ["calendar", start, end, accountId ?? "all", dashboardFilterKey(journal)],
     queryFn: () => {
       const params = new URLSearchParams({ start, end });
       if (accountId) params.set("account_id", accountId);
+      appendDashboardFilters(params, journal);
       return api.get<CalendarResponse>(`/api/calendar?${params.toString()}`);
     },
     enabled: (options?.enabled ?? true) && Boolean(start && end),

@@ -37,11 +37,11 @@ export function TradeScatterChart({
         ) : (
           <ResponsiveContainer width="100%" height={CHART_BODY_H}>
             <ScatterChart margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ECEDEF" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" vertical={false} />
               <XAxis
                 type="number"
                 dataKey="x"
-                tick={{ fontSize: 9, fill: "#85868E" }}
+                tick={{ fontSize: 9, fill: "var(--color-chart-axis)" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => (xMode === "clock" ? formatClock(Number(v)) : formatDuration(Number(v)))}
@@ -49,13 +49,13 @@ export function TradeScatterChart({
               <YAxis
                 type="number"
                 dataKey="y"
-                tick={{ fontSize: 9, fill: "#85868E" }}
+                tick={{ fontSize: 9, fill: "var(--color-chart-axis)" }}
                 tickLine={false}
                 axisLine={false}
                 width={48}
                 tickFormatter={(v) => formatMoney(Number(v), { signed: true, digits: 0 })}
               />
-              <ReferenceLine y={0} stroke="#D4D5DB" strokeDasharray="4 4" />
+              <ReferenceLine y={0} stroke="var(--color-border-strong)" strokeDasharray="4 4" />
               <Tooltip
                 contentStyle={chartTooltipStyle}
                 formatter={(v: number, name: string, item) => {

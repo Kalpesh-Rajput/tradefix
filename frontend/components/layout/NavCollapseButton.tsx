@@ -24,9 +24,9 @@ export function NavCollapseButton({
       onClick={toggle}
       className={clsx(
         "hidden h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors duration-150 md:inline-flex",
-        variant === "dark"
-          ? "text-white/80 hover:bg-white/10 hover:text-white"
-          : "text-[var(--color-text-secondary)] hover:bg-black/[0.05] hover:text-[var(--color-text-primary)]",
+        variant === "light"
+          ? "text-muted hover:bg-foreground/5 hover:text-foreground"
+          : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground",
         className
       )}
       aria-label={label}

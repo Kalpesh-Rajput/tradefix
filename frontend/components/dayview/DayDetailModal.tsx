@@ -17,6 +17,8 @@ import { parseLocalIso } from "@/lib/dateLocal";
 import { useCalendar } from "@/lib/hooks/useAnalytics";
 import { useDayNote } from "@/lib/hooks/useDayNotes";
 import { useTrades } from "@/lib/hooks/useTrades";
+import type { DashboardJournalQuery } from "@/lib/trades/dashboardFilters";
+import { DEFAULT_FILTERS, matchesTrade, type LocalFilters } from "@/lib/trades/logFilters";
 import type { CalendarDay } from "@/lib/types";
 
 function emptyDay(date: string): CalendarDay {
@@ -47,14 +49,16 @@ function formatDayTitle(iso: string, locale: string) {
 export function DayDetailModal({
   date,
   day,
+  journal = null,
   onClose,
 }: {
   date: string | null;
   day?: CalendarDay | null;
+  journal?: DashboardJournalQuery | null;
   onClose: () => void;
 }) {
   const { t, locale } = useLocale();
-  const { formatMoney, activeAccount } = useAccountPrefs();
+  const { formatMoney, activeAccount, displayPnl } = useAccountPrefs();
   const accountId = activeAccount?.id;
   const toast = useToast();
   const router = useRouter();
@@ -84,8 +88,9 @@ export function DayDetailModal({
   const iso = date?.slice(0, 10) ?? "";
   const { data: calendar, isLoading: calendarLoading } = useCalendar(iso, iso, accountId, {
     enabled: Boolean(iso && accountId),
+    journal,
   });
-  const { data: trades = [], isLoading: tradesLoading } = useTrades(
+  const { data: loadedTrades = [], isLoading: tradesLoading } = useTrades(
     {
       account_id: accountId,
       date_from: `${iso}T00:00:00`,
@@ -94,6 +99,14 @@ export function DayDetailModal({
       limit: 500,
     },
     { enabled: Boolean(iso && accountId) }
+  );
+  const tradeFilters = useMemo<LocalFilters>(
+    () => ({ ...DEFAULT_FILTERS, ...(journal ?? {}) }),
+    [journal]
+  );
+  const trades = useMemo(
+    () => (journal ? loadedTrades.filter((trade) => matchesTrade(trade, tradeFilters, displayPnl)) : loadedTrades),
+    [journal, loadedTrades, tradeFilters, displayPnl]
   );
   const { data: note } = useDayNote(accountId, iso);
 

@@ -49,7 +49,7 @@ export function compactMoney(value: number, symbol: string, signed = false): str
 
 export function pnlClass(value: number | null | undefined): string {
   if (value == null || value === 0) return "text-[var(--color-text-secondary)]";
-  return value > 0 ? "text-[#1F7A4D]" : "text-[#C23B3B]";
+  return value > 0 ? "text-[var(--color-success-text)]" : "text-[var(--color-danger-text)]";
 }
 
 export const HOUR_AXIS_TICKS = [0, 4, 8, 12, 16, 20] as const;

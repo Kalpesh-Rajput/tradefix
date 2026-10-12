@@ -4,13 +4,16 @@ import { useMemo } from "react";
 
 import { ChartCard } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
-import { BAR_LOSS_HEX, BAR_PROFIT_HEX } from "@/lib/appearance";
 import type { DashboardPerformance, HeatmapDay } from "@/lib/types";
 
 import { AnalyticsEmpty, FloatingTip, formatPct, pnlTone, tradeLabel, useFloatingTip, type MoneyFormat, type TipRow } from "./shared";
 
-const PROFIT = ["#E5F8F2", "#C3EEDF", "#8FE0C4", "#5ED4A8", "#40C79A"];
-const LOSS = ["#FDECEC", "#F9C9C9", "#F6A3A3", "#F48686", "#F26969"];
+const PROFIT = [20, 40, 60, 80, 100].map(
+  (amount) => `color-mix(in srgb, var(--color-chart-profit) ${amount}%, var(--color-surface))`
+);
+const LOSS = [20, 40, 60, 80, 100].map(
+  (amount) => `color-mix(in srgb, var(--color-chart-loss) ${amount}%, var(--color-surface))`
+);
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const GAP = 3;
 const MONTH_H = 16;
@@ -197,9 +200,7 @@ export function ActivityHeatmap({
               <span key={color} className="h-3 w-3 rounded-[3px]" style={{ background: color }} />
             ))}
             <span className="ml-0.5">Profit</span>
-            <span className="sr-only">
-              Profit color {BAR_PROFIT_HEX}, loss color {BAR_LOSS_HEX}
-            </span>
+            <span className="sr-only">Profit is shown in green. Loss is shown in red.</span>
           </div>
         </div>
       )}

@@ -1,14 +1,12 @@
 "use client";
 
 import clsx from "clsx";
-import { LayoutGrid, Upload } from "lucide-react";
+import { Filter, LayoutGrid, Upload } from "lucide-react";
 import { useMemo } from "react";
 
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { PortfolioSwitcher } from "@/components/dashboard/PortfolioSwitcher";
 import { HeaderActions } from "@/components/layout/HeaderActions";
-import { ViewMyDayControl } from "@/components/progress/ViewMyDayControl";
-import { useAccountPrefs } from "@/components/providers/AccountProvider";
 
 const headerIconBtn =
   "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] transition-colors duration-150 hover:bg-[var(--color-primary-very-light)] hover:text-[var(--color-text-primary)]";
@@ -21,6 +19,9 @@ export function ZellaDashboardHeader({
   editing,
   onToggleEdit,
   onImport,
+  filterCount,
+  filtersOpen,
+  onOpenFilters,
 }: {
   dateFrom: string;
   dateTo: string;
@@ -29,12 +30,34 @@ export function ZellaDashboardHeader({
   editing: boolean;
   onToggleEdit: () => void;
   onImport: () => void;
+  filterCount: number;
+  filtersOpen: boolean;
+  onOpenFilters: () => void;
 }) {
-  const { activeAccount } = useAccountPrefs();
   const toolbar = useMemo(
     () => (
       <div className="contents lg:flex lg:w-auto lg:flex-wrap lg:items-center lg:justify-end lg:gap-2">
-        <ViewMyDayControl accountId={activeAccount?.id} />
+        <button
+          type="button"
+          onClick={onOpenFilters}
+          className={clsx(
+            "inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[13px] font-medium transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+            filterCount > 0 || filtersOpen
+              ? "border-primary/40 bg-[var(--color-primary-light)] text-primary"
+              : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-primary-very-light)]"
+          )}
+          aria-haspopup="dialog"
+          aria-expanded={filtersOpen}
+          aria-label={filterCount > 0 ? `Advance Filter, ${filterCount} active` : "Advance Filter"}
+        >
+          <Filter className="h-3.5 w-3.5" strokeWidth={1.75} />
+          Advance Filter
+          {filterCount > 0 ? (
+            <span className="rounded-full bg-primary/15 px-1.5 text-[10px] font-semibold tabular-nums text-primary">
+              {filterCount}
+            </span>
+          ) : null}
+        </button>
         <DateRangePicker
           dateFrom={dateFrom}
           dateTo={dateTo}
@@ -67,7 +90,7 @@ export function ZellaDashboardHeader({
         </button>
       </div>
     ),
-    [dateFrom, dateTo, onRangeChange, editing, onToggleEdit, onImport, activeAccount?.id]
+    [dateFrom, dateTo, onRangeChange, editing, onToggleEdit, onImport, filterCount, filtersOpen, onOpenFilters]
   );
 
   return <HeaderActions subtitle={greeting}>{toolbar}</HeaderActions>;

@@ -75,7 +75,12 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
-    user = User(email=payload.email, password_hash=hash_password(payload.password), name=payload.name)
+    user = User(
+        email=payload.email,
+        password_hash=hash_password(payload.password),
+        name=payload.name,
+        theme="tradefix-purple",
+    )
     db.add(user)
     db.flush()
 
@@ -142,6 +147,7 @@ def google_auth(payload: GoogleAuthRequest, db: Session = Depends(get_db)):
                 google_id=google_sub,
                 auth_provider="google",
                 name=name,
+                theme="tradefix-purple",
             )
             db.add(user)
             db.flush()

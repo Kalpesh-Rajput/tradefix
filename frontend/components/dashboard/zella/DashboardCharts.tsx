@@ -59,16 +59,16 @@ export function CumulativePnlChart({
                   )}
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ECEDEF" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" vertical={false} />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 9, fill: "#85868E", fontWeight: 400 }}
+                tick={{ fontSize: 9, fill: "var(--color-chart-axis)", fontWeight: 400 }}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={28}
               />
               <YAxis
-                tick={{ fontSize: 9, fill: "#85868E", fontWeight: 400 }}
+                tick={{ fontSize: 9, fill: "var(--color-chart-axis)", fontWeight: 400 }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => formatMoney(Number(v), { signed: false, digits: 0 })}
@@ -112,16 +112,16 @@ export function DailyPnlChart({
         ) : (
           <ResponsiveContainer width="100%" height={CHART_BODY_H}>
             <BarChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ECEDEF" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" vertical={false} />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 9, fill: "#85868E", fontWeight: 400 }}
+                tick={{ fontSize: 9, fill: "var(--color-chart-axis)", fontWeight: 400 }}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={28}
               />
               <YAxis
-                tick={{ fontSize: 9, fill: "#85868E", fontWeight: 400 }}
+                tick={{ fontSize: 9, fill: "var(--color-chart-axis)", fontWeight: 400 }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => formatMoney(Number(v), { signed: false, digits: 0 })}

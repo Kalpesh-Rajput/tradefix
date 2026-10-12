@@ -9,7 +9,23 @@ _URL_RE = re.compile(r"^https?://[^\s]+$", re.IGNORECASE)
 _USERNAME_RE = re.compile(r"^[a-zA-Z0-9_.-]*$")
 _LANGUAGE_RE = re.compile(r"^[a-z]{2,3}(-[A-Za-z]{2,8})?$")
 _DATE_FORMATS = {"MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"}
-_THEMES = {"dark", "light", "system"}
+_THEMES = {
+    "dark",
+    "light",
+    "system",
+    "classic",
+    "midnight-pro",
+    "ocean-blue",
+    "forest-green",
+    "amethyst",
+    "warm-sand",
+    "tradefix-purple",
+    "obsidian-gold",
+    "emerald-luxe",
+    "burgundy-champagne",
+    "violet-aurora",
+    "electric-spectrum",
+}
 _ACCENT_COLORS = {"blue", "purple", "orange", "red", "pink", "periwinkle"}
 _LEGACY_GREEN_ACCENTS = {"teal", "emerald", "green"}
 _SUPPORTED_LANGUAGES = {
@@ -125,7 +141,7 @@ class UserResponse(BaseModel):
     yearly_goal: float | None = None
     monthly_goal_ack_month: str | None = None
     target_trades: int | None = None
-    theme: str = "light"
+    theme: str = "tradefix-purple"
     accent_color: str = "purple"
     plan: str = "free"
     role: str = "trader"
@@ -314,7 +330,7 @@ class UserUpdateRequest(BaseModel):
     yearly_goal: float | None = Field(default=None, ge=0)
     monthly_goal_ack_month: str | None = Field(default=None, max_length=7)
     target_trades: int | None = Field(default=None, ge=0)
-    theme: str | None = Field(default=None, max_length=16)
+    theme: str | None = Field(default=None, max_length=32)
     accent_color: str | None = Field(default=None, max_length=32)
     plan: str | None = Field(default=None, max_length=16)
 

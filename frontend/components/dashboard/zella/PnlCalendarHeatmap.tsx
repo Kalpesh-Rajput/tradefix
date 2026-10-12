@@ -24,16 +24,22 @@ export type PnlHeatmapDay = {
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
+const cell = (amount: number, tone: "profit" | "loss") => ({
+  bg: `color-mix(in srgb, var(--color-chart-${tone}) ${amount}%, var(--color-surface))`,
+  border: "var(--color-border)",
+  text: tone === "profit" ? "var(--color-success-text)" : "var(--color-danger-text)",
+});
+
 const PROFIT = {
-  1: { bg: "#F3FAF5", border: "#D7EDE0", text: "#1F7A4D" },
-  2: { bg: "#E5F5EB", border: "#C3E4D0", text: "#176B42" },
-  3: { bg: "#D4EEDC", border: "#A9D8B8", text: "#145C38" },
+  1: cell(22, "profit"),
+  2: cell(40, "profit"),
+  3: cell(58, "profit"),
 } as const;
 
 const LOSS = {
-  1: { bg: "#FDF4F4", border: "#F3D4D6", text: "#C23B3B" },
-  2: { bg: "#F8E4E6", border: "#EBB8BC", text: "#B13232" },
-  3: { bg: "#F3D4D7", border: "#E09AA0", text: "#9B2C2C" },
+  1: cell(18, "loss"),
+  2: cell(36, "loss"),
+  3: cell(54, "loss"),
 } as const;
 
 type Cell = {

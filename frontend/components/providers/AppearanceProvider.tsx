@@ -13,12 +13,14 @@ import {
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import {
-  ACCENT_PALETTE,
   applyAppearanceToDocument,
   DEFAULT_APPEARANCE,
   isAccentColor,
-  isThemePreference,
+  migrateStoredTheme,
   readStoredAppearance,
+  resolveSaveResult,
+  resolveTheme,
+  THEME_PRESETS,
   writeStoredAppearance,
   type AccentColor,
   type AppearanceState,
@@ -27,10 +29,10 @@ import {
 
 type AppearanceContextValue = {
   theme: ThemePreference;
+  resolvedTheme: (typeof THEME_PRESETS)[keyof typeof THEME_PRESETS]["id"];
   accent: AccentColor;
   accentHex: string;
   setTheme: (theme: ThemePreference) => Promise<void>;
-  setAccent: (accent: AccentColor) => Promise<void>;
   saving: boolean;
 };
 
@@ -41,59 +43,53 @@ function normalizeAccent(value: unknown): AccentColor {
   return isAccentColor(value) ? value : DEFAULT_APPEARANCE.accent;
 }
 
-function isDefaultAppearance(state: AppearanceState) {
-  return state.theme === DEFAULT_APPEARANCE.theme && state.accent === DEFAULT_APPEARANCE.accent;
-}
-
 export function AppearanceProvider({ children }: { children: ReactNode }) {
   const { user, updateProfile } = useAuth();
   const [state, setState] = useState<AppearanceState>(DEFAULT_APPEARANCE);
+  const [systemDark, setSystemDark] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [saving, setSaving] = useState(false);
   const syncedUserId = useRef<string | null>(null);
+  const requestId = useRef(0);
+  const acknowledged = useRef<AppearanceState>(DEFAULT_APPEARANCE);
+  const stateRef = useRef(state);
+  const systemDarkRef = useRef(false);
+  stateRef.current = state;
 
-  const apply = useCallback((next: AppearanceState) => {
+  const apply = useCallback((next: AppearanceState, prefersDark?: boolean) => {
+    const dark = prefersDark ?? systemDarkRef.current;
     setState(next);
+    stateRef.current = next;
     writeStoredAppearance(next);
-    applyAppearanceToDocument(next);
+    applyAppearanceToDocument(next, dark);
   }, []);
 
   useEffect(() => {
-    apply(readStoredAppearance());
+    const stored = readStoredAppearance();
+    const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    systemDarkRef.current = dark;
+    setSystemDark(dark);
+    acknowledged.current = stored;
+    apply(stored, dark);
     setHydrated(true);
   }, [apply]);
 
   useEffect(() => {
     if (!hydrated || !user) return;
     if (syncedUserId.current === user.id) return;
+    syncedUserId.current = user.id;
 
+    const theme = migrateStoredTheme(user.theme);
     const server: AppearanceState = {
-      theme: isThemePreference(user.theme) ? user.theme : DEFAULT_APPEARANCE.theme,
+      theme,
       accent: normalizeAccent(user.accent_color),
     };
-    const stored = readStoredAppearance();
-    const hadLegacyGreen =
-      user.accent_color === "teal" ||
-      user.accent_color === "emerald" ||
-      user.accent_color === "green";
-
-    // Keep a custom local choice if the account is still on defaults, then upload it.
-    if (isDefaultAppearance(server) && !isDefaultAppearance(stored) && !hadLegacyGreen) {
-      syncedUserId.current = user.id;
-      apply(stored);
-      updateProfile({ theme: stored.theme, accent_color: stored.accent }).catch(() => {
-        /* local preview remains */
-      });
-      return;
-    }
-
-    syncedUserId.current = user.id;
+    acknowledged.current = server;
     apply(server);
 
-    // Persist migration off removed green accents
-    if (hadLegacyGreen && server.accent === "purple") {
-      updateProfile({ accent_color: "purple" }).catch(() => {
-        /* local preview remains */
+    if (user.theme !== theme) {
+      updateProfile({ theme }).catch(() => {
+        /* local copy already matches the migrated preference */
       });
     }
   }, [hydrated, user, apply, updateProfile]);
@@ -101,50 +97,58 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated || state.theme !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => applyAppearanceToDocument(state, mq.matches);
+    const onChange = () => {
+      systemDarkRef.current = mq.matches;
+      setSystemDark(mq.matches);
+      applyAppearanceToDocument(stateRef.current, mq.matches);
+    };
     onChange();
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [hydrated, state]);
+  }, [hydrated, state.theme]);
 
-  const persist = useCallback(
-    async (next: AppearanceState) => {
+  const setTheme = useCallback(
+    async (theme: ThemePreference) => {
+      const id = ++requestId.current;
+      const next: AppearanceState = { ...stateRef.current, theme };
       apply(next);
-      if (!user) return;
+      if (!user) {
+        if (resolveSaveResult(id, requestId.current, true) === "commit") {
+          acknowledged.current = next;
+        }
+        return;
+      }
       setSaving(true);
       try {
-        await updateProfile({ theme: next.theme, accent_color: next.accent });
+        await updateProfile({ theme });
+        if (resolveSaveResult(id, requestId.current, true) === "commit") {
+          acknowledged.current = next;
+        }
+      } catch (err) {
+        if (resolveSaveResult(id, requestId.current, false) === "revert") {
+          apply(acknowledged.current);
+        }
+        throw err;
       } finally {
-        setSaving(false);
+        if (id === requestId.current) setSaving(false);
       }
     },
     [apply, updateProfile, user]
   );
 
-  const setTheme = useCallback(
-    async (theme: ThemePreference) => {
-      await persist({ ...state, theme });
-    },
-    [persist, state]
-  );
-
-  const setAccent = useCallback(
-    async (accent: AccentColor) => {
-      await persist({ ...state, accent });
-    },
-    [persist, state]
-  );
+  const resolvedTheme = resolveTheme(state.theme, systemDark);
+  const accentHex = THEME_PRESETS[resolvedTheme].tokens.primary;
 
   const value = useMemo<AppearanceContextValue>(
     () => ({
       theme: state.theme,
+      resolvedTheme,
       accent: state.accent,
-      accentHex: ACCENT_PALETTE[state.accent]?.hex ?? ACCENT_PALETTE.purple.hex,
+      accentHex,
       setTheme,
-      setAccent,
       saving,
     }),
-    [state, setTheme, setAccent, saving]
+    [state, resolvedTheme, accentHex, setTheme, saving]
   );
 
   return <AppearanceContext.Provider value={value}>{children}</AppearanceContext.Provider>;

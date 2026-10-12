@@ -212,15 +212,15 @@ export function TradePreviewDrawer({
                       className="rounded-lg px-1.5 py-0.5 text-[11px] font-medium"
                       style={
                         roi == null
-                          ? { background: "#F4F4F6", color: "#85868e" }
+                          ? { background: "var(--color-surface-muted)", color: "var(--color-text-muted)" }
                           : roi >= 0
-                            ? { background: "#E7F6EE", color: PNL_PROFIT_HEX }
-                            : { background: "#FDF0F1", color: PNL_LOSS_HEX }
+                            ? { background: "var(--color-success-bg)", color: "var(--color-success-text)" }
+                            : { background: "var(--color-danger-bg)", color: "var(--color-danger-text)" }
                       }
                     >
                       ROI {roi == null ? "—" : `${roi >= 0 ? "+" : ""}${roi.toFixed(2)}%`}
                     </span>
-                    <span className="rounded-lg bg-[#F4F4F6] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
+                    <span className="rounded-lg bg-[var(--color-surface-muted)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
                       Gross {gross == null ? "—" : formatMoney(gross, { signed: true, digits: 2 })}
                     </span>
                   </div>

@@ -38,7 +38,7 @@ const ICONS = {
 } as const;
 
 const STYLES = {
-  success: "border-primary/30 bg-surface text-primary",
+  success: "border-[var(--color-success-text)]/30 bg-surface text-[var(--color-success-text)]",
   error: "border-destructive/40 bg-surface text-destructive",
   info: "border-border bg-surface text-foreground",
 } as const;

@@ -219,8 +219,8 @@ function RailNavLink({
         "relative flex h-9 items-center rounded-md text-[13px] font-medium transition-colors duration-150 motion-reduce:transition-none",
         expanded ? "px-2.5" : "justify-center px-0",
         active
-          ? "bg-[#7dcec4] text-[#12312e]"
-          : "text-[#c7c2d0] hover:bg-white/10 hover:text-white"
+          ? "bg-primary text-primary-foreground"
+          : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground"
       )}
     >
       <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={active ? 2 : 1.75} />
@@ -235,7 +235,7 @@ function RailNavLink({
       {item.badge === "new" && (
         <span
           className={clsx(
-            "shrink-0 rounded-[3px] bg-[#f4d34f] px-1 text-[8px] font-bold leading-[14px] tracking-wide text-[#514a16]",
+            "shrink-0 rounded-[3px] bg-warning-bg px-1 text-[8px] font-bold leading-[14px] tracking-wide text-[var(--color-warning-text)]",
             expanded ? "ml-auto" : "absolute -right-0.5 -top-0.5"
           )}
         >

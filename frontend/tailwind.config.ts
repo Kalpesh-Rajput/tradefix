@@ -13,10 +13,10 @@ const config: Config = {
           foreground: "hsl(var(--sidebar-foreground) / <alpha-value>)",
           muted: "hsl(var(--sidebar-muted) / <alpha-value>)",
           border: "hsl(var(--sidebar-border))",
-          active: "#4B4554",
-          hover: "#383241",
-          icon: "#AAA4B5",
-          divider: "#3A3343",
+          active: "var(--color-sidebar-active)",
+          hover: "var(--color-sidebar-hover)",
+          icon: "var(--color-text-muted)",
+          divider: "var(--color-border-subtle)",
         },
         surface: "hsl(var(--surface) / <alpha-value>)",
         "surface-2": "hsl(var(--surface-2) / <alpha-value>)",
@@ -25,8 +25,8 @@ const config: Config = {
         primary: {
           DEFAULT: "hsl(var(--primary) / <alpha-value>)",
           foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
-          hover: "#4F3C87",
-          light: "#F0ECFA",
+          hover: "var(--color-primary-hover)",
+          light: "var(--color-primary-light)",
         },
         accent: {
           DEFAULT: "hsl(var(--accent) / <alpha-value>)",
@@ -35,12 +35,12 @@ const config: Config = {
           muted: "hsl(var(--primary) / 0.12)",
         },
         secondary: {
-          DEFAULT: "#7B8DB8",
-          muted: "rgba(123,141,184,0.12)",
+          DEFAULT: "var(--color-text-secondary)",
+          muted: "var(--color-surface-muted)",
         },
         warning: {
-          DEFAULT: "#F3C623",
-          bg: "#FFF5C9",
+          DEFAULT: "var(--color-warning)",
+          bg: "var(--color-warning-bg)",
         },
         danger: {
           DEFAULT: "hsl(var(--negative) / <alpha-value>)",

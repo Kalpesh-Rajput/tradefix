@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.models.mood import MoodCheckin
 from app.models.trade import Trade, TradeStatus
+from app.schemas.trade_export import TradeExportFilters
 
 
 def _closed_trades(
@@ -545,6 +546,20 @@ def filter_trades(
     return out
 
 
+def apply_journal_filters(
+    trades: list[Trade],
+    filters: TradeExportFilters | None,
+    pnl_display_mode: str = "net",
+) -> list[Trade]:
+    """Apply the Trade View advance filter. Empty filters leave the list unchanged."""
+    if filters is None:
+        return trades
+    from app.services.trade_export import matches_export_filters
+
+    mode = "gross" if pnl_display_mode == "gross" else "net"
+    return [trade for trade in trades if matches_export_filters(trade, filters, mode)]
+
+
 def full_analytics(
     db: Session,
     user_id: uuid.UUID,
@@ -557,6 +572,8 @@ def full_analytics(
     symbol: str | None = None,
     session: str | None = None,
     is_pro: bool = True,
+    journal_filters: TradeExportFilters | None = None,
+    pnl_display_mode: str = "net",
 ) -> dict:
     trades = _closed_trades(db, user_id, account_id=account_id)
     trades = filter_trades(
@@ -568,6 +585,7 @@ def full_analytics(
         symbol=symbol,
         session=session,
     )
+    trades = apply_journal_filters(trades, journal_filters, pnl_display_mode)
     starting_equity = 0.0
     if account_id is not None:
         from app.models.account import Account
@@ -581,14 +599,18 @@ def full_analytics(
 
     window = previous_window(date_from, date_to)
     if window and score and score.get("sample_size", 0) >= 5:
-        prev_trades = filter_trades(
-            _closed_trades(db, user_id, account_id=account_id),
-            date_from=window[0],
-            date_to=window[1],
-            setup_tag=setup_tag,
-            emotion_tag=emotion_tag,
-            symbol=symbol,
-            session=session,
+        prev_trades = apply_journal_filters(
+            filter_trades(
+                _closed_trades(db, user_id, account_id=account_id),
+                date_from=window[0],
+                date_to=window[1],
+                setup_tag=setup_tag,
+                emotion_tag=emotion_tag,
+                symbol=symbol,
+                session=session,
+            ),
+            journal_filters,
+            pnl_display_mode,
         )
         prev = calculate_tradefix_score(prev_trades, starting_equity=starting_equity)
         if prev.get("sample_size", 0) >= 5 and prev.get("overall_score") is not None:
@@ -662,10 +684,13 @@ def calendar_days(
     start: date,
     end: date,
     account_id: uuid.UUID | None = None,
+    journal_filters: TradeExportFilters | None = None,
+    pnl_display_mode: str = "net",
 ) -> dict:
     since = datetime.combine(start, datetime.min.time()).replace(tzinfo=timezone.utc)
     trades = _closed_trades(db, user_id, since=since, account_id=account_id)
     trades = [t for t in trades if (t.closed_at or t.opened_at).date() <= end]
+    trades = apply_journal_filters(trades, journal_filters, pnl_display_mode)
 
     buckets: dict[date, list[Trade]] = defaultdict(list)
     for t in trades:

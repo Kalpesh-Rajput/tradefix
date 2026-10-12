@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* Brand / primary purple — TradeZella reference */
+  /* Original light theme — boot script overwrites these from the theme registry */
   --color-primary: #5b4696;
   --color-primary-hover: #4f3c87;
   --color-primary-active: #49377d;
@@ -30,12 +30,13 @@
   --color-sidebar-text: #ffffff;
   --color-sidebar-secondary: #c7c2d0;
   --color-sidebar-icon: #aaa4b5;
-  --color-sidebar-active: #4b4554;
-  --color-sidebar-hover: #383241;
+  --color-sidebar-active: rgba(124, 92, 191, 0.25);
+  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --color-sidebar-indicator: #a78bfa;
   --color-sidebar-divider: #3a3343;
   --sidebar: 240 35% 17%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-muted: 245 18% 78%;
+  --sidebar-muted: 248 27% 77%;
   --sidebar-border: 240 22% 22%;
 
   /* Borders */
@@ -45,7 +46,7 @@
   --color-divider: #ececf0;
   --border: 240 8% 92%;
 
-  /* Text — higher contrast for light UI readability */
+  /* Text */
   --color-text-primary: #14151a;
   --color-text-secondary: #4a4b52;
   --color-text-tertiary: #6b6c74;
@@ -55,31 +56,42 @@
   --foreground: 240 10% 9%;
   --muted: 233 5% 36%;
 
-  /* Financial — positive follows primary purple (no green) */
+  /* Financial — positive follows brand purple; P&L figures stay green/red */
   --color-success: #5b4696;
   --color-success-dark: #4f3c87;
-  --color-success-light: #f0ecfa;
-  --color-success-bg: #f7f4fc;
+  --color-success-text: #2f9e6a;
+  --color-success-light: #f7f4fc;
+  --color-success-bg: #f0ecfa;
   --color-danger: #e35d68;
   --color-danger-dark: #d94d59;
+  --color-danger-text: #d64545;
   --color-danger-light: #f8dde0;
   --color-danger-bg: #fdf0f1;
   --color-warning: #f3c623;
+  --color-warning-text: #514a16;
   --color-warning-bg: #fff5c9;
   --color-warning-badge: #f4d34f;
   --color-warning-badge-text: #514a16;
   --positive: 255 36% 43%;
-  --positive-soft: 255 50% 95%;
+  --positive-soft: 255 36% 94%;
   --negative: 355 71% 63%;
   --negative-soft: 355 67% 97%;
   --destructive: 355 71% 63%;
+  --color-negative-hex: #e35d68;
 
   /* Chart */
   --color-chart-grid: #ecedef;
   --color-chart-axis: #85868e;
   --color-chart-line: #4b438b;
+  --color-chart-profit: #40c79a;
+  --color-chart-loss: #f26969;
   --color-gauge-track: #e7e8ec;
   --color-breakeven: #7b8db8;
+  --color-tooltip-bg: #14151a;
+  --color-tooltip-text: #f2f2f5;
+  --color-tooltip-border: #3a3343;
+  --color-skeleton: #e7e8ec;
+  --color-scrollbar: #b7b7c0;
 
   /* Radius */
   --radius-sm: 6px;
@@ -121,6 +133,14 @@ body {
   color-scheme: light;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body {
+    transition: none;
+  }
 }
 
 html.dark,
@@ -142,6 +162,11 @@ html.light body {
   color: hsl(var(--foreground));
 }
 
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: var(--color-danger-text);
+}
 input[type="range"],
 input[type="checkbox"],
 input[type="radio"],
@@ -166,7 +191,7 @@ progress {
 
 .trade-log-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #b7b7c0 transparent;
+  scrollbar-color: var(--color-scrollbar) transparent;
 }
 
 .trade-log-scroll::-webkit-scrollbar {
@@ -189,7 +214,7 @@ progress {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #c8c8ce;
+  background-color: var(--color-scrollbar);
   border-radius: 10px;
 }
 
@@ -201,7 +226,7 @@ progress {
 .sidebar-chrome nav,
 .sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-color: var(--color-scrollbar) transparent;
 }
 
 .sidebar-chrome nav::-webkit-scrollbar,
@@ -216,23 +241,20 @@ progress {
 
 .sidebar-chrome nav::-webkit-scrollbar-thumb,
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--color-scrollbar);
   border-radius: 9999px;
 }
 
 .sidebar-chrome nav:hover::-webkit-scrollbar-thumb,
-.sidebar-scroll:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.22);
-}
-
+.sidebar-scroll:hover::-webkit-scrollbar-thumb,
 .sidebar-chrome nav::-webkit-scrollbar-thumb:hover,
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: var(--color-scrollbar);
 }
 
 .nav-column {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  scrollbar-color: var(--color-scrollbar) transparent;
 }
 
 .nav-column::-webkit-scrollbar {
@@ -244,7 +266,7 @@ progress {
 }
 
 .nav-column::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.14);
+  background-color: var(--color-scrollbar);
   border-radius: 9999px;
 }
 
@@ -399,8 +421,77 @@ html.dark .bg-\[\#f5f4f8\] {
 }
 
 html.dark .text-\[\#70717A\],
-html.dark .text-\[\#70717a\] {
-  color: var(--color-text-tertiary) !important;
+html.dark .text-\[\#70717a\],
+html.dark .text-\[\#4A4D57\],
+html.dark .text-\[\#4a4d57\] {
+  color: var(--color-text-secondary) !important;
+}
+
+html.dark .border-\[\#E2E2E7\],
+html.dark .border-\[\#e2e2e7\],
+html.dark .border-\[\#E4E4E9\],
+html.dark .border-\[\#e4e4e9\],
+html.dark .border-\[\#E4E5EA\],
+html.dark .border-\[\#e4e5ea\],
+html.dark .border-\[\#EEEFF2\],
+html.dark .border-\[\#eeeff2\],
+html.dark .border-\[\#EFEFF2\],
+html.dark .border-\[\#efeff2\],
+html.dark .border-\[\#ECEDEF\],
+html.dark .border-\[\#ecedef\] {
+  border-color: var(--color-border) !important;
+}
+
+html.dark .bg-\[\#F7F7F9\],
+html.dark .bg-\[\#f7f7f9\],
+html.dark .bg-\[\#F7F8FA\],
+html.dark .bg-\[\#f7f8fa\],
+html.dark .hover\:bg-\[\#F7F7F9\]:hover,
+html.dark .hover\:bg-\[\#F7F8FA\]:hover {
+  background-color: var(--color-surface-secondary) !important;
+}
+
+html.dark .text-\[\#1F2128\],
+html.dark .text-\[\#1f2128\],
+html.dark .text-\[\#6B6E78\],
+html.dark .text-\[\#6b6e78\],
+html.dark .text-\[\#8B8D96\],
+html.dark .text-\[\#8b8d96\] {
+  color: var(--color-text-secondary) !important;
+}
+
+html.dark .text-\[\#1F7A4D\],
+html.dark .text-\[\#1f7a4d\] {
+  color: var(--color-success-text) !important;
+}
+
+html.dark .text-\[\#C23B3B\],
+html.dark .text-\[\#c23b3b\] {
+  color: var(--color-danger-text) !important;
+}
+
+html.dark .text-\[\#5B4696\],
+html.dark .text-\[\#5b4696\] {
+  color: var(--color-primary) !important;
+}
+
+html.dark .bg-\[\#E8F6EE\] {
+  background-color: var(--color-success-bg) !important;
+}
+
+html.dark .bg-\[\#FDECEE\] {
+  background-color: var(--color-danger-bg) !important;
+}
+
+html.dark .bg-\[\#EEE8F8\] {
+  background-color: var(--color-primary-light) !important;
+}
+
+html.dark .bg-\[\#F4F5F7\],
+html.dark .bg-\[\#F3F4F6\],
+html.dark .bg-\[\#E8E8EC\],
+html.dark .hover\:bg-\[\#F4F5F7\]:hover {
+  background-color: var(--color-surface-secondary) !important;
 }
 
 html.dark input,
@@ -408,9 +499,13 @@ html.dark textarea,
 html.dark select {
   color-scheme: dark;
 }
+html.dark textarea,
+html.dark select {
+  color-scheme: dark;
+}
 
 html.dark ::-webkit-scrollbar-thumb {
-  background-color: #4a4554;
+  background-color: var(--color-scrollbar);
 }
 
 @layer components {
@@ -1274,5 +1369,157 @@ html.dark ::-webkit-scrollbar-thumb {
   .auth-blob-a,
   .auth-blob-b {
     animation: none;
+  }
+}
+
+/* Violet Aurora only. Other presets do not define these variables. */
+html[data-theme="violet-aurora"] .dash-card {
+  box-shadow: var(--shadow-sm), inset 0 1px 0 #ffffff;
+}
+
+html[data-theme="violet-aurora"] :is(
+  .dash-btn-primary,
+  :is(button, a):not([aria-current="page"]):not([aria-pressed="true"]).bg-primary:is(
+    .text-on-accent,
+    [class~="hover:bg-primary-hover"],
+    [class~="hover:opacity-90"]
+  )
+) {
+  background-image: var(--aurora-gradient);
+  background-color: var(--color-primary);
+}
+
+html[data-theme="violet-aurora"] .dash-btn-primary {
+  transition: background-color 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+html[data-theme="violet-aurora"] :is(
+  .dash-btn-primary,
+  :is(button, a):not([aria-current="page"]):not([aria-pressed="true"]).bg-primary:is(
+    .text-on-accent,
+    [class~="hover:bg-primary-hover"],
+    [class~="hover:opacity-90"]
+  )
+):hover:not(:disabled):not(:focus-visible):not(:active) {
+  background-image: var(--aurora-gradient-hover);
+  background-color: var(--color-primary-hover);
+  box-shadow: var(--aurora-glow);
+}
+
+html[data-theme="violet-aurora"] :is(
+  .dash-btn-primary,
+  :is(button, a):not([aria-current="page"]):not([aria-pressed="true"]).bg-primary:is(
+    .text-on-accent,
+    [class~="hover:bg-primary-hover"],
+    [class~="hover:opacity-90"]
+  )
+):active:not(:disabled) {
+  background-image: none;
+  background-color: var(--color-primary-active);
+  box-shadow: none;
+}
+
+html[data-theme="violet-aurora"] :is(
+  .dash-btn-primary,
+  button.bg-primary,
+  a.bg-primary
+):focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+html[data-theme="violet-aurora"] :is(
+  a[aria-current="page"].bg-primary,
+  button[aria-pressed="true"].bg-primary
+) {
+  background-image: none;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-active);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="violet-aurora"] .dash-btn-primary,
+  html[data-theme="violet-aurora"] .dash-card {
+    transition: none;
+  }
+}
+
+/* Electric Spectrum only. Decorative brand gradient stays on the swatch; text buttons use the contrast-safe action gradient. */
+html[data-theme="electric-spectrum"] .dash-card {
+  box-shadow: var(--shadow-sm), inset 0 1px 0 #ffffff;
+}
+
+html[data-theme="electric-spectrum"] .spectrum-wordmark {
+  background-image: var(--spectrum-wordmark);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html[data-theme="electric-spectrum"] :is(
+  .dash-btn-primary,
+  :is(button, a):not([aria-current="page"]):not([aria-pressed="true"]).bg-primary:is(
+    .text-on-accent,
+    [class~="hover:bg-primary-hover"],
+    [class~="hover:opacity-90"]
+  )
+):not(:disabled) {
+  background-image: var(--spectrum-action-gradient);
+  background-color: var(--color-primary);
+}
+
+html[data-theme="electric-spectrum"] .dash-btn-primary {
+  transition: background-color 180ms ease, box-shadow 180ms ease;
+}
+
+html[data-theme="electric-spectrum"] :is(
+  .dash-btn-primary,
+  :is(button, a):not([aria-current="page"]):not([aria-pressed="true"]).bg-primary:is(
+    .text-on-accent,
+    [class~="hover:bg-primary-hover"],
+    [class~="hover:opacity-90"]
+  )
+):hover:not(:disabled):not(:focus-visible):not(:active) {
+  background-image: var(--spectrum-action-gradient-hover);
+  background-color: var(--color-primary-hover);
+  box-shadow: var(--spectrum-glow);
+  opacity: 1;
+}
+
+html[data-theme="electric-spectrum"] :is(
+  .dash-btn-primary,
+  :is(button, a):not([aria-current="page"]):not([aria-pressed="true"]).bg-primary:is(
+    .text-on-accent,
+    [class~="hover:bg-primary-hover"],
+    [class~="hover:opacity-90"]
+  )
+):active:not(:disabled) {
+  background-image: none;
+  background-color: var(--color-primary-active);
+  box-shadow: none;
+  opacity: 1;
+}
+
+html[data-theme="electric-spectrum"] :is(
+  .dash-btn-primary,
+  button.bg-primary,
+  a.bg-primary
+):focus-visible {
+  box-shadow: var(--focus-ring);
+  opacity: 1;
+}
+
+html[data-theme="electric-spectrum"] :is(
+  .dash-btn-primary,
+  button.bg-primary,
+  a.bg-primary
+):disabled {
+  background-image: none;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="electric-spectrum"] .dash-btn-primary,
+  html[data-theme="electric-spectrum"] .dash-card {
+    transition: none;
   }
 }

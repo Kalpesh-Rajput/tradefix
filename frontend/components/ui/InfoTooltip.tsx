@@ -237,7 +237,7 @@ export function HoverTip({
               id={tipId}
               role="tooltip"
               className={clsx(
-                "pointer-events-none fixed z-[80] w-max max-w-[280px] whitespace-pre-line rounded-lg bg-[#1C1C3A] px-3 py-2 text-[12px] font-normal leading-snug shadow-[0_8px_24px_rgba(20,16,40,0.28)]",
+                "pointer-events-none fixed z-[80] w-max max-w-[280px] whitespace-pre-line rounded-lg border border-[var(--color-tooltip-border)] bg-[var(--color-tooltip-bg)] px-3 py-2 text-[12px] font-normal leading-snug text-[var(--color-tooltip-text)] shadow-dropdown",
                 reduce ? "" : "transition-[opacity,transform] duration-150 ease-out",
                 visible ? "opacity-100" : "opacity-0",
                 !reduce && (visible ? "scale-100" : "scale-[0.96]")
@@ -245,14 +245,13 @@ export function HoverTip({
               style={{
                 top: coords?.top ?? -9999,
                 left: coords?.left ?? 0,
-                color: "#F7F7FB",
                 transformOrigin: ORIGIN[coords?.side ?? side],
               }}
             >
               {content}
               <span
                 aria-hidden
-                className="absolute h-2 w-2 rotate-45 bg-[#1C1C3A]"
+                className="absolute h-2 w-2 rotate-45 bg-[var(--color-tooltip-bg)]"
                 style={arrowStyle(coords?.side ?? side, coords?.arrowX ?? 16, coords?.arrowY ?? 16)}
               />
             </div>,
@@ -283,7 +282,7 @@ export function InfoTooltip({
       <button
         type="button"
         aria-label={`About ${label}`}
-        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[#8B8D96] outline-none transition-colors hover:text-[var(--color-text-secondary)] focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-muted outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/30"
       >
         <Info className="h-3 w-3" strokeWidth={1.75} aria-hidden />
       </button>
