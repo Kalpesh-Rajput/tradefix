@@ -158,7 +158,7 @@ html.light body {
 }
 
 ::selection {
-  background: hsl(var(--primary) / 0.2);
+  background: var(--color-selection, hsl(var(--primary) / 0.2));
   color: hsl(var(--foreground));
 }
 
@@ -1523,3 +1523,157 @@ html[data-theme="electric-spectrum"] :is(
     transition: none;
   }
 }
+
+/* Custom themes only. Built-in presets do not set data-custom-theme. */
+[data-custom-theme="1"] .dash-btn-primary {
+  color: var(--color-primary-foreground) !important;
+  background-color: var(--color-primary);
+}
+
+[data-custom-theme="1"] .dash-btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+[data-custom-theme="1"] .dash-btn-primary:active {
+  background-color: var(--color-primary-active);
+}
+
+[data-custom-theme="1"] .tf-btn-secondary {
+  background: var(--color-button-secondary-bg, hsl(var(--surface-2)));
+  color: var(--color-button-secondary-fg, hsl(var(--foreground)));
+  border-color: var(--color-button-secondary-border, hsl(var(--border)));
+}
+
+[data-custom-theme="1"] .tf-btn-secondary:hover {
+  background: var(--color-button-secondary-hover, hsl(var(--surface)));
+}
+
+[data-custom-theme="1"] .tf-btn-ghost {
+  color: var(--color-button-ghost-fg, hsl(var(--muted)));
+}
+
+[data-custom-theme="1"] .tf-btn-ghost:hover {
+  background: var(--color-button-ghost-hover, hsl(var(--foreground) / 0.05));
+}
+
+[data-custom-theme="1"] .tf-btn-danger {
+  background: var(--color-button-danger-bg, hsl(var(--destructive) / 0.1));
+  color: var(--color-button-danger-fg, hsl(var(--destructive)));
+  border-color: var(--color-danger-border, hsl(var(--destructive) / 0.3));
+}
+
+[data-custom-theme="1"] :is(button, input, select, textarea):disabled {
+  background-color: var(--color-button-disabled-bg, revert-layer);
+  color: var(--color-button-disabled-fg, var(--color-text-disabled));
+}
+
+[data-custom-theme="1"] :is(input[type="checkbox"], input[type="radio"], input[type="range"]) {
+  accent-color: var(--color-control-accent, hsl(var(--primary)));
+}
+
+[data-custom-theme="1"] :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  textarea,
+  select
+) {
+  background-color: var(--color-input-bg);
+  color: var(--color-input-text, var(--color-text-primary));
+  border-color: var(--color-input-border);
+}
+
+[data-custom-theme="1"] :is(input, textarea, select):hover {
+  border-color: var(--color-input-hover-border, var(--color-input-border));
+}
+
+[data-custom-theme="1"] :is(input, textarea, select):focus {
+  border-color: var(--color-input-focus-border, hsl(var(--primary)));
+}
+
+[data-custom-theme="1"] :is(input, textarea, select):disabled {
+  background-color: var(--color-input-disabled-bg, var(--color-surface-muted));
+  border-color: var(--color-disabled-border, var(--color-border));
+}
+
+[data-custom-theme="1"] :is(input, textarea, select)[aria-invalid="true"] {
+  border-color: var(--color-input-error, var(--color-danger-text));
+}
+
+[data-custom-theme="1"] ::placeholder {
+  color: var(--color-placeholder);
+}
+
+[data-custom-theme="1"] a.text-primary {
+  color: var(--color-link, hsl(var(--primary)));
+}
+
+[data-custom-theme="1"] a.text-primary:hover {
+  color: var(--color-link-hover, var(--color-link, hsl(var(--primary))));
+}
+
+[data-custom-theme="1"] header.app-header {
+  background: var(--color-header, var(--color-surface));
+  color: var(--color-header-foreground, var(--color-text-primary));
+  border-bottom-color: var(--color-header-border, var(--color-border));
+}
+
+[data-custom-theme="1"] .dash-card {
+  border-color: var(--color-card-border, var(--color-border));
+}
+
+[data-custom-theme="1"] .dash-card .dash-card {
+  background: var(--color-nested, var(--color-surface));
+}
+
+[data-custom-theme="1"] [role="dialog"] {
+  background-color: var(--color-dialog, var(--color-surface));
+  color: var(--color-text-primary);
+}
+
+[data-custom-theme="1"] :is(.trade-dropdown, [role="menu"], [role="listbox"]) {
+  background-color: var(--color-dropdown, var(--color-surface));
+  color: var(--color-text-primary);
+}
+
+[data-custom-theme="1"] :is(.bg-black\/25, .bg-black\/30, .bg-black\/35, .bg-black\/40, .bg-black\/45) {
+  background-color: var(--color-overlay);
+}
+
+[data-custom-theme="1"] thead th,
+[data-custom-theme="1"] thead td {
+  background-color: var(--color-table-header);
+  color: var(--color-table-header-foreground, var(--color-text-secondary));
+}
+
+[data-custom-theme="1"] tbody tr:hover {
+  background-color: var(--color-table-hover);
+}
+
+[data-custom-theme="1"] tbody tr:has(input:checked) {
+  background-color: var(--color-table-selected);
+}
+
+[data-custom-theme="1"] .chart-card .recharts-wrapper {
+  background: var(--color-chart-bg, transparent);
+}
+
+[data-custom-theme="1"] .recharts-tooltip-cursor {
+  stroke: var(--color-chart-crosshair, var(--color-chart-axis));
+}
+
+[data-custom-theme="1"] .recharts-legend-item-text {
+  color: var(--color-chart-legend, var(--color-text-secondary)) !important;
+}
+
+[data-custom-theme="1"] .trade-log-scroll {
+  scrollbar-color: var(--color-scrollbar) var(--color-scrollbar-track, transparent);
+}
+
+[data-custom-theme="1"] .tf-toast {
+  background: var(--color-toast-bg, var(--color-surface));
+  color: var(--color-toast-fg, var(--color-text-primary));
+}
+
+.nav-active-label {
+  color: var(--color-sidebar-active-text, hsl(var(--sidebar-foreground)));
+}
+

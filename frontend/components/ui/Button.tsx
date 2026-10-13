@@ -17,10 +17,10 @@ export function Button({ variant = "primary", size = "md", className, ...props }
         size === "lg" && "px-5 py-2.5 text-sm",
         variant === "primary" && "bg-primary font-semibold text-primary-foreground text-on-accent hover:opacity-90",
         variant === "secondary" &&
-          "border border-border bg-surface-2 text-foreground hover:bg-surface",
-        variant === "ghost" && "text-muted hover:bg-foreground/5 hover:text-foreground",
+          "tf-btn-secondary border border-border bg-surface-2 text-foreground hover:bg-surface",
+        variant === "ghost" && "tf-btn-ghost text-muted hover:bg-foreground/5 hover:text-foreground",
         variant === "danger" &&
-          "border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20",
+          "tf-btn-danger border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20",
         className
       )}
       {...props}

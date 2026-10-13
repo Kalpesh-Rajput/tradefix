@@ -66,8 +66,8 @@ export function Sidebar({
   const { t } = useLocale();
   const { openFlow } = useAddTradeModal();
   const { setMobileOpen } = useSidebar();
-  const { resolvedTheme } = useAppearance();
-  const original = resolvedTheme === "tradefix-purple";
+  const { resolvedTheme, semanticChrome } = useAppearance();
+  const original = resolvedTheme === "tradefix-purple" && !semanticChrome;
 
   void forceExpanded;
   void showEdgeToggle;
@@ -131,7 +131,7 @@ export function Sidebar({
                 active
                   ? original
                     ? "bg-[#7C5CBF]/25 font-semibold text-white shadow-[inset_2px_0_0_#A78BFA]"
-                    : "bg-sidebar-active font-semibold text-sidebar-foreground shadow-[inset_2px_0_0_var(--color-sidebar-indicator,var(--color-primary))]"
+                    : "nav-active-label bg-sidebar-active font-semibold shadow-[inset_2px_0_0_var(--color-sidebar-indicator,var(--color-primary))]"
                   : original
                     ? "text-[#b8b4d4] hover:bg-white/[0.06] hover:text-white"
                     : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground"
@@ -139,7 +139,13 @@ export function Sidebar({
             >
               <Icon
                 className="h-[17px] w-[17px] shrink-0 transition-colors duration-200 ease-out"
-                style={original ? { color: active ? ACTIVE_ICON : item.iconColor } : undefined}
+                style={
+                  original
+                    ? { color: active ? ACTIVE_ICON : item.iconColor }
+                    : semanticChrome
+                      ? { color: "var(--color-sidebar-icon)" }
+                      : undefined
+                }
                 strokeWidth={active ? 2 : 1.75}
                 aria-hidden
               />

@@ -874,6 +874,10 @@ export interface User {
   target_trades?: number | null;
   theme?: string;
   accent_color?: string;
+  custom_themes?: {
+    revision: number;
+    themes: import("@/lib/custom-theme").CustomThemeRecord[];
+  };
   plan?: string;
   role?: string;
   custom_emotion_tags?: string[];
@@ -936,6 +940,10 @@ export interface UserUpdateInput {
   target_trades?: number | null;
   theme?: string;
   accent_color?: string;
+  custom_themes?: {
+    revision: number;
+    themes: import("@/lib/custom-theme").CustomThemeRecord[];
+  };
   plan?: string;
 }
 

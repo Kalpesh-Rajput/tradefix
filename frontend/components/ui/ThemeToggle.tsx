@@ -6,15 +6,14 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { useAppearance } from "@/components/providers/AppearanceProvider";
 import { ThemeChoices } from "@/components/ui/ThemeChoices";
-import { THEME_PRESETS } from "@/lib/theme-registry";
 
 export function ThemeToggle({ className }: { className?: string }) {
-  const { theme, resolvedTheme } = useAppearance();
+  const { mode, themeLabel } = useAppearance();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
-  const dark = THEME_PRESETS[resolvedTheme].mode === "dark";
-  const label = theme === "system" ? "Follow device" : THEME_PRESETS[resolvedTheme].name;
+  const dark = mode === "dark";
+  const label = themeLabel;
 
   useEffect(() => {
     if (!open) return;

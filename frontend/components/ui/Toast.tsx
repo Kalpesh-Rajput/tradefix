@@ -93,7 +93,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     initial={{ opacity: 0, y: 12, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                    className={`pointer-events-auto flex gap-3 rounded-xl border px-3.5 py-3 shadow-lg shadow-black/40 ${STYLES[item.variant]}`}
+                    className={`tf-toast pointer-events-auto flex gap-3 rounded-xl border px-3.5 py-3 shadow-lg shadow-black/40 ${STYLES[item.variant]}`}
                     role="status"
                   >
                     <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />

@@ -55,6 +55,11 @@ class User(Base):
     target_trades: Mapped[int | None] = mapped_column(Integer, nullable=True)
     theme: Mapped[str] = mapped_column(String(32), nullable=False, default="tradefix-purple", server_default="tradefix-purple")
     accent_color: Mapped[str] = mapped_column(String(32), nullable=False, default="purple", server_default="purple")
+    custom_themes: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=lambda: {"revision": 0, "themes": []},
+    )
     plan: Mapped[str] = mapped_column(String(16), nullable=False, default="free", server_default="free")
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     custom_emotion_tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)

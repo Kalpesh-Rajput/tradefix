@@ -22,6 +22,7 @@ from app.schemas.auth import (
     UserUpdateRequest,
     _REFERRAL_DETAILS,
 )
+from app.schemas.custom_theme import CustomThemesDocument, is_custom_theme_id, stored_document, theme_ids
 from app.services.google_auth import verify_google_id_token
 from app.services.rate_limit import avatar_upload_limiter, password_change_limiter
 from app.services.storage import delete_local_upload, save_avatar
@@ -238,6 +239,20 @@ def update_me(
 ):
     data = payload.model_dump(exclude_unset=True)
 
+    if "custom_themes" in data:
+        try:
+            document = data["custom_themes"]
+            if not isinstance(document, CustomThemesDocument):
+                document = CustomThemesDocument.model_validate(document)
+            data["custom_themes"] = stored_document(current_user.custom_themes, document)
+        except ValueError as exc:
+            if str(exc) == "revision":
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Custom themes were updated in another session. Reload and try again.",
+                ) from exc
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid custom theme") from exc
+
     if "username" in data:
         username = data["username"]
         if username:
@@ -296,6 +311,10 @@ def update_me(
         if isinstance(value, str):
             value = value.strip() or None
         setattr(current_user, field, value)
+
+    active_theme = current_user.theme or ""
+    if is_custom_theme_id(active_theme) and active_theme not in theme_ids(current_user.custom_themes):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="That custom theme is not saved on your account.")
 
     db.add(current_user)
     db.commit()

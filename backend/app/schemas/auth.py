@@ -5,6 +5,8 @@ from zoneinfo import ZoneInfo, available_timezones
 
 from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator, model_validator
 
+from app.schemas.custom_theme import CustomThemesDocument, is_allowed_theme_value
+
 _URL_RE = re.compile(r"^https?://[^\s]+$", re.IGNORECASE)
 _USERNAME_RE = re.compile(r"^[a-zA-Z0-9_.-]*$")
 _LANGUAGE_RE = re.compile(r"^[a-z]{2,3}(-[A-Za-z]{2,8})?$")
@@ -143,6 +145,7 @@ class UserResponse(BaseModel):
     target_trades: int | None = None
     theme: str = "tradefix-purple"
     accent_color: str = "purple"
+    custom_themes: CustomThemesDocument = Field(default_factory=lambda: CustomThemesDocument(revision=0, themes=[]))
     plan: str = "free"
     role: str = "trader"
     custom_emotion_tags: list[str] = Field(default_factory=list)
@@ -332,6 +335,7 @@ class UserUpdateRequest(BaseModel):
     target_trades: int | None = Field(default=None, ge=0)
     theme: str | None = Field(default=None, max_length=32)
     accent_color: str | None = Field(default=None, max_length=32)
+    custom_themes: CustomThemesDocument | None = None
     plan: str | None = Field(default=None, max_length=16)
 
     @field_validator("username")
@@ -429,7 +433,7 @@ class UserUpdateRequest(BaseModel):
         if value is None:
             return None
         cleaned = value.strip().lower()
-        if cleaned not in _THEMES:
+        if not is_allowed_theme_value(cleaned):
             raise ValueError("Invalid theme")
         return cleaned
 

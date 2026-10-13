@@ -23,7 +23,7 @@ export function AppHeader() {
   return (
     <header
       className={clsx(
-        "relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text-primary)] sm:px-4",
+        "relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text-primary)] app-header sm:px-4",
         subtitle ? "min-h-[52px]" : "min-h-12"
       )}
     >

@@ -1160,18 +1160,27 @@ export function isThemePreference(value: unknown): value is ThemePreference {
   return typeof value === "string" && (THEME_PREFERENCES as readonly string[]).includes(value);
 }
 
-/** Legacy light/dark become explicit presets. `system` stays Follow device. Saved preset ids are kept. */
-export function migrateStoredTheme(value: unknown): ThemePreference {
+/** Saved custom themes use this id. The palette itself is not stored in `users.theme`. */
+export const CUSTOM_THEME_ID_PATTERN = /^ct_[a-f0-9]{12}$/;
+
+export function isCustomThemeId(value: unknown): value is string {
+  return typeof value === "string" && CUSTOM_THEME_ID_PATTERN.test(value);
+}
+
+/** Legacy light/dark become explicit presets. `system` stays Follow device. Saved preset and custom ids are kept. */
+export function migrateStoredTheme(value: unknown): string {
   if (value === "dark") return "midnight-pro";
   if (value === "light") return DEFAULT_THEME_ID;
   if (value === "system") return "system";
   if (isThemePresetId(value)) return value;
+  if (isCustomThemeId(value)) return value;
   return DEFAULT_THEME_ID;
 }
 
-export function resolveTheme(preference: ThemePreference, systemDark: boolean): ThemePresetId {
+export function resolveTheme(preference: string, systemDark: boolean): ThemePresetId {
   if (preference === "system") return systemDark ? "midnight-pro" : "classic";
-  return preference;
+  if (isThemePresetId(preference)) return preference;
+  return DEFAULT_THEME_ID;
 }
 
 export function parseHex(hex: string): { r: number; g: number; b: number } {
@@ -1417,5 +1426,6 @@ export function buildAppearanceBootScript(storageKey: string): string {
     css: PRESET_CSS_VARIABLES,
     modes: Object.fromEntries(THEME_PRESET_IDS.map((id) => [id, THEME_PRESETS[id].mode])),
   });
-  return `(function(){try{var D=${payload};var theme=${JSON.stringify(DEFAULT_THEME_ID)};var raw=localStorage.getItem(D.key);if(raw){var p=JSON.parse(raw);var t=p&&typeof p.theme==="string"?p.theme:"";if(t==="dark")theme="midnight-pro";else if(t==="light")theme=${JSON.stringify(DEFAULT_THEME_ID)};else if(t==="system"||D.css[t])theme=t;if(t==="dark"||t==="light"){try{p.theme=theme;localStorage.setItem(D.key,JSON.stringify(p));}catch(e){}}}var resolved=theme;if(theme==="system"){resolved=window.matchMedia("(prefers-color-scheme: dark)").matches?"midnight-pro":"classic";}var vars=D.css[resolved]||D.css[${JSON.stringify(DEFAULT_THEME_ID)}];var r=document.documentElement;var dark=D.modes[resolved]==="dark";r.classList.toggle("dark",dark);r.classList.toggle("light",!dark);r.style.colorScheme=dark?"dark":"light";r.dataset.theme=resolved;r.dataset.preference=theme;for(var k in vars){if(Object.prototype.hasOwnProperty.call(vars,k))r.style.setProperty(k,vars[k]);}}catch(e){}})();`;
+  const fallback = JSON.stringify(DEFAULT_THEME_ID);
+  return `(function(){try{var D=${payload};var theme=${fallback};var raw=localStorage.getItem(D.key);var stored=null;if(raw){stored=JSON.parse(raw);var t=stored&&typeof stored.theme==="string"?stored.theme:"";if(t==="dark")theme="midnight-pro";else if(t==="light")theme=${fallback};else if(t==="system"||D.css[t]||/^ct_[a-f0-9]{12}$/.test(t))theme=t;if(t==="dark"||t==="light"){try{stored.theme=theme;localStorage.setItem(D.key,JSON.stringify(stored));}catch(e){}}}var custom=stored&&stored.customCss&&stored.customCss[theme];if(custom&&custom.vars){var root=document.documentElement;var customDark=custom.mode==="dark";root.classList.toggle("dark",customDark);root.classList.toggle("light",!customDark);root.style.colorScheme=customDark?"dark":"light";root.dataset.theme=custom.base&&D.css[custom.base]?custom.base:${fallback};root.dataset.preference=theme;root.dataset.customTheme="1";var customVars=custom.vars;for(var key in customVars){if(Object.prototype.hasOwnProperty.call(customVars,key))root.style.setProperty(key,customVars[key]);}return;}var resolved=theme;if(theme==="system"){resolved=window.matchMedia("(prefers-color-scheme: dark)").matches?"midnight-pro":"classic";}if(!D.css[resolved])resolved=${fallback};var vars=D.css[resolved];var node=document.documentElement;var dark=D.modes[resolved]==="dark";node.classList.toggle("dark",dark);node.classList.toggle("light",!dark);node.style.colorScheme=dark?"dark":"light";node.dataset.theme=resolved;node.dataset.preference=theme;delete node.dataset.customTheme;for(var name in vars){if(Object.prototype.hasOwnProperty.call(vars,name))node.style.setProperty(name,vars[name]);}}catch(e){}})();`;
 }
