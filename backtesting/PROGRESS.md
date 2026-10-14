@@ -15,7 +15,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 
 | Id | Scope | Status |
 |---|---|---|
-| 0 | Audit and docs | todo |
+| 0 | Audit and docs | auto-passed (node v24.21.0, Postgres 18.6 at 0032 verified) |
 | 1A | Schema, config, registry | todo |
 | 1B | Live-trades helper: core journal readers | todo |
 | 1C | Live-trades helper: AI, sync, import, raw-SQL readers | todo |
@@ -62,12 +62,16 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 |---|---|---|---|---|
 | _(none yet)_ | | | | |
 
-## Open questions for the user
+## Open questions (resolved by default when implementation started without answers)
 
-1. **Uncommitted work in the tree.** Many unrelated files are modified or untracked: dashboard, analytics, trade components, and others. Some files these sub-phases must edit may already contain your uncommitted changes, for example `api/routers/trades.py`, `services/stats_service.py` and `imports/confirm.py`. A per-sub-phase commit (D-016) of those files would include your changes. Please choose one: commit or stash your current work before Phase 1A, or allow those files to be committed together with your changes.
-2. **D-023:** store detected time offsets per journal account (proposed) or per broker account only?
-3. **Local Postgres for tests:** is the `DATABASE_URL` in `backend/.env` a disposable development database that tests and migration round trips may write to (inside rolled-back transactions, and with downgrade and upgrade)? If not, provide a test database URL. Otherwise, database-dependent [AUTO] checks become pending.
-4. **Network access:** may the agent make live calls to Binance and Dukascopy from this machine for [NET] checks and for seeding? Note that the full seed list backfill runs for hours.
+1. **Uncommitted work.** `backend/` was clean, so backend files are committed normally. In `frontend/`, only files created by this feature are committed. Pre-existing dirty or untracked user files that get edited are listed under "Left uncommitted" below.
+2. **D-023:** offsets are keyed per journal account (the proposed default).
+3. **Test database.** Tests use the dev `DATABASE_URL` inside rolled-back transactions. Migration round trips only drop and recreate this feature's own tables and columns.
+4. **Network.** Live calls are attempted for [NET] checks. Failures are recorded as pending.
+
+## Left uncommitted (pre-existing user changes in edited files)
+
+_(none yet)_
 
 ## Commit log
 

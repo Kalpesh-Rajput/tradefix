@@ -171,7 +171,7 @@ Every gate check is labelled [AUTO], [NET] or [HUMAN].
 - Write paths set it from 2C onward.
 - Reason: `timestamptz` loses whether the original input was naive, so provenance must be stored explicitly.
 
-## D-023: Time-offset scope key (pending user)
+## D-023: Time-offset scope key (accepted by default; implementation started without objection)
 Proposed: detected offsets are stored per **journal account** (`trades.account_id`), with `broker_account_id` recorded when present. This covers manual entries, CSV and file imports, and broker sync. The alternative, keying only by broker account, would leave CSV-imported accounts without detection. Please confirm.
 
 ## D-024: CandleChart is client-only and StrictMode-safe (accepted, rev 2)
