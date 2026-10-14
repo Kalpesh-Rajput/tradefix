@@ -2,7 +2,8 @@
 
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { CHART_BODY_H, ChartCard, EmptyChart, chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
+import { CHART_HOVER_LINE, TipCard, pnlTone } from "@/components/dashboard/analytics/shared";
+import { CHART_BODY_H, ChartCard, EmptyChart } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { CHART_LINE_HEX, PNL_LOSS_HEX } from "@/lib/appearance";
 import type { DrawdownPoint } from "@/lib/dashboardSeries";
@@ -46,8 +47,23 @@ export function DrawdownChart({
                 tickFormatter={(v) => formatMoney(Number(v), { signed: true, digits: 0 })}
               />
               <Tooltip
-                contentStyle={chartTooltipStyle}
-                formatter={(v: number) => [formatMoney(v, { signed: true, digits: 2 }), "Drawdown"]}
+                cursor={CHART_HOVER_LINE}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const point = payload[0].payload as { date: string; value: number };
+                  return (
+                    <TipCard
+                      title={point.date}
+                      rows={[
+                        {
+                          label: "Drawdown",
+                          value: formatMoney(point.value, { signed: true, digits: 2 }),
+                          tone: pnlTone(point.value),
+                        },
+                      ]}
+                    />
+                  );
+                }}
               />
               <Area
                 type="monotone"

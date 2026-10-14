@@ -10,16 +10,6 @@ export const DASH_GAP_PX = 12;
 export const CHART_CARD_H = 14 * 2 + 28 + 8 + CHART_BODY_H;
 export const DASH_CALENDAR_H = CHART_CARD_H * 2 + DASH_GAP_PX;
 
-export const chartTooltipStyle = {
-  background: "var(--color-tooltip-bg)",
-  border: "1px solid var(--color-tooltip-border)",
-  borderRadius: 8,
-  fontSize: 11,
-  boxShadow: "var(--shadow-dropdown)",
-  padding: "6px 10px",
-  color: "var(--color-tooltip-text)",
-};
-
 export function ChartCard({
   title,
   children,

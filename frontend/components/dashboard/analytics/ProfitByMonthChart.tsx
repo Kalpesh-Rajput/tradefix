@@ -23,6 +23,7 @@ import {
   GRID,
   BAR_LOSS_HEX,
   BAR_PROFIT_HEX,
+  CHART_HOVER_FILL,
   TIME_CHART_H,
   TipCard,
   formatPct,
@@ -77,7 +78,7 @@ export function ProfitByMonthChart({
               />
               <ReferenceLine y={0} stroke="var(--color-border)" />
               <Tooltip
-                cursor={{ fill: "color-mix(in srgb, var(--color-text-muted) 8%, transparent)" }}
+                cursor={{ fill: CHART_HOVER_FILL }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const row = payload[0].payload as (typeof rows)[number];

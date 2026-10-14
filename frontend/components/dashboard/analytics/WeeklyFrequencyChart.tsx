@@ -11,6 +11,7 @@ import {
   AnalyticsEmpty,
   GRID,
   BAR_PROFIT_HEX,
+  CHART_HOVER_FILL,
   ROW_CHART_H,
   TipCard,
   pnlTone,
@@ -48,7 +49,7 @@ export function WeeklyFrequencyChart({
               />
               <YAxis type="category" dataKey="day" width={36} tick={AXIS} tickLine={false} axisLine={false} />
               <Tooltip
-                cursor={{ fill: "color-mix(in srgb, var(--color-text-muted) 8%, transparent)" }}
+                cursor={{ fill: CHART_HOVER_FILL }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const row = payload[0].payload as (typeof rows)[number];

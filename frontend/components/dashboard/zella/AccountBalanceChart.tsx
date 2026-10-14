@@ -10,7 +10,8 @@ import {
   YAxis,
 } from "recharts";
 
-import { CHART_BODY_COMPACT, ChartCard, EmptyChart, chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
+import { CHART_HOVER_LINE, TipCard } from "@/components/dashboard/analytics/shared";
+import { CHART_BODY_COMPACT, ChartCard, EmptyChart } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { CHART_LINE_HEX } from "@/lib/appearance";
 import type { LinePoint } from "@/lib/dashboardSeries";
@@ -65,11 +66,24 @@ export function AccountBalanceChart({
                   tickFormatter={(v) => formatMoney(Number(v), { signed: true, digits: 0 })}
                 />
                 <Tooltip
-                  contentStyle={chartTooltipStyle}
-                  formatter={(v: number, name: string) => [
-                    formatMoney(v, { signed: true, digits: 2 }),
-                    name === "baseline" ? "Starting capital" : "Balance",
-                  ]}
+                  cursor={CHART_HOVER_LINE}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const point = payload[0].payload as { date: string; value: number; baseline?: number };
+                    const rows = [
+                      {
+                        label: "Balance",
+                        value: formatMoney(point.value, { signed: true, digits: 2 }),
+                      },
+                    ];
+                    if (point.baseline != null) {
+                      rows.push({
+                        label: "Starting capital",
+                        value: formatMoney(point.baseline, { signed: true, digits: 2 }),
+                      });
+                    }
+                    return <TipCard title={point.date} rows={rows} />;
+                  }}
                 />
                 <Line
                   type="monotone"

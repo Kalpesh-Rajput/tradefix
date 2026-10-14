@@ -14,6 +14,7 @@ import {
 
 import { CHART_BODY_H, ChartCard } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { CHART_HOVER_FILL } from "@/components/dashboard/analytics/shared";
 import { HoverTip } from "@/components/ui/InfoTooltip";
 import {
   TradeFixScoreDetails,
@@ -252,7 +253,10 @@ export function TradeFixScoreCard({
                     isAnimationActive={!reduceMotion}
                     animationDuration={700}
                   />
-                  <Tooltip content={<RadarTooltip />} />
+                  <Tooltip
+                    cursor={{ fill: CHART_HOVER_FILL }}
+                    content={<RadarTooltip />}
+                  />
                 </RadarChart>
               </ResponsiveContainer>
             </div>

@@ -17,6 +17,7 @@ import type { DashboardPerformance } from "@/lib/types";
 import {
   AXIS,
   AnalyticsEmpty,
+  CHART_HOVER_LINE,
   GRID,
   PNL_PROFIT_HEX,
   TIME_CHART_H,
@@ -77,6 +78,7 @@ export function HourlyWinRateChart({
                 tickFormatter={(value) => `${value}%`}
               />
               <Tooltip
+                cursor={CHART_HOVER_LINE}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const row = payload[0].payload as (typeof rows)[number];

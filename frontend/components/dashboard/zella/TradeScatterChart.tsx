@@ -12,7 +12,8 @@ import {
   YAxis,
 } from "recharts";
 
-import { CHART_BODY_H, ChartCard, EmptyChart, chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
+import { CHART_HOVER_LINE, TipCard, pnlTone } from "@/components/dashboard/analytics/shared";
+import { CHART_BODY_H, ChartCard, EmptyChart } from "@/components/dashboard/zella/ChartCard";
 import { BAR_LOSS_HEX, BAR_PROFIT_HEX } from "@/lib/appearance";
 import { formatClock, formatDuration, type ScatterPoint } from "@/lib/dashboardSeries";
 
@@ -57,13 +58,24 @@ export function TradeScatterChart({
               />
               <ReferenceLine y={0} stroke="var(--color-border-strong)" strokeDasharray="4 4" />
               <Tooltip
-                contentStyle={chartTooltipStyle}
-                formatter={(v: number, name: string, item) => {
-                  if (name === "y") return [formatMoney(v, { signed: true, digits: 2 }), "P&L"];
-                  const payload = item?.payload as ScatterPoint | undefined;
-                  return [payload?.label ?? String(v), xMode === "clock" ? "Time" : "Duration"];
+                cursor={CHART_HOVER_LINE}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const point = payload[0].payload as ScatterPoint;
+                  return (
+                    <TipCard
+                      title={point.symbol}
+                      rows={[
+                        { label: xMode === "clock" ? "Time" : "Duration", value: point.label },
+                        {
+                          label: "P&L",
+                          value: formatMoney(point.y, { signed: true, digits: 2 }),
+                          tone: pnlTone(point.y),
+                        },
+                      ]}
+                    />
+                  );
                 }}
-                labelFormatter={(_, payload) => (payload?.[0]?.payload as ScatterPoint | undefined)?.symbol ?? ""}
               />
               <Scatter data={series} r={4}>
                 {series.map((p, i) => (

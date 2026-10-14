@@ -89,6 +89,10 @@ export function AnalyticsEmpty({ title, body }: { title: string; body: string })
   );
 }
 
+/** Soft band behind a hovered bar or radar sector. SVG fill defaults to black when omitted. */
+export const CHART_HOVER_FILL = "color-mix(in srgb, var(--color-text-muted) 10%, transparent)";
+export const CHART_HOVER_LINE = { stroke: "var(--color-border-strong)", strokeWidth: 1, fill: "none" };
+
 export function TipCard({
   title,
   rows,
@@ -106,9 +110,9 @@ export function TipCard({
             <dd
               className={
                 row.tone === "pos"
-                  ? "font-semibold tabular-nums text-[#1F7A4D]"
+                  ? "font-semibold tabular-nums text-[var(--color-success-text)]"
                   : row.tone === "neg"
-                    ? "font-semibold tabular-nums text-[#C23B3B]"
+                    ? "font-semibold tabular-nums text-[var(--color-danger-text)]"
                     : "font-medium tabular-nums text-[var(--color-text-primary)]"
               }
             >

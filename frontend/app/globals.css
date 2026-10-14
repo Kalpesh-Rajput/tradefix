@@ -526,6 +526,11 @@ html.dark ::-webkit-scrollbar-thumb {
     container-name: chartcard;
   }
 
+  /* Recharts omits fill on hover cursors; SVG then paints them black. */
+  .recharts-tooltip-cursor {
+    fill: color-mix(in srgb, var(--color-text-muted) 10%, transparent);
+  }
+
   .chart-legend {
     display: none;
   }

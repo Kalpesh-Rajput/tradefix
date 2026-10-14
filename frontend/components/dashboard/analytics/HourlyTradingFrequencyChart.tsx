@@ -11,6 +11,7 @@ import {
   AnalyticsEmpty,
   GRID,
   BAR_PROFIT_HEX,
+  CHART_HOVER_FILL,
   TIME_CHART_H,
   TipCard,
   HOUR_AXIS_TICKS,
@@ -59,7 +60,7 @@ export function HourlyTradingFrequencyChart({
                 domain={[0, (max: number) => Math.max(1, max)]}
               />
               <Tooltip
-                cursor={{ fill: "color-mix(in srgb, var(--color-text-muted) 8%, transparent)" }}
+                cursor={{ fill: CHART_HOVER_FILL }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const row = payload[0].payload as (typeof rows)[number];

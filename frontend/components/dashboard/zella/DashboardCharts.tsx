@@ -13,7 +13,8 @@ import {
   YAxis,
 } from "recharts";
 
-import { CHART_BODY_H, ChartCard, EmptyChart, chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
+import { CHART_HOVER_FILL, CHART_HOVER_LINE, TipCard, pnlTone } from "@/components/dashboard/analytics/shared";
+import { CHART_BODY_H, ChartCard, EmptyChart } from "@/components/dashboard/zella/ChartCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { BAR_LOSS_HEX, BAR_PROFIT_HEX, PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 
@@ -75,8 +76,23 @@ export function CumulativePnlChart({
                 width={48}
               />
               <Tooltip
-                contentStyle={chartTooltipStyle}
-                formatter={(v: number) => [formatMoney(v, { signed: true, digits: 2 }), "P&L"]}
+                cursor={CHART_HOVER_LINE}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const point = payload[0].payload as { date: string; value: number };
+                  return (
+                    <TipCard
+                      title={point.date}
+                      rows={[
+                        {
+                          label: "P&L",
+                          value: formatMoney(point.value, { signed: true, digits: 2 }),
+                          tone: pnlTone(point.value),
+                        },
+                      ]}
+                    />
+                  );
+                }}
               />
               <Area
                 type="monotone"
@@ -128,8 +144,23 @@ export function DailyPnlChart({
                 width={48}
               />
               <Tooltip
-                contentStyle={chartTooltipStyle}
-                formatter={(v: number) => [formatMoney(v, { signed: true, digits: 2 }), "P&L"]}
+                cursor={{ fill: CHART_HOVER_FILL }}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const point = payload[0].payload as { date: string; value: number };
+                  return (
+                    <TipCard
+                      title={point.date}
+                      rows={[
+                        {
+                          label: "Net P&L",
+                          value: formatMoney(point.value, { signed: true, digits: 2 }),
+                          tone: pnlTone(point.value),
+                        },
+                      ]}
+                    />
+                  );
+                }}
               />
               <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={22}>
                 {series.map((entry, i) => (

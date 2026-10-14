@@ -13,7 +13,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { chartTooltipStyle } from "@/components/dashboard/zella/ChartCard";
+import { CHART_HOVER_LINE, TipCard, pnlTone } from "@/components/dashboard/analytics/shared";
 import { PNL_LOSS_HEX, PNL_PROFIT_HEX } from "@/lib/appearance";
 
 const LINE = "var(--color-chart-axis)";
@@ -55,9 +55,23 @@ export function PnLChart({
           />
           <ReferenceLine y={0} stroke="var(--color-border-strong)" strokeDasharray="4 4" />
           <Tooltip
-            contentStyle={chartTooltipStyle}
-            formatter={(v) => [formatMoney(Number(v), { signed: true, digits: 2 }), "P&L"]}
-            labelFormatter={() => ""}
+            cursor={CHART_HOVER_LINE}
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const point = payload[0].payload as { value: number };
+              return (
+                <TipCard
+                  title="P&L"
+                  rows={[
+                    {
+                      label: "Net P&L",
+                      value: formatMoney(point.value, { signed: true, digits: 2 }),
+                      tone: pnlTone(point.value),
+                    },
+                  ]}
+                />
+              );
+            }}
           />
           <Area
             type="monotone"
