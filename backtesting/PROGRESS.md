@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 2G (replay overlays, notes, entry points).
+- **Current sub-phase:** 3A (scenario format and shared rules).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -30,7 +30,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 2D | CandleChart wrapper | auto-passed (HUMAN pending) |
 | 2E | Replay engine (TS) | auto-passed |
 | 2F | Replay page shell | auto-passed (HUMAN pending) |
-| 2G | Replay overlays, notes, entry points (Gate 2) | todo |
+| 2G | Replay overlays, notes, entry points (Gate 2) | auto-passed (HUMAN pending) |
 | 3A | Shared rules and scenario format (Python) | todo |
 | 3B | Browser order engine (TS) | todo |
 | 3C | Session backend and descriptor endpoint | todo |
@@ -172,6 +172,11 @@ Fill in during work: the files changed, the commands run with their result summa
   - The page shows a skeleton, a preparing panel, and distinct states for an unresolved symbol (with a request-support action), an unavailable market, a missing trade, a rate limit and a network error.
   - `ReplayStage` owns the engine. Chart updates stay imperative; React state is flushed once per frame. Controls: play and pause, step, candle step, speed, timeframe, scrub, jump to entry or exit, reset, fullscreen.
   - Gate: `npm run build` and `npm run typecheck` pass. The HUMAN check is in HUMAN_QA.
+- **2G:**
+  - `ReplayOverlays.ts` draws entry and exit markers, notes, and entry/stop/target lines only once the cursor has reached them. The floating badge uses the replayed close while the trade is open and the fill price after exit. The exit span is shaded from chart coordinates. "Align to my fills" shifts displayed prices by the suggested delta and is never stored.
+  - Notes load and save through `/api/trades/{id}/replay-notes`. The side panel lists them; clicking one seeks. Shortcuts are Space, arrows, and +/−, and they do nothing while an input, textarea, or select is focused.
+  - Replay opens from the trade detail page and the preview drawer.
+  - Gate: `npm test`, `npm run typecheck`, and `npm run build` pass. `scripts/test-replay-overlays.ts` covers the cursor rule. HUMAN steps 1–7 are in HUMAN_QA.
 
 ## Pending human verification
 
@@ -186,6 +191,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 1H | NET | Seeded aggregation for EURUSD and XAUUSD | `.\venv\Scripts\python.exe -m pytest -m seeded` (no skips) | pending (same block) |
 | 2D | HUMAN | One chart canvas in StrictMode, no console warnings, resize and theme switching work | HUMAN_QA "2D chart lifecycle" | pending |
 | 2F | HUMAN | Seeded trade loads; preparing, unresolved and error states render | HUMAN_QA "2F page shell" | pending |
+| 2G | HUMAN | Phase 2 manual steps 1 to 7 | HUMAN_QA Phase 2 steps 1–7 | pending |
 | 1H | NET | Cross-check EURUSD daily closes against a reference | Compare the `1d` closes from `/api/market-data/candles` with a public EURUSD daily close (for example ECB or broker statements) within 0.0005 | pending (same block) |
 
 ## Open questions (resolved by default when implementation started without answers)
@@ -218,3 +224,4 @@ _(none yet)_
 | 2C | 7a7dbcf | backtesting(2c): prefetch hooks and time-basis writers |
 | 2D | 2a5e274 | backtesting(2d): CandleChart wrapper |
 | 2E | f528dc8 | backtesting(2e): replay engine |
+| 2F | 379c867 | backtesting(2f): replay page shell |

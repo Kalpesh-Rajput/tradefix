@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "npx --yes tsx scripts/test-market-sessions.ts && npx --yes tsx scripts/test-fx.ts && npx --yes tsx scripts/test-tradefix-score.ts && npx --yes tsx scripts/test-motion.ts && npx --yes tsx scripts/test-themes.ts && npx --yes tsx scripts/test-custom-themes.ts && npx --yes tsx scripts/test-chart-lifecycle.ts && npx --yes tsx scripts/test-replay-engine.ts",
+    "test": "npx --yes tsx scripts/test-market-sessions.ts && npx --yes tsx scripts/test-fx.ts && npx --yes tsx scripts/test-tradefix-score.ts && npx --yes tsx scripts/test-motion.ts && npx --yes tsx scripts/test-themes.ts && npx --yes tsx scripts/test-custom-themes.ts && npx --yes tsx scripts/test-chart-lifecycle.ts && npx --yes tsx scripts/test-replay-engine.ts && npx --yes tsx scripts/test-replay-overlays.ts",
     "test:replay-engine": "npx --yes tsx scripts/test-replay-engine.ts",
     "test:chart-lifecycle": "npx --yes tsx scripts/test-chart-lifecycle.ts",
     "test:themes": "npx --yes tsx scripts/test-themes.ts && npx --yes tsx scripts/test-custom-themes.ts",

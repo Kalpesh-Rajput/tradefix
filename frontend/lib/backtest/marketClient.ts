@@ -35,6 +35,10 @@ export type ReplayPayload = {
   window_end_ms: number;
   time_basis: { basis: string; rule: string; tz_label: string | null };
   price_note: string | null;
+  alignment: {
+    tolerance: number;
+    offset_suggestion: { based_on: "entry" | "exit"; price_delta: number; points: number } | null;
+  } | null;
 };
 
 export type DataJob = {

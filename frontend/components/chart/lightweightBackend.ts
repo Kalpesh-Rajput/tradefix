@@ -172,6 +172,14 @@ export const createLightweightBackend: ChartBackendFactory = (container, initial
     resize(width, height) {
       chart.resize(width, height);
     },
+    timeToX(timeMs) {
+      const x = chart.timeScale().timeToCoordinate(toTime(timeMs));
+      return x == null ? null : x;
+    },
+    onRange(listener) {
+      chart.timeScale().subscribeVisibleLogicalRangeChange(listener);
+      return () => chart.timeScale().unsubscribeVisibleLogicalRangeChange(listener);
+    },
     onCrosshair(handler) {
       const listener = (param: MouseEventParams<Time>) => {
         const raw = param.time === undefined ? undefined : param.seriesData.get(candles);

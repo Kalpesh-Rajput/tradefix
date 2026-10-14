@@ -50,6 +50,8 @@ export interface ChartBackend {
   setDisplay(display: ChartDisplay): void;
   resize(width: number, height: number): void;
   onCrosshair(handler: (bar: CandleBar | null) => void): () => void;
+  timeToX(timeMs: number): number | null;
+  onRange(listener: () => void): () => void;
   remove(): void;
 }
 
@@ -198,6 +200,14 @@ export class ChartModel {
 
   resize(width: number, height: number) {
     if (width > 0 && height > 0) this.backend?.resize(width, height);
+  }
+
+  timeToX(timeMs: number): number | null {
+    return this.backend?.timeToX(timeMs) ?? null;
+  }
+
+  onRange(listener: () => void): () => void {
+    return this.backend?.onRange(listener) ?? (() => {});
   }
 }
 

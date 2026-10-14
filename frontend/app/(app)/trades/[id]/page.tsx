@@ -212,6 +212,9 @@ export default function TradeDetailPage() {
           Trades
         </Link>
         <div className="flex items-center gap-2">
+          <Button size="sm" variant="secondary" onClick={() => router.push(`/replay/${trade.id}`)}>
+            Replay
+          </Button>
           <Button size="sm" variant="secondary" onClick={() => openEdit(trade.id)}>
             Edit Trade
           </Button>

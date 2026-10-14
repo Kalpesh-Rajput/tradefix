@@ -64,3 +64,9 @@ export function aggregateMinutes(minutes: readonly Candle[], timeframe: Timefram
 export function speedLabel(speed: ReplaySpeed): string {
   return speed === "candle" ? "1 candle/s" : `${speed}×`;
 }
+
+export function nextSpeed(speed: ReplaySpeed, direction: 1 | -1): ReplaySpeed {
+  const index = REPLAY_SPEEDS.indexOf(speed);
+  const next = Math.min(REPLAY_SPEEDS.length - 1, Math.max(0, index + direction));
+  return REPLAY_SPEEDS[next];
+}

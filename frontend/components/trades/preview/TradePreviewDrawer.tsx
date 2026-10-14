@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -103,6 +104,14 @@ export function TradePreviewDrawer({
               Trade Preview
             </h2>
             <div className="flex items-center gap-2">
+              {trade ? (
+                <Link
+                  href={`/replay/${trade.id}`}
+                  className="inline-flex h-8 items-center rounded-xl border border-[#E2E2E7] px-2.5 text-[12px] font-medium text-[var(--color-text-primary)] hover:bg-[#F7F7F9]"
+                >
+                  Replay
+                </Link>
+              ) : null}
               {trade ? (
                 <button
                   type="button"

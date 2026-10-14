@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ApiError, api } from "@/lib/api";
 import type { DataJob, ReplayPayload } from "@/lib/backtest/marketClient";
@@ -24,6 +24,28 @@ export function useReplay(tradeId: string) {
     retryDelay,
     refetchInterval: (query) => (query.state.data?.status === "preparing" ? 2_000 : false),
   });
+}
+
+export type ReplayNote = {
+  id: string;
+  replay_time_ms: number;
+  text: string;
+  created_at: string | null;
+};
+
+export function useReplayNotes(tradeId: string, enabled: boolean) {
+  const client = useQueryClient();
+  const query = useQuery({
+    queryKey: ["replay-notes", tradeId],
+    queryFn: () => api.get<ReplayNote[]>(`/api/trades/${tradeId}/replay-notes`),
+    enabled: enabled && tradeId.length > 0,
+  });
+  const add = useMutation({
+    mutationFn: (body: { replay_time_ms: number; text: string }) =>
+      api.post<ReplayNote>(`/api/trades/${tradeId}/replay-notes`, body),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["replay-notes", tradeId] }),
+  });
+  return { notes: query.data ?? [], addNote: add.mutateAsync, saving: add.isPending, error: add.error };
 }
 
 export function useDataJob(jobId: string | null | undefined) {

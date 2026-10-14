@@ -90,6 +90,12 @@ function makeFactory() {
         this.display = next;
       },
       resize() {},
+      timeToX() {
+        return null;
+      },
+      onRange() {
+        return () => {};
+      },
       onCrosshair() {
         this.crosshairSubscribers += 1;
         return () => {

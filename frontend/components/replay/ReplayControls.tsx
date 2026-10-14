@@ -126,8 +126,11 @@ export function ReplayControls({
           }
         }}
       />
-      {state.status === "buffering" ? <p className="text-[11px] text-[var(--color-text-muted)]">Loading candles…</p> : null}
-      {state.status === "ended" ? <p className="text-[11px] text-[var(--color-text-muted)]">End of available data.</p> : null}
+      <p className="text-[11px] text-[var(--color-text-muted)]">
+        Space play/pause · ← → step · + − speed
+        {state.status === "buffering" ? " · Loading candles…" : ""}
+        {state.status === "ended" ? " · End of available data." : ""}
+      </p>
     </div>
   );
 }

@@ -26,6 +26,8 @@ export type CandleChartHandle = {
   fit: () => void;
   bars: () => readonly CandleBar[];
   theme: () => ChartTheme;
+  timeToX: (timeMs: number) => number | null;
+  onRange: (listener: () => void) => () => void;
 };
 
 export type CandleChartProps = {
@@ -77,6 +79,8 @@ export const CandleChart = forwardRef<CandleChartHandle, CandleChartProps>(funct
       fit: () => model.fit(),
       bars: () => model.getBars(),
       theme: () => model.display.theme,
+      timeToX: (timeMs) => model.timeToX(timeMs),
+      onRange: (listener) => model.onRange(listener),
     };
   }, []);
 
