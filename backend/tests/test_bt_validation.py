@@ -73,6 +73,17 @@ def test_outliers_flagged_but_kept():
     assert flag_outliers(batch, 20) == []
 
 
+def test_tick_pinned_quiet_market_does_not_flag_ordinary_bars():
+    n = 90
+    ts = T0 + np.arange(n, dtype=np.int64) * MINUTE_MS
+    close = np.full(n, 79692.51)
+    high, low = close.copy(), close - 0.01
+    low[70] = close[70] - 8.0
+    high[80] = close[80] + 900.0
+    quiet = Candles(ts, close.copy(), high, low, close, np.ones(n))
+    assert flag_outliers(quiet, 20) == [int(ts[80])]
+
+
 def test_gap_summary_crypto_counts_every_missing_minute():
     batch = _flat(60)
     keep = np.ones(60, dtype=bool)

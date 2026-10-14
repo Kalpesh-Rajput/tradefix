@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 1D (resolver, validation, store, coverage).
+- **Current sub-phase:** 2A (trade time-offset detection).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -23,7 +23,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 1E | Provider adapters, verify-instrument | auto-passed (1 NET pending) |
 | 1F | Jobs queue, worker, entitlements, errors, make-admin | auto-passed |
 | 1G | Candle service core | auto-passed |
-| 1H | Candle API, health, gzip, CLI, seed (Gate 1) | todo |
+| 1H | Candle API, health, gzip, CLI, seed (Gate 1) | auto-passed (Gate 1 NET partly pending: Dukascopy WAF) |
 | 2A | Trade time-offset detection | todo |
 | 2B | Replay payload API and notes | todo |
 | 2C | Prefetch hooks and time-basis writers | todo |
@@ -108,6 +108,23 @@ Fill in during work: the files changed, the commands run with their result summa
   - Bug found and fixed: an empty cache is falsy, so `cache or candle_cache` silently used the global cache.
   - Spec 02 section 9.1 now carries the D-017 amendment.
   - Tests: `test_bt_aggregation.py` (independent Python reference, seeded, `BT_SEED` override) and `test_bt_candle_service.py`. Full suite: 435 passed.
+- **1H:**
+  - **API:** `schemas/market_data.py`, plus `api/routers/market_data.py` (a thin router) over `marketdata/read_api.py`. Endpoints:
+    - `GET /api/market-data/instruments`: enabled only, with `q` and `asset_class` filters.
+    - `GET /api/market-data/candles`: columnar `t/o/h/l/c/v`, start and end in epoch ms or ISO, plus `until` and `limit`. Rate limited per user (`CANDLE_REQUESTS_PER_MINUTE`, returns `rate_limited` with Retry-After). The fetch window is clipped to the last closed minute. Returns 202 `data_preparing` with `job_id` when the data isn't ready.
+    - `GET /api/market-data/jobs/{id}`: backtest-lane jobs return 404 to anyone but their owner.
+  - `SlidingWindowRateLimiter.allow()` is the non-raising variant; `check()` is unchanged.
+  - `ensure_candles` now resolves its provider and session factories at call time.
+  - **Health:** `/api/health` keeps `status` and `app` and adds `checks`: database, storage writable (probe file in `<MARKET_DATA_DIR>/tmp`), and `market_worker` (ok, stale or missing, with its age). `status` is `degraded` when any check fails, and HTTP stays 200.
+  - **GZip:** global, D-018 verified.
+  - **CLI:** `backfill [symbols|--all] [--from --to] [--enqueue]`, `top-up`, `seed-demo`, `coverage [--reset]`, `verify`, `add-alias`, `unresolved`. The logic lives in `marketdata/operations.py`.
+  - **D-029:** the outlier baseline is floored at 1 bp of price (real BTCUSDT seed data went from 408 flags to 5).
+  - **NET results:**
+    - `verify-instrument BTCUSDT EURUSD XAUUSD --write`: BTCUSDT OK and written. EURUSD and XAUUSD fail with the Dukascopy WAF (202).
+    - `seed-demo`: BTCUSDT 43,200 rows for 2026-09 (expected 43,200). `coverage` shows one range, no holes, 0 gap minutes, 5 outliers. `verify` OK.
+    - `pytest -m seeded`: 7 BTCUSDT timeframes pass against the numpy reference; EURUSD and XAUUSD skip because they aren't seeded.
+    - BTCUSDT September daily closes match Binance `/api/v3/klines?interval=1d` exactly (30 of 30 days, max relative difference 0).
+  - Tests: `tests/test_candle_api.py` (17), `tests/test_seeded_candles.py` (marked seeded), and a regression test for the tick-pinned outlier case. Full suite: 453 passed.
 
 ## Pending human verification
 
@@ -117,6 +134,10 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 |---|---|---|---|---|
 | 1E | NET | Live Dukascopy smoke | `cd backend; npm ci --prefix tools/dukascopy; .\venv\Scripts\python.exe -m pytest -m live tests/test_providers.py -k dukascopy` | pending: the development network gets an AWS WAF challenge (HTTP 202) from jetta.dukascopy.com |
 | 1E | NET | Record a real Dukascopy output fixture | Run dukascopy-node for one EURUSD weekday with `-f json -v`, trim to 120 rows, and replace `tests/fixtures/marketdata/dukascopy_eurusd_m1.json` | pending (same block) |
+| 1H | NET | Verify EURUSD and XAUUSD | `cd backend; .\venv\Scripts\python.exe -m app.cli.marketdata verify-instrument EURUSD XAUUSD --write` | pending: Dukascopy WAF (HTTP 202) |
+| 1H | NET | Seed EURUSD and XAUUSD (expect about 28,000 to 32,000 rows each) | `.\venv\Scripts\python.exe -m app.cli.marketdata seed-demo`, then `coverage EURUSD XAUUSD` | pending (same block) |
+| 1H | NET | Seeded aggregation for EURUSD and XAUUSD | `.\venv\Scripts\python.exe -m pytest -m seeded` (no skips) | pending (same block) |
+| 1H | NET | Cross-check EURUSD daily closes against a reference | Compare the `1d` closes from `/api/market-data/candles` with a public EURUSD daily close (for example ECB or broker statements) within 0.0005 | pending (same block) |
 
 ## Open questions (resolved by default when implementation started without answers)
 
@@ -140,3 +161,4 @@ _(none yet)_
 | 1D | df0e21b | backtesting(1d): resolver, validation, parquet store, coverage |
 | 1E | 0a0179d | backtesting(1e): binance and dukascopy adapters, fixtures, verify-instrument |
 | 1F | 428571b | backtesting(1f): job queue, provider limiter, market worker, errors, entitlements, make-admin |
+| 1G | 382b2fd | backtesting(1g): candle service core, aggregation, cache, ingest jobs |

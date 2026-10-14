@@ -142,7 +142,8 @@ Every gate check is labelled [AUTO], [NET] or [HUMAN].
 - Rationale: FastAPI runs sync handlers in a bounded threadpool (about 40 threads by default), and long provider calls there starve every endpoint. **Rule: sync request handlers must never block the threadpool for long.** Anything that can't finish within the inline limit becomes a job.
 - This rule goes into README_BACKTESTING and 02 section 9.1 when 1G is implemented.
 
-## D-018: GZip and streaming endpoints (accepted, rev 2, verification pending in 1H)
+## D-018: GZip and streaming endpoints (accepted, rev 2, verified in 1H)
+- **1H result:** global `GZipMiddleware(minimum_size=1024)` is kept. `tests/test_candle_api.py` proves all three CSV exports return complete, gzip-encoded bodies (the decompressed bytes equal the identity response), and that `/ws/account` still connects. No path-scoped fallback was needed.
 - Planning audit result: there are no SSE or event-stream endpoints in backend or frontend. Grep for `StreamingResponse`, `EventSource`, `text/event-stream` and `getReader()` found only:
   - The CSV `StreamingResponse`s in `analytics.py` line 174 and `accounts.py` line 258.
   - A plain-`Response` trade export in `trades.py` line 442.
@@ -201,6 +202,12 @@ Proposed: detected offsets are stored per **journal account** (`trades.account_i
 - `verify-instrument <symbols...> [--write]` (1E) fetches one real recent day and checks the row count, sanity price ranges and validation. With `--write`, it sets `verified_on: <YYYY-MM-DD>` and `enabled: true`.
 - Before Gate 1, BTCUSDT, EURUSD and XAUUSD must be verified. Unverified instruments stay disabled.
 - If there's no network, this is recorded as pending [NET].
+- **1H result:** BTCUSDT was verified and written on 2026-10-14 (1,440 of 1,440 rows for 2026-10-13). EURUSD and XAUUSD are still disabled: Dukascopy answers with an AWS WAF challenge (HTTP 202) from the development network. We do not bypass it, so both are pending [NET].
+
+## D-029: Outlier baseline floor (accepted, 1H)
+- Seeding real BTCUSDT data for September 2026 flagged 408 "outliers". During quiet hours the price sits pinned to one 0.01 tick, so the trailing 60-bar median range collapses to 0.01 and an ordinary 8-dollar bar looks like a 20x spike.
+- `flag_outliers` now compares each bar against `max(median range, 1e-4 x close)`. That's 1 basis point: about 8 USD for BTC, about 1.1 pips for EURUSD. The same month now flags 5 bars.
+- Outliers are still flagged and kept, never dropped (02 section 7).
 
 ## D-028: Deployment readiness documentation (accepted, rev 2)
 README_BACKTESTING (5D) includes a Deployment readiness section covering:

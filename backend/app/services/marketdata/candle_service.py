@@ -80,10 +80,12 @@ def ensure_candles(
     end_ms: int,
     *,
     store: CandleStore | None = None,
-    provider_factory: ProviderFactory = default_provider,
-    session_factory: SessionFactory = _default_sessions,
+    provider_factory: ProviderFactory | None = None,
+    session_factory: SessionFactory | None = None,
     owner_user_id=None,
 ) -> EnsureResult:
+    provider_factory = provider_factory or default_provider
+    session_factory = session_factory or _default_sessions
     gaps = find_gaps(db, spec.symbol, spec.source, start_ms, end_ms)
     if not gaps:
         return EnsureResult("ready")

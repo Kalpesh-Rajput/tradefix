@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from fastapi.responses import JSONResponse
@@ -24,6 +25,7 @@ from app.api.routers import (
     brokers,
     imports,
     insights,
+    market_data,
     media,
     mentor,
     mood,
@@ -41,6 +43,7 @@ from app.core.config import settings
 from app.core.security import decode_access_token
 from app.services.backtest.errors import BacktestError
 from app.services.brokers.errors import BrokerError
+from app.services.health import health_report
 from app.services.scheduler import shutdown_scheduler, start_scheduler
 from app.services.ws_hub import hub
 
@@ -81,6 +84,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 app.include_router(auth.router)
 app.include_router(accounts.router)
@@ -113,6 +117,7 @@ app.include_router(coach.router)
 app.include_router(mentor.router)
 app.include_router(media.router)
 app.include_router(fx.router)
+app.include_router(market_data.router)
 
 uploads_path = Path(settings.upload_dir)
 uploads_path.mkdir(parents=True, exist_ok=True)
@@ -131,7 +136,7 @@ def backtest_error_handler(_request, exc: BacktestError):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "app": settings.app_name}
+    return health_report()
 
 
 @app.websocket("/ws/account")

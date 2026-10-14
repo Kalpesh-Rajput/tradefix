@@ -16,6 +16,7 @@ from app.services.marketdata.candles import MINUTE_MS, Candles
 logger = logging.getLogger(__name__)
 
 OUTLIER_WINDOW = 60
+OUTLIER_MIN_RANGE_FRACTION = 1e-4
 MAX_GAP_RANGES = 50
 _NEW_YORK = ZoneInfo("America/New_York")
 _DAILY_BREAK_CLASSES = {"metal", "index"}
@@ -64,7 +65,10 @@ def _dedup_keep_last(batch: Candles) -> tuple[Candles, int]:
 
 
 def flag_outliers(batch: Candles, multiple: float | None = None, window: int = OUTLIER_WINDOW) -> list[int]:
-    """Timestamps whose range exceeds `multiple` x the median range of the preceding `window` bars."""
+    """Timestamps whose range exceeds `multiple` x the median range of the preceding `window` bars.
+
+    The median is floored at OUTLIER_MIN_RANGE_FRACTION of price: quiet markets pinned to one tick
+    otherwise turn ordinary bars into "outliers"."""
     multiple = multiple or settings.candle_outlier_range_multiple
     ranges = batch.high - batch.low
     if len(ranges) <= 1:
@@ -75,7 +79,8 @@ def flag_outliers(batch: Candles, multiple: float | None = None, window: int = O
         medians[index] = np.median(ranges[:index])
     if len(ranges) > window:
         medians[window:] = np.median(sliding_window_view(ranges, window)[:-1], axis=1)
-    flagged = (medians > 0) & (ranges > multiple * medians)
+    baseline = np.maximum(medians, np.abs(batch.close) * OUTLIER_MIN_RANGE_FRACTION)
+    flagged = (medians > 0) & (ranges > multiple * baseline)
     return batch.ts[flagged].tolist()
 
 

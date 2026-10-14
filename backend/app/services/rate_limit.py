@@ -15,18 +15,24 @@ class SlidingWindowRateLimiter:
         self.detail = detail or "Too many attempts. Please wait and try again."
         self._hits: dict[str, deque[float]] = defaultdict(deque)
 
-    def check(self, key: str) -> None:
+    def allow(self, key: str) -> bool:
+        """Record a hit and return False instead of raising when the window is full."""
         now = time.monotonic()
         window = self._hits[key]
         cutoff = now - self.window_seconds
         while window and window[0] < cutoff:
             window.popleft()
         if len(window) >= self.max_calls:
+            return False
+        window.append(now)
+        return True
+
+    def check(self, key: str) -> None:
+        if not self.allow(key):
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail=self.detail,
             )
-        window.append(now)
 
 
 # 10 avatar uploads per user per hour
