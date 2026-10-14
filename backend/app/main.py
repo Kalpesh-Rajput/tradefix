@@ -53,6 +53,9 @@ async def lifespan(app: FastAPI):
         hub.set_loop(asyncio.get_running_loop())
     except Exception:
         pass
+    from app.services.marketdata.registry import mirror_on_startup
+
+    mirror_on_startup()
     if settings.enable_scheduler:
         start_scheduler()
     if settings.broker_worker_in_process:

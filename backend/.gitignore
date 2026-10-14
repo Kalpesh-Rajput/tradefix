@@ -6,3 +6,6 @@ __pycache__/
 *.db
 .pytest_cache/
 uploads/
+
+market_data/
+

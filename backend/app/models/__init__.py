@@ -28,6 +28,8 @@ from app.models.day_note import DayNote
 from app.models.day_plan import DayPlan, DayPlanEvent, DayPlanItem
 from app.models.notebook_folder import NotebookFolder
 from app.models.insight import Insight
+from app.models.job import Job, WorkerHeartbeat
+from app.models.market_data import CandleCoverage, CandleMonthStat, Instrument, SymbolAlias, UnresolvedSymbol
 from app.models.mentor import MentorAccess, TradeComment
 from app.models.mood import MoodCheckin
 from app.models.playbook import Playbook, PlaybookTemplate
@@ -83,6 +85,13 @@ __all__ = [
     "MentorAccess",
     "TradeComment",
     "Insight",
+    "Job",
+    "WorkerHeartbeat",
+    "Instrument",
+    "SymbolAlias",
+    "UnresolvedSymbol",
+    "CandleCoverage",
+    "CandleMonthStat",
     "AgentRun",
     "UserAgent",
     "UserNotification",

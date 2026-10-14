@@ -129,6 +129,10 @@ class Trade(Base):
     swap: Mapped[float | None] = mapped_column(Numeric(18, 8), nullable=True)
     funding: Mapped[float | None] = mapped_column(Numeric(18, 8), nullable=True)
     gross_pnl: Mapped[float | None] = mapped_column(Numeric(18, 8), nullable=True)
+    # Simulated rows (backtest "save to journal") never reach live analytics; see services/live_trades.py.
+    is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false", index=True)
+    # utc_aware | naive_wall_clock | unknown. timestamptz loses whether the input was naive (D-022).
+    time_basis: Mapped[str] = mapped_column(String(24), nullable=False, default="unknown", server_default="unknown")
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

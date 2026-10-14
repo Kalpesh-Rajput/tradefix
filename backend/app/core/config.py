@@ -100,6 +100,61 @@ class Settings(BaseSettings):
     sync_reconcile_minutes: int = 10
     sync_overlap_minutes: int = 30
 
+    # Market data and backtesting. Every limit here is documented in .env.example and backtesting/02.
+    market_data_dir: str = "market_data"
+    candle_max_bars_per_request: int = 5000
+    candle_requests_per_minute: int = 120
+    candle_cache_max_entries: int = 256
+    inline_fetch_max_gap_minutes: int = 4320
+    inline_fetch_timeout_s: float = 8.0
+    inline_fetch_max_concurrent: int = 4
+    candle_outlier_range_multiple: float = 20.0
+    binance_rest_hosts: str = "https://api.binance.com,https://data-api.binance.vision"
+    binance_futures_rest_host: str = "https://fapi.binance.com"
+    binance_archive_host: str = "https://data.binance.vision"
+    binance_requests_per_second: float = 5.0
+    dukascopy_enabled: bool = True
+    dukascopy_price_side: str = "bid"
+    dukascopy_chunk_days: int = 7
+    dukascopy_tool_dir: str = "tools/dukascopy"
+    dukascopy_requests_per_second: float = 0.5
+    dukascopy_timeout_s: int = 300
+    market_worker_in_process: bool = False
+    market_worker_poll_seconds: float = 2.0
+    market_worker_lock_key: int = 740001
+    scheduler_lock_key: int = 740002
+    worker_heartbeat_stale_seconds: int = 60
+    jobs_max_concurrent_binance: int = 2
+    jobs_max_concurrent_dukascopy: int = 1
+    jobs_max_concurrent_backtest: int = 2
+    job_max_attempts: int = 5
+    job_lock_seconds: int = 300
+    job_backoff_base_seconds: float = 15.0
+    job_backoff_max_seconds: float = 900.0
+    replay_window_bars_before: int = 200
+    replay_window_bars_after: int = 100
+    replay_suggested_start_bars: int = 100
+    replay_alignment_tolerance_pct: float = 0.05
+    replay_alignment_tolerance_pips: float = 2.0
+    time_offset_candidates: str = "UTC,Etc/GMT-2,Etc/GMT-3,NY_CLOSE,Europe/London"
+    time_offset_min_sample: int = 5
+    backtest_max_bars_per_run: int = 500000
+    backtest_runs_per_day: int = 30
+    backtest_max_concurrent_per_user: int = 1
+    backtest_max_strategies: int = 50
+    backtest_max_sessions: int = 50
+    backtest_max_trades_per_run: int = 5000
+    backtest_time_limit_s: int = 120
+    backtest_cache_window_hours: int = 24
+    backtest_equity_points: int = 1000
+    strategy_max_conditions: int = 10
+    strategy_max_indicators: int = 6
+    indicator_period_min: int = 2
+    indicator_period_max: int = 500
+    topup_utc_hour: int = 0
+    topup_utc_minute: int = 35
+    crosscheck_tolerance_pct: float = 0.1
+
     @property
     def cors_origins(self) -> list[str]:
         origins = [part.strip() for part in self.frontend_origin.split(",") if part.strip()]
