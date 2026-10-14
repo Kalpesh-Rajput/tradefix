@@ -25,7 +25,7 @@ import duckdb
 import numpy as np
 import pyarrow.parquet as pq
 
-from app.core.config import settings
+from app.core.config import backend_path, settings
 from app.services.marketdata.candles import COLUMNS, Candles
 from app.services.marketdata.validation import validate_batch
 
@@ -162,7 +162,7 @@ def duckdb_query(sql: str, params: dict[str, Any]) -> dict[str, np.ndarray]:
 
 class LocalParquetStore:
     def __init__(self, root: Path | str | None = None) -> None:
-        self.root = Path(root or settings.market_data_dir).resolve()
+        self.root = (Path(root) if root else backend_path(settings.market_data_dir)).resolve()
         self.candles_dir = self.root / "candles"
         self.tmp_dir = self.root / "tmp"
         self.locks_dir = self.root / "locks"

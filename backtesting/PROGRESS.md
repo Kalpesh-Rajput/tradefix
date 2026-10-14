@@ -20,7 +20,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 1B | Live-trades helper: core journal readers | auto-passed |
 | 1C | Live-trades helper: AI, sync, import, raw-SQL readers | auto-passed |
 | 1D | Resolver, validation, store, coverage | auto-passed |
-| 1E | Provider adapters, verify-instrument | todo |
+| 1E | Provider adapters, verify-instrument | auto-passed (1 NET pending) |
 | 1F | Jobs queue, worker, entitlements, errors, make-admin | todo |
 | 1G | Candle service core | todo |
 | 1H | Candle API, health, gzip, CLI, seed (Gate 1) | todo |
@@ -69,6 +69,20 @@ Fill in during work: the files changed, the commands run with their result summa
   - `coverage.record_fetch`: validate, then write, then mark covered (under a Postgres advisory transaction lock), then refresh the month stat (open-market gap minutes over the covered part, plus outliers recounted from the file). A store failure leaves coverage untouched.
   - The resolver's built-in aliases cover GOLD, SPX500, NAS100, GER40 and similar, and `BTCUSD` maps to `BTCUSDT`. Other crypto exchanges are flagged `binance_proxy` (D-011).
   - Tests: `test_bt_validation.py`, `test_bt_store.py`, `test_bt_coverage.py`, `test_bt_resolver.py`. Full suite: 371 passed.
+- **1E:**
+  - New modules: `providers/base.py` (`Chunk`, `ProviderError` with a code and a retryable flag, `Provider`), `providers/binance.py`, `providers/dukascopy.py`, `marketdata/verify.py`, and `app/cli/marketdata.py` with `verify-instrument`. Added `config.backend_path`, so relative data and tool paths are anchored at `backend/`.
+  - Binance planning: whole past months come from monthly archives, whole past days from daily archives, and anything partial or recent from REST. A 404 or a missing checksum falls back to REST. A checksum mismatch is retried once, then raises `checksum_mismatch`.
+  - Binance REST: rotates to the next host on HTTP 451 and on TLS or connection errors, and remembers the host that worked. On 429 and 418 it honours `retry-after` with jitter. It pauses when the used weight passes 80%. Only closed minutes are returned.
+  - Network findings:
+    - `api.binance.com` and `fapi.binance.com` fail TLS from the development network.
+    - `data-api.binance.vision` and `data.binance.vision` work.
+    - Futures REST is therefore unavailable here, though futures archives work.
+  - `pytest.ini` registers the `live` and `seeded` markers and deselects them by default.
+  - Fixtures live in `tests/fixtures/marketdata` (provenance in its README).
+  - NET results:
+    - `pytest -m live tests/test_providers.py`: Binance passed. Dukascopy is blocked by the WAF and stays pending.
+    - `verify-instrument BTCUSDT`: OK, 1,440 of 1,440 rows for 2026-10-13, prices 81033.66 to 84168.0.
+  - Tests: `tests/test_providers.py`, 25 passed.
 
 ## Pending human verification
 
@@ -76,7 +90,8 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 
 | Sub-phase | Label | Check | Exact command or steps | Status |
 |---|---|---|---|---|
-| _(none yet)_ | | | | |
+| 1E | NET | Live Dukascopy smoke | `cd backend; npm ci --prefix tools/dukascopy; .\venv\Scripts\python.exe -m pytest -m live tests/test_providers.py -k dukascopy` | pending: the development network gets an AWS WAF challenge (HTTP 202) from jetta.dukascopy.com |
+| 1E | NET | Record a real Dukascopy output fixture | Run dukascopy-node for one EURUSD weekday with `-f json -v`, trim to 120 rows, and replace `tests/fixtures/marketdata/dukascopy_eurusd_m1.json` | pending (same block) |
 
 ## Open questions (resolved by default when implementation started without answers)
 

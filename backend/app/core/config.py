@@ -1,7 +1,16 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+
+def backend_path(value: str) -> Path:
+    """Resolve a configured path; relative values are anchored at the backend folder, not the cwd."""
+    path = Path(value)
+    return path if path.is_absolute() else BACKEND_ROOT / path
 
 
 def normalize_database_url(url: str) -> str:

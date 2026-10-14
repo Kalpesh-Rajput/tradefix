@@ -8,4 +8,5 @@ __pycache__/
 uploads/
 
 market_data/
+tools/dukascopy/node_modules/
 

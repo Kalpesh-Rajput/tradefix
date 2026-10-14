@@ -67,6 +67,12 @@ They live in `fixtures/backtesting/scenarios/*.json` and are read by both pytest
 ## D-009: Dukascopy downloader (accepted)
 `dukascopy-node` is pinned in `backend/tools/dukascopy/package.json` plus its lockfile and invoked as a subprocess. Node is already a project requirement for the frontend. The adapter sits behind `DUKASCOPY_ENABLED`, because of the personal-use licensing.
 
+- **1E note:** the pinned version is 1.50.0; install it with `npm ci` in `backend/tools/dukascopy`.
+- **Arguments:** `-t m1 -p <side> -utc 0 -v -f json -r 3`. Flats are excluded by omitting `-fl`.
+- **Empty output:** on a chunk that has open-market minutes, empty output raises the retryable `provider_empty` error, so a blocked or empty download is never marked covered.
+- **Network:** from the development network, `jetta.dukascopy.com` answers with an AWS WAF challenge (HTTP 202, empty body) and `datafeed.dukascopy.com` answers 429. We do not try to bypass the WAF.
+- **Pending checks:** live Dukascopy verification (EURUSD, XAUUSD) is a pending [NET] item, to be run from a network the provider serves.
+
 ## D-010: Existing `/backtest` page (accepted)
 It becomes the Backtesting hub, with the tabs Manual Sessions, Strategies, Runs, and Setup Lab. The current expectancy table moves unchanged into the Setup Lab tab.
 
