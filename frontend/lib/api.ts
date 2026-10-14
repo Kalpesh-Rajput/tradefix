@@ -25,11 +25,27 @@ export function clearToken(): void {
   window.localStorage.removeItem(TOKEN_KEY);
 }
 
+export type ApiErrorInfo = {
+  code?: string;
+  jobId?: string;
+  retryAfterS?: number;
+  details?: unknown;
+};
+
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  code?: string;
+  jobId?: string;
+  retryAfterS?: number;
+  details?: unknown;
+  constructor(message: string, status: number, info?: ApiErrorInfo) {
     super(message);
+    this.name = "ApiError";
     this.status = status;
+    this.code = info?.code;
+    this.jobId = info?.jobId;
+    this.retryAfterS = info?.retryAfterS;
+    this.details = info?.details;
   }
 }
 
@@ -42,17 +58,33 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...(options.headers as Record<string, string> | undefined),
   };
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  } catch {
+    throw new ApiError("Network error. Check your connection and try again.", 0, { code: "network" });
+  }
 
   if (!res.ok) {
-    let detail = res.statusText;
+    let message = res.statusText || "Request failed";
+    const info: ApiErrorInfo = {};
     try {
       const body = await res.json();
-      detail = body.detail || detail;
+      if (body && typeof body === "object") {
+        const record = body as Record<string, unknown>;
+        if (typeof record.message === "string" && record.message) message = record.message;
+        else if (typeof record.detail === "string" && record.detail) message = record.detail;
+        else if (record.detail != null) message = JSON.stringify(record.detail);
+        if (typeof record.code === "string") info.code = record.code;
+        if (typeof record.job_id === "string") info.jobId = record.job_id;
+        if (record.details !== undefined) info.details = record.details;
+      }
     } catch {
-      // ignore
+      // keep the status text
     }
-    throw new ApiError(typeof detail === "string" ? detail : JSON.stringify(detail), res.status);
+    const retryAfter = Number.parseInt(res.headers.get("Retry-After") ?? "", 10);
+    if (Number.isFinite(retryAfter)) info.retryAfterS = retryAfter;
+    throw new ApiError(message, res.status, info);
   }
 
   if (res.status === 204) return undefined as T;

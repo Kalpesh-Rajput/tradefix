@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 2F (replay page shell).
+- **Current sub-phase:** 2G (replay overlays, notes, entry points).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -29,7 +29,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 2C | Prefetch hooks and time-basis writers | auto-passed |
 | 2D | CandleChart wrapper | auto-passed (HUMAN pending) |
 | 2E | Replay engine (TS) | auto-passed |
-| 2F | Replay page shell | todo |
+| 2F | Replay page shell | auto-passed (HUMAN pending) |
 | 2G | Replay overlays, notes, entry points (Gate 2) | todo |
 | 3A | Shared rules and scenario format (Python) | todo |
 | 3B | Browser order engine (TS) | todo |
@@ -166,6 +166,12 @@ Fill in during work: the files changed, the commands run with their result summa
   - The engine keeps a history buffer, a forward buffer of 1m candles (1,500 minutes, prefetch at 500) and one forming candle. The visible candles are built only from minutes with `time < cursor`. A starved buffer pauses playback and resumes when the chunk arrives. A throttled tab catches up in batches of at most 50 steps, with the backlog capped at 2 seconds.
   - Seek, step back and a timeframe switch all go through one rebuild: complete candles end at the bucket start, and the forming candle is rebuilt from the minutes inside the bucket up to the cursor.
   - Tests: `npm run test:replay-engine` (11 groups plus 500 seeded sequences). A planted one-minute leak fails the suite, which confirms the no-future check. `npm run typecheck` passes.
+- **2F:**
+  - Route `/replay/[tradeId]`. `useReplay` loads the payload and polls every 2 seconds while it is preparing; rate limits and network errors retry with `Retry-After`. `useDataJob` polls the prepare job. `loadCandles` waits out a `data_preparing` 202 and a 429, then feeds `createCandleSource`.
+  - `ApiError` now keeps `code`, `jobId`, `retryAfterS` and `details`, and a failed fetch becomes a network error instead of a raw rejection.
+  - The page shows a skeleton, a preparing panel, and distinct states for an unresolved symbol (with a request-support action), an unavailable market, a missing trade, a rate limit and a network error.
+  - `ReplayStage` owns the engine. Chart updates stay imperative; React state is flushed once per frame. Controls: play and pause, step, candle step, speed, timeframe, scrub, jump to entry or exit, reset, fullscreen.
+  - Gate: `npm run build` and `npm run typecheck` pass. The HUMAN check is in HUMAN_QA.
 
 ## Pending human verification
 
@@ -179,6 +185,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 1H | NET | Seed EURUSD and XAUUSD (expect about 28,000 to 32,000 rows each) | `.\venv\Scripts\python.exe -m app.cli.marketdata seed-demo`, then `coverage EURUSD XAUUSD` | pending (same block) |
 | 1H | NET | Seeded aggregation for EURUSD and XAUUSD | `.\venv\Scripts\python.exe -m pytest -m seeded` (no skips) | pending (same block) |
 | 2D | HUMAN | One chart canvas in StrictMode, no console warnings, resize and theme switching work | HUMAN_QA "2D chart lifecycle" | pending |
+| 2F | HUMAN | Seeded trade loads; preparing, unresolved and error states render | HUMAN_QA "2F page shell" | pending |
 | 1H | NET | Cross-check EURUSD daily closes against a reference | Compare the `1d` closes from `/api/market-data/candles` with a public EURUSD daily close (for example ECB or broker statements) within 0.0005 | pending (same block) |
 
 ## Open questions (resolved by default when implementation started without answers)
@@ -210,3 +217,4 @@ _(none yet)_
 | 2B | 91ce6da | backtesting(2b): replay payload builder, replay API, notes, symbol interest |
 | 2C | 7a7dbcf | backtesting(2c): prefetch hooks and time-basis writers |
 | 2D | 2a5e274 | backtesting(2d): CandleChart wrapper |
+| 2E | f528dc8 | backtesting(2e): replay engine |
