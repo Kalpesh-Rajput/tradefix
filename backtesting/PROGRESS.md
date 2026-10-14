@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 2B (replay payload API and notes).
+- **Current sub-phase:** 2C (prefetch hooks and time-basis writers).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -25,7 +25,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 1G | Candle service core | auto-passed |
 | 1H | Candle API, health, gzip, CLI, seed (Gate 1) | auto-passed (Gate 1 NET partly pending: Dukascopy WAF) |
 | 2A | Trade time-offset detection | auto-passed (seeded NET check passed) |
-| 2B | Replay payload API and notes | todo |
+| 2B | Replay payload API and notes | auto-passed |
 | 2C | Prefetch hooks and time-basis writers | todo |
 | 2D | CandleChart wrapper | todo |
 | 2E | Replay engine (TS) | todo |
@@ -136,6 +136,14 @@ Fill in during work: the files changed, the commands run with their result summa
   - **D-031:** migration round trips now preserve dev data. I found this when the full suite wiped the 1H seed; I re-seeded BTCUSDT.
   - Bug found by running the CLI: `detect-offsets` printed after its session closed (DetachedInstanceError). Fixed.
   - Tests: `tests/test_time_offsets.py` (13, plus 1 seeded). Full suite: 468 passed. `pytest -m seeded`: 8 passed (the NY-close account is detected with high confidence on real September BTCUSDT data).
+- **2B:**
+  - **Migration 0035 `trade_replay_notes`:** user, journal trade, `replay_time_ms`, text between 1 and 2,000 characters (CHECK), an index on (user, trade), and cascade on delete.
+  - **`marketdata/replay_service.py`:**
+    - `ReplayTradeDescriptor` is source-neutral (journal, session or run). `build_replay_payload` resolves the instrument (unresolved gives `unresolved_symbol`; disabled gives `instrument_not_supported`), picks the default timeframe from the holding duration, and computes the suggested start (100 bars) and the replay window (200 bars before, 100 after, padded by a day, clipped to the last closed minute). It then calls `ensure_candles` (D-017), which returns ready or preparing with a job id.
+    - The alignment diagnostic checks the entry and exit against their 1m bars with the tolerance; an `offset_suggestion` (price delta and points) is returned when a price is outside.
+    - `journal_descriptor` converts times through `effective_utc` and reports the rule it used.
+  - **Endpoints:** `GET /api/trades/{id}/replay` and `GET`/`POST /api/trades/{id}/replay-notes`, both through `get_live_trade`, so simulated and foreign trades return 404. Also `POST /api/market-data/symbol-interest` (202; increments `unresolved_symbols.interest_count`; 30 per user per hour).
+  - Tests: `tests/test_replay_api.py` (22). Full suite: 489 passed.
 
 ## Pending human verification
 
@@ -174,3 +182,4 @@ _(none yet)_
 | 1F | 428571b | backtesting(1f): job queue, provider limiter, market worker, errors, entitlements, make-admin |
 | 1G | 382b2fd | backtesting(1g): candle service core, aggregation, cache, ingest jobs |
 | 1H | 291a6ad | backtesting(1h): candle API, health, gzip, CLI, seed |
+| 2A | d95633b | backtesting(2a): trade time-offset detection |

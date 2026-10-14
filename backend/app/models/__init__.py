@@ -17,6 +17,7 @@ from app.models.broker import (
     SyncRun,
 )
 from app.models.agent_run import AgentRun
+from app.models.backtest import TradeReplayNote
 from app.models.user_agent import UserAgent
 from app.models.user_notification import UserNotification
 from app.models.ai_document import AiDocument
@@ -94,6 +95,7 @@ __all__ = [
     "CandleCoverage",
     "CandleMonthStat",
     "AccountTimeOffset",
+    "TradeReplayNote",
     "AgentRun",
     "UserAgent",
     "UserNotification",

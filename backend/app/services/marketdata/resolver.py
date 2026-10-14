@@ -164,6 +164,18 @@ def record_unresolved(db: Session, broker: str, raw: str) -> None:
     )
 
 
+def record_interest(db: Session, broker: str | None, raw: str) -> None:
+    """A user asked for replay support for a symbol; counted separately from automatic misses."""
+    table = UnresolvedSymbol.__table__
+    stmt = insert(table).values(broker=normalize_broker(broker)[:64], raw_symbol=raw.strip()[:64], count=0, interest_count=1)
+    db.execute(
+        stmt.on_conflict_do_update(
+            constraint="uq_unresolved_broker_raw",
+            set_={"interest_count": table.c.interest_count + 1, "last_seen": func.now()},
+        )
+    )
+
+
 def resolve_symbol(
     db: Session,
     broker: str | None,

@@ -1,11 +1,12 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.models.user import User
 from app.schemas.market_data import CandlesOut, DataJobOut, InstrumentOut
+from app.schemas.replay import SymbolInterestIn, SymbolInterestOut
 from app.services.backtest.entitlements import require_feature
 from app.services.marketdata import read_api
 
@@ -35,6 +36,16 @@ def get_candles(
     return read_api.candles_for_user(
         db, current_user, symbol=symbol.upper(), timeframe=timeframe, start=start, end=end, until=until, limit=limit
     )
+
+
+@router.post("/symbol-interest", response_model=SymbolInterestOut, status_code=status.HTTP_202_ACCEPTED)
+def symbol_interest(
+    payload: SymbolInterestIn,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_feature("market_data.read")),
+):
+    read_api.record_symbol_interest(db, current_user, payload.broker, payload.raw_symbol)
+    return SymbolInterestOut(recorded=True)
 
 
 @router.get("/jobs/{job_id}", response_model=DataJobOut)

@@ -17,6 +17,7 @@ from app.services.marketdata.aggregation import TIMEFRAME_MINUTES, ceil_to, floo
 from app.services.marketdata.candle_service import ensure_candles, get_candles
 from app.services.marketdata.candles import MINUTE_MS
 from app.services.marketdata.registry import InstrumentSpec, all_instruments, get_instrument
+from app.services.marketdata.resolver import record_interest
 from app.services.rate_limit import SlidingWindowRateLimiter
 
 _candle_limiter: SlidingWindowRateLimiter | None = None
@@ -121,6 +122,16 @@ def candles_for_user(
         has_more_after=window.has_more_after,
         complete_until_ms=window.complete_until_ms,
     )
+
+
+_interest_limiter = SlidingWindowRateLimiter(max_calls=30, window_seconds=3600)
+
+
+def record_symbol_interest(db: Session, user: User, broker: str | None, raw_symbol: str) -> None:
+    if not _interest_limiter.allow(f"interest:{user.id}"):
+        raise BacktestError("rate_limited", "You've sent a lot of requests. Try again later.", retry_after_s=600)
+    record_interest(db, broker, raw_symbol)
+    db.commit()
 
 
 def job_for_user(db: Session, user: User, job_id: uuid.UUID) -> DataJobOut:

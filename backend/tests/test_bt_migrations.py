@@ -26,6 +26,7 @@ MIGRATIONS = {
         [("trades", "is_simulated"), ("trades", "time_basis")],
     ),
     "0034": ("0033", ["account_time_offsets"], []),
+    "0035": ("0034", ["trade_replay_notes"], []),
 }
 
 
