@@ -13,6 +13,7 @@ from app.core.db import get_db
 from app.models.account import Account
 from app.models.prop_settings import PropSettings
 from app.models.trade import Trade, TradeStatus
+from app.services.live_trades import live_scope
 from app.models.user import User
 from app.services.prop_engine import distance_to_breach
 
@@ -142,7 +143,7 @@ def get_distance(
     trades = list(
         db.scalars(
             select(Trade).where(
-                Trade.user_id == current_user.id,
+                *live_scope(current_user.id, include_deleted=True),
                 Trade.account_id == account_id,
                 Trade.status == TradeStatus.closed,
             )

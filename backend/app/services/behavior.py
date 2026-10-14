@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.trade import Trade, TradeStatus
+from app.services.live_trades import live_scope
 
 
 def apply_behavior_flags(db: Session, user_id: uuid.UUID, trade: Trade) -> None:
@@ -21,7 +22,7 @@ def apply_behavior_flags(db: Session, user_id: uuid.UUID, trade: Trade) -> None:
         prior = db.scalars(
             select(Trade)
             .where(
-                Trade.user_id == user_id,
+                *live_scope(user_id, include_deleted=True),
                 Trade.account_id == trade.account_id,
                 Trade.id != trade.id,
                 Trade.status == TradeStatus.closed,
@@ -46,7 +47,7 @@ def apply_behavior_flags(db: Session, user_id: uuid.UUID, trade: Trade) -> None:
     day_end = datetime.combine(day, datetime.max.time()).replace(tzinfo=timezone.utc)
     day_count = db.scalar(
         select(func.count(Trade.id)).where(
-            Trade.user_id == user_id,
+            *live_scope(user_id, include_deleted=True),
             Trade.account_id == trade.account_id,
             Trade.opened_at >= day_start,
             Trade.opened_at <= day_end,
@@ -56,7 +57,7 @@ def apply_behavior_flags(db: Session, user_id: uuid.UUID, trade: Trade) -> None:
     # Approximate median via last 30 trading days with activity
     recent = db.scalars(
         select(Trade.opened_at).where(
-            Trade.user_id == user_id,
+            *live_scope(user_id, include_deleted=True),
             Trade.account_id == trade.account_id,
             Trade.opened_at < day_start,
         ).order_by(Trade.opened_at.desc()).limit(500)

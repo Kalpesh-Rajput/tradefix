@@ -11,12 +11,12 @@ from xml.etree import ElementTree as ET
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
-from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.account import Account
 from app.models.trade import Trade
 from app.schemas.trade_export import TradeExportFilters, TradeExportRequest
+from app.services.live_trades import live_trades
 
 _COLUMNS: list[tuple[str, str, str]] = [
     ("Trade ID", "id", "text"),
@@ -398,12 +398,7 @@ def _select_trades(
     pnl_display_mode: str,
     filters: TradeExportFilters,
 ) -> list[Trade]:
-    stmt = (
-        select(Trade)
-        .options(selectinload(Trade.account))
-        .where(Trade.user_id == user_id, Trade.is_deleted.is_(False))
-        .order_by(Trade.opened_at.desc())
-    )
+    stmt = live_trades(user_id).options(selectinload(Trade.account)).order_by(Trade.opened_at.desc())
     if scope in {"filtered", "custom"}:
         if filters.account_id is None:
             return []

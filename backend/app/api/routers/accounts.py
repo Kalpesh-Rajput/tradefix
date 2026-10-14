@@ -13,6 +13,7 @@ from app.api.deps import get_current_user
 from app.core.db import get_db
 from app.models.account import Account
 from app.models.trade import Trade
+from app.services.live_trades import live_scope, live_trades
 from app.models.user import User
 from app.schemas.account import AccountCreate, AccountResponse, AccountUpdate
 
@@ -62,7 +63,7 @@ def get_default_account(db: Session, user: User) -> Account:
 def _trade_counts(db: Session, user_id: uuid.UUID) -> dict[uuid.UUID, int]:
     rows = db.execute(
         select(Trade.account_id, func.count(Trade.id))
-        .where(Trade.user_id == user_id)
+        .where(*live_scope(user_id, include_deleted=True))
         .group_by(Trade.account_id)
     ).all()
     return {account_id: count for account_id, count in rows}
@@ -208,8 +209,8 @@ def export_trade_history(
     account = _owned_account(db, account_id, current_user)
     trades = list(
         db.scalars(
-            select(Trade)
-            .where(Trade.user_id == current_user.id, Trade.account_id == account.id)
+            live_trades(current_user.id, include_deleted=True)
+            .where(Trade.account_id == account.id)
             .order_by(Trade.opened_at.desc())
         )
     )

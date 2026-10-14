@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.models.mood import MoodCheckin
 from app.models.trade import Trade, TradeStatus
 from app.schemas.trade_export import TradeExportFilters
+from app.services.live_trades import live_trades
 
 
 def _closed_trades(
@@ -21,11 +22,9 @@ def _closed_trades(
     since: datetime | None = None,
     account_id: uuid.UUID | None = None,
 ) -> list[Trade]:
-    stmt = select(Trade).where(
-        Trade.user_id == user_id,
+    stmt = live_trades(user_id).where(
         Trade.status == TradeStatus.closed,
         Trade.pnl.is_not(None),
-        Trade.is_deleted.is_(False),
     )
     if account_id is not None:
         stmt = stmt.where(Trade.account_id == account_id)
@@ -40,11 +39,7 @@ def _open_trades(
     user_id: uuid.UUID,
     account_id: uuid.UUID | None = None,
 ) -> list[Trade]:
-    stmt = select(Trade).where(
-        Trade.user_id == user_id,
-        Trade.status == TradeStatus.open,
-        Trade.is_deleted.is_(False),
-    )
+    stmt = live_trades(user_id).where(Trade.status == TradeStatus.open)
     if account_id is not None:
         stmt = stmt.where(Trade.account_id == account_id)
     return list(db.scalars(stmt).all())

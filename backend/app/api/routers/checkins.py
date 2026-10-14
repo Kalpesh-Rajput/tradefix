@@ -14,6 +14,7 @@ from app.models.daily_checkin import DailyCheckin
 from app.models.daily_recap import DailyRecap
 from app.models.mood import MoodCheckin
 from app.models.trade import Trade
+from app.services.live_trades import live_scope, live_trades
 from app.models.user import User
 from app.schemas.checkin import (
     DailyCheckinResponse,
@@ -117,12 +118,12 @@ def upsert_checkin(
 
 @router.get("/milestones", response_model=MilestonesResponse)
 def get_milestones(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    trade_count = db.scalar(select(func.count(Trade.id)).where(Trade.user_id == current_user.id)) or 0
+    trade_count = db.scalar(select(func.count(Trade.id)).where(*live_scope(current_user.id, include_deleted=True))) or 0
 
     mood_dates = set(db.scalars(select(MoodCheckin.date).where(MoodCheckin.user_id == current_user.id)).all())
     recap_dates = set(db.scalars(select(DailyRecap.date).where(DailyRecap.user_id == current_user.id)).all())
     checkin_dates = set(db.scalars(select(DailyCheckin.date).where(DailyCheckin.user_id == current_user.id)).all())
-    shot_trades = db.scalars(select(Trade).where(Trade.user_id == current_user.id)).all()
+    shot_trades = db.scalars(live_trades(current_user.id, include_deleted=True)).all()
     for t in shot_trades:
         if t.screenshot_urls and t.opened_at:
             checkin_dates.add(t.opened_at.date())
@@ -130,9 +131,7 @@ def get_milestones(db: Session = Depends(get_db), current_user: User = Depends(g
 
     # No revenge streak ending today
     revenge_days = set()
-    flagged = db.scalars(
-        select(Trade).where(Trade.user_id == current_user.id)
-    ).all()
+    flagged = db.scalars(live_trades(current_user.id, include_deleted=True)).all()
     for t in flagged:
         emotions = [e.lower() for e in (t.emotion_tags or [])]
         flags = list(t.auto_flags or [])

@@ -18,6 +18,7 @@ from app.core.db import get_db
 from app.models.account import Account
 from app.models.daily_recap import DailyRecap, DayMood
 from app.models.trade import Trade, TradeStatus
+from app.services.live_trades import live_scope
 from app.models.user import User
 from app.schemas.daily_recap import (
     DailyRecapCreate,
@@ -52,7 +53,7 @@ def _compute_day_pnl(
     trades = list(
         db.scalars(
             select(Trade).where(
-                Trade.user_id == user_id,
+                *live_scope(user_id, include_deleted=True),
                 Trade.account_id == account_id,
                 Trade.status == TradeStatus.closed,
                 (

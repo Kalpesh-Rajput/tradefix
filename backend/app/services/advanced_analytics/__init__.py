@@ -46,6 +46,7 @@ from app.services.advanced_analytics.core import (
     stats,
     zone,
 )
+from app.services.live_trades import live_scope, live_trades
 from app.services.tradefix_score import calculate_tradefix_score
 
 logger = logging.getLogger(__name__)
@@ -105,12 +106,10 @@ def load(
     lower = prev[0] if prev else f.date_from
     upper = f.date_to
 
-    stmt = select(Trade).where(
-        Trade.user_id == user.id,
+    stmt = live_trades(user.id).where(
         Trade.account_id == account.id,
         Trade.status == TradeStatus.closed,
         Trade.pnl.is_not(None),
-        Trade.is_deleted.is_(False),
     )
     if lower:
         stmt = stmt.where(Trade.opened_at >= _local_midnight_utc(lower, tz))
@@ -163,10 +162,9 @@ def load(
             select(func.count())
             .select_from(Trade)
             .where(
-                Trade.user_id == user.id,
+                *live_scope(user.id),
                 Trade.account_id == account.id,
                 Trade.status == TradeStatus.open,
-                Trade.is_deleted.is_(False),
             )
         )
         or 0

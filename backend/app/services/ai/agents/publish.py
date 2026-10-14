@@ -88,7 +88,7 @@ def write_recap(db: Session, user_id: uuid.UUID, account_id: uuid.UUID, day: dat
 
 def write_trade_tags(db: Session, user_id: uuid.UUID, trade_id: uuid.UUID, applied: list[str], suggestions: list[dict]) -> None:
     trade = db.get(Trade, uuid.UUID(str(trade_id)))
-    if trade is None or trade.user_id != user_id or trade.is_deleted:
+    if trade is None or trade.user_id != user_id or trade.is_deleted or trade.is_simulated:
         return
     tags = list(trade.setup_tags or [])
     for tag in applied:

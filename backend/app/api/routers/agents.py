@@ -214,7 +214,7 @@ def read_notification(notification_id: uuid.UUID, db: Session = Depends(get_db),
 
 def decide_tag(db: Session, user: User, trade_id: uuid.UUID, tag: str, accept: bool) -> Trade:
     trade = db.get(Trade, trade_id)
-    if trade is None or trade.user_id != user.id or trade.is_deleted:
+    if trade is None or trade.user_id != user.id or trade.is_deleted or trade.is_simulated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trade not found")
     suggestions = list(trade.ai_tag_suggestions or [])
     if accept:

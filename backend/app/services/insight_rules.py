@@ -10,14 +10,13 @@ from sqlalchemy.orm import Session
 from app.models.insight import Insight, InsightSeverity, InsightType
 from app.models.trade import Trade, TradeStatus
 from app.services import stats_service
+from app.services.live_trades import live_trades
 
 
 def _get_closed_trades(db: Session, user_id: uuid.UUID) -> list[Trade]:
-    stmt = select(Trade).where(
-        Trade.user_id == user_id,
+    stmt = live_trades(user_id).where(
         Trade.status == TradeStatus.closed,
         Trade.pnl.is_not(None),
-        Trade.is_deleted.is_(False),
     )
     return list(db.scalars(stmt.order_by(Trade.opened_at.asc())).all())
 

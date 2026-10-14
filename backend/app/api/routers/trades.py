@@ -8,7 +8,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_current_user
@@ -21,6 +21,7 @@ from app.models.user import User
 from app.schemas.trade import TradeCreate, TradeExecutionResponse, TradeResponse, TradeUpdate
 from app.schemas.trade_export import TradeExportCountRequest, TradeExportRequest
 from app.services.behavior import apply_behavior_flags
+from app.services.live_trades import get_live_trade, live_trades
 from app.services.rate_limit import screenshot_upload_limiter, trade_export_limiter
 from app.services.trade_export import EmptyExport, build_trade_export, count_trades_for_export
 from app.services.storage import delete_local_upload, save_trade_screenshot, save_trade_voice
@@ -221,11 +222,7 @@ def list_trades(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    stmt = (
-        select(Trade)
-        .options(selectinload(Trade.executions), selectinload(Trade.account))
-        .where(Trade.user_id == current_user.id, Trade.is_deleted.is_(False))
-    )
+    stmt = live_trades(current_user.id).options(selectinload(Trade.executions), selectinload(Trade.account))
     if account_id:
         account = db.get(Account, account_id)
         if not account or account.user_id != current_user.id:
@@ -467,8 +464,8 @@ def export_trades(
 
 @router.get("/{trade_id}", response_model=TradeResponse)
 def get_trade(trade_id: uuid.UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    trade = db.get(Trade, trade_id)
-    if not trade or trade.user_id != current_user.id or trade.is_deleted:
+    trade = get_live_trade(db, current_user.id, trade_id)
+    if not trade or trade.is_deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trade not found")
     return _to_response(trade)
 
@@ -480,8 +477,8 @@ def update_trade(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    trade = db.get(Trade, trade_id)
-    if not trade or trade.user_id != current_user.id or trade.is_deleted:
+    trade = get_live_trade(db, current_user.id, trade_id)
+    if not trade or trade.is_deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trade not found")
 
     if payload.extra is not None and "went_well" in payload.extra:
@@ -597,8 +594,8 @@ def update_trade(
 
 @router.delete("/{trade_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_trade(trade_id: uuid.UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    trade = db.get(Trade, trade_id)
-    if not trade or trade.user_id != current_user.id:
+    trade = get_live_trade(db, current_user.id, trade_id)
+    if not trade:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trade not found")
     account_id = trade.account_id
     opened_at = trade.opened_at
@@ -626,8 +623,8 @@ async def upload_trade_screenshot(
     current_user: User = Depends(get_current_user),
 ):
     screenshot_upload_limiter.check(str(current_user.id))
-    trade = db.get(Trade, trade_id)
-    if not trade or trade.user_id != current_user.id:
+    trade = get_live_trade(db, current_user.id, trade_id)
+    if not trade:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trade not found")
 
     urls = list(trade.screenshot_urls or [])
@@ -657,8 +654,8 @@ def delete_trade_screenshot(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    trade = db.get(Trade, trade_id)
-    if not trade or trade.user_id != current_user.id:
+    trade = get_live_trade(db, current_user.id, trade_id)
+    if not trade:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trade not found")
     urls = list(trade.screenshot_urls or [])
     if url not in urls:
@@ -678,8 +675,8 @@ async def upload_trade_voice(
     current_user: User = Depends(get_current_user),
 ):
     screenshot_upload_limiter.check(str(current_user.id))
-    trade = db.get(Trade, trade_id)
-    if not trade or trade.user_id != current_user.id:
+    trade = get_live_trade(db, current_user.id, trade_id)
+    if not trade:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trade not found")
 
     data = await file.read()

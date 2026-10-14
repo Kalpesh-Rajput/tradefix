@@ -24,6 +24,7 @@ from app.models.progress_tracker import (
     ProgressTrackerSettings,
 )
 from app.models.trade import Trade
+from app.services.live_trades import live_scope
 from app.models.user import User
 from app.schemas.progress_tracker import (
     AppendManualRuleRequest,
@@ -258,7 +259,7 @@ def _trade_only_snapshot(snapshot: dict) -> dict:
 
 
 def _earliest_trade_day(db: Session, user: User) -> date | None:
-    opened = db.scalar(select(func.min(Trade.opened_at)).where(Trade.user_id == user.id, Trade.is_deleted.is_(False)))
+    opened = db.scalar(select(func.min(Trade.opened_at)).where(*live_scope(user.id)))
     if opened is None:
         return None
     return local_date(opened, _tz(user))
@@ -496,8 +497,7 @@ def _trade_snapshots(
         select(Trade)
         .options(selectinload(Trade.account))
         .where(
-            Trade.user_id == user.id,
-            Trade.is_deleted.is_(False),
+            *live_scope(user.id),
             or_(
                 and_(Trade.closed_at.is_not(None), Trade.closed_at >= start_utc, Trade.closed_at < end_utc),
                 and_(Trade.closed_at.is_(None), Trade.opened_at >= start_utc, Trade.opened_at < end_utc),

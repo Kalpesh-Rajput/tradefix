@@ -166,7 +166,7 @@ def list_comments(
     current_user: User = Depends(get_current_user),
 ):
     trade = db.get(Trade, trade_id)
-    if not trade or not _can_access_trade(db, current_user, trade):
+    if not trade or trade.is_simulated or not _can_access_trade(db, current_user, trade):
         raise HTTPException(status_code=404, detail="Trade not found")
     rows = db.scalars(
         select(TradeComment).where(TradeComment.trade_id == trade_id).order_by(TradeComment.created_at.asc())
@@ -195,7 +195,7 @@ def add_comment(
     current_user: User = Depends(get_current_user),
 ):
     trade = db.get(Trade, trade_id)
-    if not trade:
+    if not trade or trade.is_simulated:
         raise HTTPException(status_code=404, detail="Trade not found")
     # Only coach can initiate comments
     access = db.scalar(
