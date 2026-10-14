@@ -14,6 +14,7 @@ from app.models.user import User
 from app.schemas.ai_insights import AiInsightsFeed, InsightFacets, InsightPlaybookFacet
 from app.services.ai.insights.cohorts import opened_at, setup_of
 from app.services.ai.insights.feed import build_feed
+from app.services.live_trades import live_trades
 from app.services.ai.insights.snapshot import (
     get_snapshot,
     is_fresh,
@@ -53,13 +54,11 @@ def _load_trades(
     since: datetime | None,
 ) -> list[Trade]:
     stmt = (
-        select(Trade)
+        live_trades(user_id)
         .options(selectinload(Trade.playbook))
         .where(
-            Trade.user_id == user_id,
             Trade.status == TradeStatus.closed,
             Trade.pnl.is_not(None),
-            Trade.is_deleted.is_(False),
         )
     )
     if since is not None:

@@ -5,9 +5,9 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** Phase 0 (Audit and docs). **Not started.**
-- **Blocked on:** user confirmation of plan revision 2 and the open questions below.
-- **Last commit:** none for this feature.
+- **Current sub-phase:** 1D (resolver, validation, store, coverage).
+- **Blocked on:** nothing.
+- **Last commit:** see the commit log below.
 
 ## Sub-phase checklist
 
@@ -16,9 +16,9 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | Id | Scope | Status |
 |---|---|---|
 | 0 | Audit and docs | auto-passed (node v24.21.0, Postgres 18.6 at 0032 verified) |
-| 1A | Schema, config, registry | todo |
-| 1B | Live-trades helper: core journal readers | todo |
-| 1C | Live-trades helper: AI, sync, import, raw-SQL readers | todo |
+| 1A | Schema, config, registry | auto-passed |
+| 1B | Live-trades helper: core journal readers | auto-passed |
+| 1C | Live-trades helper: AI, sync, import, raw-SQL readers | auto-passed |
 | 1D | Resolver, validation, store, coverage | todo |
 | 1E | Provider adapters, verify-instrument | todo |
 | 1F | Jobs queue, worker, entitlements, errors, make-admin | todo |
@@ -52,7 +52,15 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 
 Fill in during work: the files changed, the commands run with their result summary, and any deviations (with their DECISIONS ids).
 
-_(empty)_
+- **1A:** migration 0033 (market-data tables, `jobs`, `worker_heartbeats`, `trades.is_simulated`, `trades.time_basis` with backfill). The upgrade, downgrade, upgrade round trip passes in `tests/test_bt_migrations.py`. The registry YAML is mirrored to `instruments` on startup.
+- **1B:** `app/services/live_trades.py` is used by stats, advanced analytics, export, the trades router, accounts, check-ins, recaps, prop, behavior, insight rules and the progress tracker. Agents and mentor reject simulated trades explicitly. Covered by `tests/test_bt_live_trades.py`.
+- **1C:**
+  - AI context, AI analytics tool, insights engine and snapshot, RAG ingest and backfill (simulated trades never embedded), broker-sync upsert, broker connection delete, import duplicates and import confirm all go through the live helper.
+  - No raw-SQL trade readers exist (`text(` grep: only advisory locks and `set_config`).
+  - The source scan `test_every_trade_reader_uses_live_helper` passes.
+  - `tests/test_bt_live_trades_ai.py` includes a golden check: full analytics, advanced analytics and the AI tools give byte-identical output before and after a simulated trade is inserted.
+  - Fixed an existing bug in `rag/store.upsert_document`: it inserted the ORM attribute key `metadata`, which clashes with `Base.metadata`. It now inserts against the table.
+  - Full suite: 308 passed.
 
 ## Pending human verification
 

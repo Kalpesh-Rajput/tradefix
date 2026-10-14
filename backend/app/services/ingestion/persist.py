@@ -15,6 +15,7 @@ from app.models.broker import BrokerExecution, BrokerPosition, RawProviderRecord
 from app.models.trade import AssetType, ExecutionLegType, Trade, TradeExecution, TradeSide, TradeStatus
 from app.services.brokers.canonical import CanonicalExecution, fingerprint
 from app.services.ingestion.grouping import PositionDraft, group_executions
+from app.services.live_trades import live_trades
 
 _ASSET = {
     "mt5": AssetType.forex,
@@ -172,8 +173,7 @@ def _upsert_position(db, user_id, broker_account_id, draft: PositionDraft) -> No
 
 def _upsert_journal(db, user_id, broker_account_id, journal_account_id, provider, draft: PositionDraft) -> None:
     existing = db.scalar(
-        select(Trade).where(
-            Trade.user_id == user_id,
+        live_trades(user_id, include_deleted=True).where(
             Trade.broker_account_id == broker_account_id,
             Trade.external_trade_id == draft.external_position_id,
         )

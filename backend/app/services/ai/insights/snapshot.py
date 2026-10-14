@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.models.ai_insight_snapshot import AiInsightSnapshot
 from app.models.trade import Trade, TradeStatus
 from app.services.ai.insights.types import STALE_HOURS
+from app.services.live_trades import live_scope
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +19,9 @@ def latest_closed_trade_at(
     db: Session, user_id: uuid.UUID, account_id: uuid.UUID | None
 ) -> datetime | None:
     stmt = select(func.max(func.coalesce(Trade.closed_at, Trade.opened_at))).where(
-        Trade.user_id == user_id,
+        *live_scope(user_id),
         Trade.status == TradeStatus.closed,
         Trade.pnl.is_not(None),
-        Trade.is_deleted.is_(False),
     )
     if account_id is not None:
         stmt = stmt.where(Trade.account_id == account_id)

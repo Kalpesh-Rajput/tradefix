@@ -3,13 +3,12 @@ from __future__ import annotations
 import uuid
 from collections import defaultdict
 
-from sqlalchemy import select
-
 from app.core.config import settings
 from app.models.account import Account
 from app.models.trade import Trade, TradeStatus
 from app.services import stats_service
 from app.services.ai.tools.context import SourceRef, ToolContext
+from app.services.live_trades import live_trades
 from app.services.ai.tools.filters import (
     compact_overview,
     normalize_session,
@@ -93,10 +92,8 @@ def get_trade_history(ctx: ToolContext, args: dict) -> dict:
     limit = max(1, min(limit, settings.ai_max_trade_results))
 
     stmt = (
-        select(Trade)
+        live_trades(ctx.user_id)
         .where(
-            Trade.user_id == ctx.user_id,
-            Trade.is_deleted.is_(False),
             Trade.status == TradeStatus.closed,
             Trade.pnl.is_not(None),
         )

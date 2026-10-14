@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.models.account import Account
 from app.models.broker import BrokerAccount, BrokerConnection, BrokerCredential, SyncEvent, SyncJob, SyncRun
 from app.models.trade import Trade
+from app.services.live_trades import live_scope
 from app.models.user import User
 from app.services.brokers.errors import BrokerError, message_for
 from app.services.brokers.factory import connector_for
@@ -173,7 +174,9 @@ def delete_synced_data(db: Session, connection: BrokerConnection) -> int:
     deleted = 0
     db.execute(text("SELECT set_config('tradefix.allow_raw_delete', 'on', true)"))
     for account in accounts:
-        result = db.query(Trade).filter(Trade.user_id == connection.user_id, Trade.broker_account_id == account.id).delete(
+        result = db.query(Trade).filter(
+            *live_scope(connection.user_id, include_deleted=True), Trade.broker_account_id == account.id
+        ).delete(
             synchronize_session=False
         )
         deleted += int(result or 0)

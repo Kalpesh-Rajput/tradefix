@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.trade import Trade
+from app.services.live_trades import live_scope
 from app.services.brokers.canonical import D
 
 
@@ -47,7 +48,7 @@ def existing_duplicate_keys(db: Session, user_id: uuid.UUID, account_id: uuid.UU
             Trade.quantity,
             Trade.entry_price,
             Trade.opened_at,
-        ).where(Trade.user_id == user_id, Trade.account_id == account_id)
+        ).where(*live_scope(user_id, include_deleted=True), Trade.account_id == account_id)
     ).all()
     keys: set[str] = set()
     for trade in trades:

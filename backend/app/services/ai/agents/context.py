@@ -14,6 +14,7 @@ from app.models.day_plan import DayPlan
 from app.models.playbook import Playbook
 from app.models.trade import Trade
 from app.services.ai.agents.logic import hold_seconds
+from app.services.live_trades import live_trades
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -56,7 +57,7 @@ def _playbook_names(db: Session, trades: list[Trade]) -> dict[uuid.UUID, str]:
 
 
 def load_trades(db: Session, user_id: uuid.UUID, trade_ids: list[uuid.UUID] | None = None, day: date | None = None, account_id: uuid.UUID | None = None, since: datetime | None = None) -> list[Trade]:
-    stmt = select(Trade).where(Trade.user_id == user_id, Trade.is_deleted.is_(False))
+    stmt = live_trades(user_id)
     if trade_ids:
         stmt = stmt.where(Trade.id.in_(trade_ids))
     if account_id:
@@ -84,7 +85,7 @@ def tag_catalog(db: Session, user_id: uuid.UUID) -> list[str]:
         if text and text not in labels:
             labels.append(text)
 
-    trades = db.scalars(select(Trade).where(Trade.user_id == user_id, Trade.is_deleted.is_(False)).limit(400)).all()
+    trades = db.scalars(live_trades(user_id).limit(400)).all()
     for trade in trades:
         add(trade.setup_tag)
         add(trade.session)

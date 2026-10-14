@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.models.broker import ImportBatch, ImportRow
 from app.models.trade import AssetType, Trade, TradeSide, TradeStatus
+from app.services.live_trades import live_trades
 from app.models.user import User
 from app.services.brokers.canonical import CanonicalExecution, D, fingerprint
 from app.services.ingestion.grouping import group_executions
@@ -71,8 +72,7 @@ def confirm_batch(db: Session, user: User, batch: ImportBatch) -> dict[str, int]
             executed_at=draft.opened_at,
         )
         existing = db.scalar(
-            select(Trade).where(
-                Trade.user_id == user.id,
+            live_trades(user.id, include_deleted=True).where(
                 Trade.account_id == batch.account_id,
                 Trade.external_trade_id == external_id,
             )

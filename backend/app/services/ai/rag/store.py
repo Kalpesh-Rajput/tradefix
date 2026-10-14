@@ -58,7 +58,7 @@ def upsert_document(
         "embedding": embedding,
         "metadata": metadata or {},
     }
-    stmt = insert(AiDocument).values(**values)
+    stmt = insert(AiDocument.__table__).values(**values)
     stmt = stmt.on_conflict_do_update(
         constraint="uq_ai_documents_user_source",
         set_={

@@ -17,6 +17,7 @@ from app.models.trade import Trade
 from app.services.ai.embeddings.openrouter import OpenRouterEmbeddingProvider
 from app.services.ai.rag import documents as doc_builders
 from app.services.ai.rag import store as doc_store
+from app.services.live_trades import live_trades
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,8 @@ def ingest_mood(db: Session, row: MoodCheckin) -> None:
 
 
 def ingest_trade(db: Session, trade: Trade) -> None:
-    _upsert(db, trade.user_id, "trade_note", trade.id, doc_builders.trade_note_document(trade))
+    payload = None if trade.is_simulated else doc_builders.trade_note_document(trade)
+    _upsert(db, trade.user_id, "trade_note", trade.id, payload)
 
 
 def ingest_playbook(db: Session, playbook: Playbook) -> None:
@@ -87,7 +89,8 @@ def ingest_trade_comment(db: Session, comment: TradeComment, trade: Trade | None
         trade = db.get(Trade, comment.trade_id)
     if trade is None:
         return
-    _upsert(db, trade.user_id, "trade_comment", comment.id, doc_builders.trade_comment_document(comment, trade))
+    payload = None if trade.is_simulated else doc_builders.trade_comment_document(comment, trade)
+    _upsert(db, trade.user_id, "trade_comment", comment.id, payload)
 
 
 def safe_ingest(db: Session, fn) -> None:
@@ -134,7 +137,7 @@ def backfill_user_documents(db: Session, user_id: uuid.UUID) -> int:
         ingest_mood(db, row)
         created += 1
 
-    trades = db.scalars(select(Trade).where(Trade.user_id == user_id, Trade.is_deleted.is_(False))).all()
+    trades = db.scalars(live_trades(user_id)).all()
     indexed_notes = doc_store.indexed_source_ids(db, user_id, "trade_note")
     for trade in trades:
         if trade.id in indexed_notes:
