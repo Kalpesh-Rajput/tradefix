@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 2E (replay engine, pure TypeScript).
+- **Current sub-phase:** 2F (replay page shell).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -28,7 +28,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 2B | Replay payload API and notes | auto-passed |
 | 2C | Prefetch hooks and time-basis writers | auto-passed |
 | 2D | CandleChart wrapper | auto-passed (HUMAN pending) |
-| 2E | Replay engine (TS) | todo |
+| 2E | Replay engine (TS) | auto-passed |
 | 2F | Replay page shell | todo |
 | 2G | Replay overlays, notes, entry points (Gate 2) | todo |
 | 3A | Shared rules and scenario format (Python) | todo |
@@ -161,6 +161,11 @@ Fill in during work: the files changed, the commands run with their result summa
   - The bar cap trims in batches (10% slack), so ticks never trigger a full `setData`.
   - Gate: `npm run build` passes; `npm run typecheck` passes (it stands in for lint, D-032); `npm run test:chart-lifecycle` passes. That test checks a balanced mount, unmount, mount sequence, remount restore, ticks that only update the last bar, batch trimming, and theme and display propagation, with no theme updates after unmount.
   - The HUMAN check for 2D is in HUMAN_QA (it can be done once the 2F page exists).
+- **2E:**
+  - `lib/backtest/` has no React or Next imports. It holds `types.ts`, `timeframes.ts` (UTC-epoch buckets matching the server), `rng.ts` (`mulberry32`, overridable with `BT_SEED`) and `replayEngine.ts`.
+  - The engine keeps a history buffer, a forward buffer of 1m candles (1,500 minutes, prefetch at 500) and one forming candle. The visible candles are built only from minutes with `time < cursor`. A starved buffer pauses playback and resumes when the chunk arrives. A throttled tab catches up in batches of at most 50 steps, with the backlog capped at 2 seconds.
+  - Seek, step back and a timeframe switch all go through one rebuild: complete candles end at the bucket start, and the forming candle is rebuilt from the minutes inside the bucket up to the cursor.
+  - Tests: `npm run test:replay-engine` (11 groups plus 500 seeded sequences). A planted one-minute leak fails the suite, which confirms the no-future check. `npm run typecheck` passes.
 
 ## Pending human verification
 
@@ -204,3 +209,4 @@ _(none yet)_
 | 2A | d95633b | backtesting(2a): trade time-offset detection |
 | 2B | 91ce6da | backtesting(2b): replay payload builder, replay API, notes, symbol interest |
 | 2C | 7a7dbcf | backtesting(2c): prefetch hooks and time-basis writers |
+| 2D | 2a5e274 | backtesting(2d): CandleChart wrapper |
