@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from app.models.account import Account
 from app.models.trade import AssetType, Trade, TradeSide, TradeStatus
 from app.models.user import User
+from app.services.marketdata.prefetch import prefetch_for_trades
+from app.services.marketdata.time_offsets import basis_for_input
 from app.services.trade_calc import calculate_trade
 from app.services.trade_service import apply_calc, replace_executions
 
@@ -136,6 +138,7 @@ def import_trades_from_csv(
                 setup_tag=setup_tag,
                 notes=notes,
                 status=calc.status if exit_price is not None else status,
+                time_basis=basis_for_input(opened_at),
             )
             apply_calc(trade, calc)
             replace_executions(trade, calc.fills, opened_at)
@@ -147,4 +150,5 @@ def import_trades_from_csv(
             errors.append(f"Row {idx + 2}: {exc}")
 
     db.commit()
+    prefetch_for_trades(created_ids)
     return imported, skipped_duplicates, errors, created_ids

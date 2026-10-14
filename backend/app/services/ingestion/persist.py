@@ -16,6 +16,8 @@ from app.models.trade import AssetType, ExecutionLegType, Trade, TradeExecution,
 from app.services.brokers.canonical import CanonicalExecution, fingerprint
 from app.services.ingestion.grouping import PositionDraft, group_executions
 from app.services.live_trades import live_trades
+from app.services.marketdata.prefetch import prefetch_for_trades
+from app.services.marketdata.time_offsets import basis_for_provider
 
 _ASSET = {
     "mt5": AssetType.forex,
@@ -50,10 +52,12 @@ def persist_executions(
         except Exception:
             counts["failed"] += 1
     drafts = group_executions(rows, provider=provider, account_key=str(broker_account_id))
+    touched: list[uuid.UUID] = []
     for draft in drafts:
         _upsert_position(db, user_id, broker_account_id, draft)
-        _upsert_journal(db, user_id, broker_account_id, journal_account_id, provider, draft)
+        touched.append(_upsert_journal(db, user_id, broker_account_id, journal_account_id, provider, draft))
     db.commit()
+    prefetch_for_trades(touched)
     return counts
 
 
@@ -171,7 +175,7 @@ def _upsert_position(db, user_id, broker_account_id, draft: PositionDraft) -> No
     db.flush()
 
 
-def _upsert_journal(db, user_id, broker_account_id, journal_account_id, provider, draft: PositionDraft) -> None:
+def _upsert_journal(db, user_id, broker_account_id, journal_account_id, provider, draft: PositionDraft) -> uuid.UUID:
     existing = db.scalar(
         live_trades(user_id, include_deleted=True).where(
             Trade.broker_account_id == broker_account_id,
@@ -206,11 +210,12 @@ def _upsert_journal(db, user_id, broker_account_id, journal_account_id, provider
             funding=draft.funding,
             gross_pnl=draft.gross_pnl,
             is_sync=True,
+            time_basis=basis_for_provider(provider),
         )
         db.add(trade)
         db.flush()
         _replace_legs(db, trade, draft)
-        return
+        return trade.id
     existing.exit_price = draft.exit_price
     existing.closed_at = draft.closed_at
     existing.pnl = draft.net_pnl
@@ -223,6 +228,7 @@ def _upsert_journal(db, user_id, broker_account_id, journal_account_id, provider
     existing.is_sync = True
     _replace_legs(db, existing, draft)
     db.flush()
+    return existing.id
 
 
 def _replace_legs(db, trade: Trade, draft: PositionDraft) -> None:

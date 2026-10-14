@@ -22,6 +22,8 @@ from app.schemas.trade import TradeCreate, TradeExecutionResponse, TradeResponse
 from app.schemas.trade_export import TradeExportCountRequest, TradeExportRequest
 from app.services.behavior import apply_behavior_flags
 from app.services.live_trades import get_live_trade, live_trades
+from app.services.marketdata.prefetch import prefetch_for_trades
+from app.services.marketdata.time_offsets import basis_for_input
 from app.services.rate_limit import screenshot_upload_limiter, trade_export_limiter
 from app.services.trade_export import EmptyExport, build_trade_export, count_trades_for_export
 from app.services.storage import delete_local_upload, save_trade_screenshot, save_trade_voice
@@ -377,6 +379,7 @@ def create_trade(
         strategy_id=payload.strategy_id,
         playbook_id=payload.playbook_id,
         precheck_list_id=payload.precheck_list_id,
+        time_basis=basis_for_input(payload.opened_at),
     )
     apply_journal_fields(
         trade,
@@ -398,6 +401,7 @@ def create_trade(
     from app.services.ai.rag.ingest import ingest_trade, safe_ingest
 
     safe_ingest(db, lambda: ingest_trade(db, trade))
+    prefetch_for_trades([trade.id])
     _notify(current_user.id, account.id, "trade_created")
     return _to_response(trade)
 
@@ -542,6 +546,8 @@ def update_trade(
         if field == "symbol" and value:
             value = value.upper()
         setattr(trade, field, value)
+    if update_data.get("opened_at") is not None:
+        trade.time_basis = basis_for_input(update_data["opened_at"])
 
     if "setup_tags" in update_data:
         tags = list(trade.setup_tags or [])
@@ -588,6 +594,8 @@ def update_trade(
     from app.services.ai.rag.ingest import ingest_trade, safe_ingest
 
     safe_ingest(db, lambda: ingest_trade(db, trade))
+    if fields & {"opened_at", "closed_at", "symbol"}:
+        prefetch_for_trades([trade.id])
     _notify(current_user.id, trade.account_id, "trade_updated")
     return _to_response(trade)
 

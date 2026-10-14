@@ -33,6 +33,19 @@ from app.services.marketdata.store import CandleStore, get_store
 logger = logging.getLogger(__name__)
 
 NAIVE_BASES = ("naive_wall_clock", "unknown")
+SERVER_TIME_PROVIDERS = frozenset({"mt4", "mt5", "xm", "exness", "avatrade"})
+
+
+def basis_for_input(value: datetime | None) -> str:
+    """Write-path rule (AUDIT section 3): an explicit offset is a real instant; a naive value is a wall clock."""
+    if value is None:
+        return "unknown"
+    return "utc_aware" if value.tzinfo is not None and value.utcoffset() is not None else "naive_wall_clock"
+
+
+def basis_for_provider(provider: str) -> str:
+    """Broker sync: MT-style bridges report broker server time as if it were UTC; the others send UTC epochs."""
+    return "naive_wall_clock" if provider.lower() in SERVER_TIME_PROVIDERS else "utc_aware"
 NY_CLOSE = "NY_CLOSE"
 NY_CLOSE_SHIFT = timedelta(hours=7)
 METHOD = "price_match_v1"

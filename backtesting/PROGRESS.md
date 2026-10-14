@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 2C (prefetch hooks and time-basis writers).
+- **Current sub-phase:** 2D (CandleChart wrapper).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -26,7 +26,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 1H | Candle API, health, gzip, CLI, seed (Gate 1) | auto-passed (Gate 1 NET partly pending: Dukascopy WAF) |
 | 2A | Trade time-offset detection | auto-passed (seeded NET check passed) |
 | 2B | Replay payload API and notes | auto-passed |
-| 2C | Prefetch hooks and time-basis writers | todo |
+| 2C | Prefetch hooks and time-basis writers | auto-passed |
 | 2D | CandleChart wrapper | todo |
 | 2E | Replay engine (TS) | todo |
 | 2F | Replay page shell | todo |
@@ -144,6 +144,11 @@ Fill in during work: the files changed, the commands run with their result summa
     - `journal_descriptor` converts times through `effective_utc` and reports the rule it used.
   - **Endpoints:** `GET /api/trades/{id}/replay` and `GET`/`POST /api/trades/{id}/replay-notes`, both through `get_live_trade`, so simulated and foreign trades return 404. Also `POST /api/market-data/symbol-interest` (202; increments `unresolved_symbols.interest_count`; 30 per user per hour).
   - Tests: `tests/test_replay_api.py` (22). Full suite: 489 passed.
+- **2C:**
+  - **`marketdata/prefetch.py`:** `prefetch_for_trades(ids)` opens its own session, loads live, non-deleted trades (at most 2,000), resolves each symbol (recording unresolved ones), skips disabled instruments, merges the replay windows per instrument, and enqueues one deduplicated `candles.ingest` job per instrument spanning the gaps. It never fetches inline and swallows every exception, logging it.
+  - **Hooks (after commit):** manual create and edit (`opened_at`, `closed_at` or `symbol` changes), the legacy CSV import, file import confirm, and broker sync persist.
+  - **`time_basis`:** manual and CSV use `basis_for_input` (a naive datetime gives `naive_wall_clock`, an aware one gives `utc_aware`). File confirm is `naive_wall_clock` if any execution timestamp was naive. Broker sync uses `basis_for_provider` (mt4, mt5, xm, exness and avatrade report server time; others are UTC).
+  - Tests: `tests/test_prefetch.py` (12): all four paths, deduplication on repeat, an injected `plan_windows` failure still returns 201, covered windows enqueue nothing, unresolved symbols are logged, simulated trades are skipped. Full suite: 501 passed.
 
 ## Pending human verification
 
@@ -183,3 +188,4 @@ _(none yet)_
 | 1G | 382b2fd | backtesting(1g): candle service core, aggregation, cache, ingest jobs |
 | 1H | 291a6ad | backtesting(1h): candle API, health, gzip, CLI, seed |
 | 2A | d95633b | backtesting(2a): trade time-offset detection |
+| 2B | 91ce6da | backtesting(2b): replay payload builder, replay API, notes, symbol interest |

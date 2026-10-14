@@ -15,6 +15,7 @@ from app.services.live_trades import live_trades
 from app.models.user import User
 from app.services.brokers.canonical import CanonicalExecution, D, fingerprint
 from app.services.ingestion.grouping import group_executions
+from app.services.marketdata.prefetch import prefetch_for_trades
 
 _ASSET = {
     "zerodha-tradebook-csv": AssetType.stock,
@@ -61,6 +62,12 @@ def confirm_batch(db: Session, user: User, batch: ImportBatch) -> dict[str, int]
         for row, built in planned
         for execution in built
     }
+    naive_fill = {
+        execution.external_execution_id: _is_naive((row.normalized or {}).get("executed_at"))
+        for row, built in planned
+        for execution in built
+    }
+    created_trades: list[Trade] = []
     for draft in drafts:
         external_id = draft.external_position_id or fingerprint(
             provider=batch.detected_format,
@@ -102,6 +109,9 @@ def confirm_batch(db: Session, user: User, batch: ImportBatch) -> dict[str, int]
             swap=draft.swap,
             funding=draft.funding,
             gross_pnl=draft.gross_pnl,
+            time_basis="naive_wall_clock"
+            if any(naive_fill.get(e.external_execution_id) for e in draft.executions)
+            else "utc_aware",
         )
         sources = []
         for execution in draft.executions:
@@ -110,11 +120,13 @@ def confirm_batch(db: Session, user: User, batch: ImportBatch) -> dict[str, int]
                 sources.append(data)
         apply_journal(trade, sources)
         db.add(trade)
+        created_trades.append(trade)
         created += 1
     batch.status = "imported"
     batch.duplicate_count = duplicates
     batch.attention_count = attention
     db.commit()
+    prefetch_for_trades([trade.id for trade in created_trades])
     return {"created": created, "duplicates": duplicates, "attention": attention, "detected": len(rows)}
 
 
@@ -352,6 +364,16 @@ def _date(value: str | None) -> date | None:
         return date.fromisoformat(str(value)[:10])
     except ValueError:
         return None
+
+
+def _is_naive(value: object) -> bool:
+    """True when the file's time carried no offset (stored as UTC, really a wall clock)."""
+    if not value:
+        return False
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).tzinfo is None
+    except ValueError:
+        return False
 
 
 def _parse_time(value: object) -> datetime | None:
