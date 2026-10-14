@@ -19,7 +19,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 1A | Schema, config, registry | auto-passed |
 | 1B | Live-trades helper: core journal readers | auto-passed |
 | 1C | Live-trades helper: AI, sync, import, raw-SQL readers | auto-passed |
-| 1D | Resolver, validation, store, coverage | todo |
+| 1D | Resolver, validation, store, coverage | auto-passed |
 | 1E | Provider adapters, verify-instrument | todo |
 | 1F | Jobs queue, worker, entitlements, errors, make-admin | todo |
 | 1G | Candle service core | todo |
@@ -61,6 +61,14 @@ Fill in during work: the files changed, the commands run with their result summa
   - `tests/test_bt_live_trades_ai.py` includes a golden check: full analytics, advanced analytics and the AI tools give byte-identical output before and after a simulated trade is inserted.
   - Fixed an existing bug in `rag/store.upsert_document`: it inserted the ORM attribute key `metadata`, which clashes with `Base.metadata`. It now inserts against the table.
   - Full suite: 308 passed.
+- **1D:**
+  - New modules: `marketdata/candles.py` (the columnar `Candles` batch), `validation.py`, `store.py`, `coverage.py` and `resolver.py`.
+  - The store merges, dedups and sorts each month, writes zstd Parquet to `<root>/tmp`, then calls `atomic_replace`, which retries `PermissionError` 5 times (50 to 800 ms) and always removes the temp file.
+  - Month writes are serialized by a thread lock plus an OS file lock (`msvcrt` or `fcntl`) on `<root>/locks/*.lock`, so the API's inline fill and the worker process can't interleave.
+  - Every read and count opens its own DuckDB connection (D-020).
+  - `coverage.record_fetch`: validate, then write, then mark covered (under a Postgres advisory transaction lock), then refresh the month stat (open-market gap minutes over the covered part, plus outliers recounted from the file). A store failure leaves coverage untouched.
+  - The resolver's built-in aliases cover GOLD, SPX500, NAS100, GER40 and similar, and `BTCUSD` maps to `BTCUSDT`. Other crypto exchanges are flagged `binance_proxy` (D-011).
+  - Tests: `test_bt_validation.py`, `test_bt_store.py`, `test_bt_coverage.py`, `test_bt_resolver.py`. Full suite: 371 passed.
 
 ## Pending human verification
 
@@ -85,4 +93,7 @@ _(none yet)_
 
 | Sub-phase | Commit | Message |
 |---|---|---|
-| _(none yet)_ | | |
+| 0 | b380ab2 | backtesting(0): audit and docs |
+| 1A | ac61e7a | backtesting(1a): schema, config, instrument registry |
+| 1B | 754cc25 | backtesting(1b): live-trades helper and core reader exclusion |
+| 1C | 206355e | backtesting(1c): AI, sync and import reader exclusion |
