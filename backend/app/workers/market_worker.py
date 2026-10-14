@@ -27,7 +27,7 @@ from app.services.marketdata.providers.base import ProviderError
 logger = logging.getLogger("tradefix.market_worker")
 
 HEARTBEAT_NAME = "market_worker"
-HANDLER_MODULES: tuple[str, ...] = ()
+HANDLER_MODULES: tuple[str, ...] = ("app.services.marketdata.ingest_jobs",)
 _started = False
 
 

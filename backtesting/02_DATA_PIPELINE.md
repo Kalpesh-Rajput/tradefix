@@ -131,6 +131,14 @@ Input: instrument, start, end. Behaviour:
 
 Concurrent requests for the same missing range must share one job, not create several.
 
+**Amended by D-017 (implemented in 1G):**
+
+- Dukascopy gaps always become a job.
+- Inline fills are Binance REST only, for gaps up to `INLINE_FETCH_MAX_GAP_MINUTES` (4,320), with a timeout of `INLINE_FETCH_TIMEOUT_S` (8 s).
+- At most `INLINE_FETCH_MAX_CONCURRENT` (4) inline fills run per process.
+- Over the cap, on timeout, or on a retryable provider error, the request gets a deduplicated job (day-aligned dedup key) and a "preparing" answer.
+- Sync request handlers must never block the threadpool for long.
+
 ### 9.2 get_candles
 Input: instrument, timeframe, start, end (or limit with an anchor and direction), optional "until" cutoff. Output: columnar arrays of time, open, high, low, close, volume.
 

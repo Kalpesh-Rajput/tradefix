@@ -22,7 +22,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 1D | Resolver, validation, store, coverage | auto-passed |
 | 1E | Provider adapters, verify-instrument | auto-passed (1 NET pending) |
 | 1F | Jobs queue, worker, entitlements, errors, make-admin | auto-passed |
-| 1G | Candle service core | todo |
+| 1G | Candle service core | auto-passed |
 | 1H | Candle API, health, gzip, CLI, seed (Gate 1) | todo |
 | 2A | Trade time-offset detection | todo |
 | 2B | Replay payload API and notes | todo |
@@ -98,6 +98,16 @@ Fill in during work: the files changed, the commands run with their result summa
   - `services/backtest/entitlements` (`check_feature`, `require_feature`) allows everyone for now.
   - `api/deps.require_admin`; `services/user_roles.set_admin`; CLI `make-admin <email> [--revoke]`.
   - Tests: `tests/test_bt_jobs.py`, 17 passed. Full suite: 413 passed.
+- **1G:**
+  - **`marketdata/aggregation.py`:** DuckDB `arg_min(open)` / `max` / `min` / `arg_max(close)` / `sum` buckets on epoch boundaries.
+  - **`cache.py`:** a bounded LRU that caches only fully covered windows (so it is safe across processes), with in-process overlap invalidation on writes.
+  - **`ingest_jobs.py`:** `fill_gaps` records and commits chunk by chunk and invalidates the cache. The `candles.ingest` handler reports progress and cancels between chunks; the worker loads it.
+  - **`candle_service.py`:**
+    - `ensure_candles` follows D-017: inline work runs on a bounded pool behind a non-blocking semaphore and waits at most `INLINE_FETCH_TIMEOUT_S`. Everything else becomes a deduplicated job.
+    - `get_candles` returns only buckets that are closed before `until`/now and fully covered. It also enforces the bar cap and returns has-more flags, `earliest_ms` and `complete_until_ms`.
+  - Bug found and fixed: an empty cache is falsy, so `cache or candle_cache` silently used the global cache.
+  - Spec 02 section 9.1 now carries the D-017 amendment.
+  - Tests: `test_bt_aggregation.py` (independent Python reference, seeded, `BT_SEED` override) and `test_bt_candle_service.py`. Full suite: 435 passed.
 
 ## Pending human verification
 
@@ -129,3 +139,4 @@ _(none yet)_
 | 1C | 206355e | backtesting(1c): AI, sync and import reader exclusion |
 | 1D | df0e21b | backtesting(1d): resolver, validation, parquet store, coverage |
 | 1E | 0a0179d | backtesting(1e): binance and dukascopy adapters, fixtures, verify-instrument |
+| 1F | 428571b | backtesting(1f): job queue, provider limiter, market worker, errors, entitlements, make-admin |
