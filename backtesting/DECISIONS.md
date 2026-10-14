@@ -81,6 +81,13 @@ Bybit, OKX and Bitget trades replay with Binance data for the same pair. The UI 
 
 ## D-012: Chart library (accepted)
 `lightweight-charts` v5 is pinned to an exact version. The installed major version and its API are recorded here once installed (in 2D).
+- **2D result:** pinned to `5.2.1`, which uses the v5 API:
+  - `chart.addSeries(CandlestickSeries | HistogramSeries, options)` creates series.
+  - The `createSeriesMarkers(series)` plugin handles markers (`setMarkers`, `detach`).
+  - `series.createPriceLine` and `removePriceLine` handle price lines.
+  - Times are `UTCTimestamp` seconds. The wrapper takes epoch milliseconds and converts them.
+- Only `components/chart/lightweightBackend.ts` imports the library. The timezone is applied through `localization.timeFormatter` and `timeScale.tickMarkFormatter` using `Intl`; the data is never shifted.
+- Attribution: the library's `attributionLogo` stays on, plus a "Charts by TradingView Lightweight Charts™" footer link. The notices page entry is added in 5D.
 
 ## D-013: Trade time normalization (amended, rev 2)
 - **Original (superseded):** normalize to UTC in the resolver; treat naive datetimes as UTC unless a broker server-offset setting exists.
@@ -219,6 +226,11 @@ Proposed: detected offsets are stored per **journal account** (`trades.account_i
 - Tests use the dev database (open question 3). The 0033 round trip used to wipe seeded coverage, and from Phase 3 it would also reset `trades.is_simulated`, which would turn simulated trades into live ones.
 - `test_bt_migrations` now copies every dropped table and the added trade columns into `_bt_backup_*` tables before the downgrade, and restores them after the upgrade. `test_round_trip_keeps_existing_rows` guards this.
 - New migrations must list their tables in FK order in `MIGRATIONS`.
+
+## D-032: Frontend lint gate is a type check (accepted, 2D)
+- `npm run lint` runs `next lint`, which Next 16 removed. It fails with "Invalid project directory ... frontend\lint". The repository also has no ESLint dependency or config.
+- Adding ESLint now would lint all existing user code, which is outside this feature. So every "`npm run lint` passes" gate in PLAN is satisfied by `npm run typecheck` (`tsc --noEmit`, with strict settings from `tsconfig.json`), together with `npm run build`.
+- An open item in PROGRESS asks the owner to choose an ESLint setup. When one exists, the gates switch back to it.
 
 ## D-028: Deployment readiness documentation (accepted, rev 2)
 README_BACKTESTING (5D) includes a Deployment readiness section covering:

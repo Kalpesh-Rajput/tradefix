@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 2D (CandleChart wrapper).
+- **Current sub-phase:** 2E (replay engine, pure TypeScript).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -27,7 +27,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 2A | Trade time-offset detection | auto-passed (seeded NET check passed) |
 | 2B | Replay payload API and notes | auto-passed |
 | 2C | Prefetch hooks and time-basis writers | auto-passed |
-| 2D | CandleChart wrapper | todo |
+| 2D | CandleChart wrapper | auto-passed (HUMAN pending) |
 | 2E | Replay engine (TS) | todo |
 | 2F | Replay page shell | todo |
 | 2G | Replay overlays, notes, entry points (Gate 2) | todo |
@@ -149,6 +149,18 @@ Fill in during work: the files changed, the commands run with their result summa
   - **Hooks (after commit):** manual create and edit (`opened_at`, `closed_at` or `symbol` changes), the legacy CSV import, file import confirm, and broker sync persist.
   - **`time_basis`:** manual and CSV use `basis_for_input` (a naive datetime gives `naive_wall_clock`, an aware one gives `utc_aware`). File confirm is `naive_wall_clock` if any execution timestamp was naive. Broker sync uses `basis_for_provider` (mt4, mt5, xm, exness and avatrade report server time; others are UTC).
   - Tests: `tests/test_prefetch.py` (12): all four paths, deduplication on repeat, an injected `plan_windows` failure still returns 201, covered windows enqueue nothing, unresolved symbols are logged, simulated trades are skipped. Full suite: 501 passed.
+- **2D:**
+  - `lightweight-charts@5.2.1` is pinned (D-012). Files are in `components/chart/`:
+    - `chartModel.ts`: a pure `ChartModel` holding bars, markers, price lines and display settings. It survives remounts and binds to whichever backend is mounted.
+    - `attachChart`: the effect body. Every resource it acquires is released by the detach function it returns.
+    - `lightweightBackend.ts`: the only file that imports the library.
+    - `chartTheme.ts`: reads the theme tokens and watches the root element's class, style and data attributes plus the system colour scheme.
+    - `chartTime.ts`: timezone tick and crosshair formatters using `Intl`.
+    - `CandleChart.tsx`: the `forwardRef` handle, an OHLC legend updated at most once per animation frame, a UTC toggle and the attribution footer.
+    - `index.ts`: the `next/dynamic` export with `ssr: false`.
+  - The bar cap trims in batches (10% slack), so ticks never trigger a full `setData`.
+  - Gate: `npm run build` passes; `npm run typecheck` passes (it stands in for lint, D-032); `npm run test:chart-lifecycle` passes. That test checks a balanced mount, unmount, mount sequence, remount restore, ticks that only update the last bar, batch trimming, and theme and display propagation, with no theme updates after unmount.
+  - The HUMAN check for 2D is in HUMAN_QA (it can be done once the 2F page exists).
 
 ## Pending human verification
 
@@ -161,6 +173,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 1H | NET | Verify EURUSD and XAUUSD | `cd backend; .\venv\Scripts\python.exe -m app.cli.marketdata verify-instrument EURUSD XAUUSD --write` | pending: Dukascopy WAF (HTTP 202) |
 | 1H | NET | Seed EURUSD and XAUUSD (expect about 28,000 to 32,000 rows each) | `.\venv\Scripts\python.exe -m app.cli.marketdata seed-demo`, then `coverage EURUSD XAUUSD` | pending (same block) |
 | 1H | NET | Seeded aggregation for EURUSD and XAUUSD | `.\venv\Scripts\python.exe -m pytest -m seeded` (no skips) | pending (same block) |
+| 2D | HUMAN | One chart canvas in StrictMode, no console warnings, resize and theme switching work | HUMAN_QA "2D chart lifecycle" | pending |
 | 1H | NET | Cross-check EURUSD daily closes against a reference | Compare the `1d` closes from `/api/market-data/candles` with a public EURUSD daily close (for example ECB or broker statements) within 0.0005 | pending (same block) |
 
 ## Open questions (resolved by default when implementation started without answers)
@@ -169,6 +182,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 2. **D-023:** offsets are keyed per journal account (the proposed default).
 3. **Test database.** Tests use the dev `DATABASE_URL` inside rolled-back transactions. Migration round trips only drop and recreate this feature's own tables and columns.
 4. **Network.** Live calls are attempted for [NET] checks. Failures are recorded as pending.
+5. **Frontend lint (D-032).** `next lint` no longer exists in Next 16, and there is no ESLint setup. Owner decision needed: adopt ESLint 9 flat config with `eslint-config-next`. Until then, `npm run typecheck` is the lint gate.
 
 ## Left uncommitted (pre-existing user changes in edited files)
 
@@ -189,3 +203,4 @@ _(none yet)_
 | 1H | 291a6ad | backtesting(1h): candle API, health, gzip, CLI, seed |
 | 2A | d95633b | backtesting(2a): trade time-offset detection |
 | 2B | 91ce6da | backtesting(2b): replay payload builder, replay API, notes, symbol interest |
+| 2C | 7a7dbcf | backtesting(2c): prefetch hooks and time-basis writers |
