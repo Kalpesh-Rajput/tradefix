@@ -21,7 +21,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 1C | Live-trades helper: AI, sync, import, raw-SQL readers | auto-passed |
 | 1D | Resolver, validation, store, coverage | auto-passed |
 | 1E | Provider adapters, verify-instrument | auto-passed (1 NET pending) |
-| 1F | Jobs queue, worker, entitlements, errors, make-admin | todo |
+| 1F | Jobs queue, worker, entitlements, errors, make-admin | auto-passed |
 | 1G | Candle service core | todo |
 | 1H | Candle API, health, gzip, CLI, seed (Gate 1) | todo |
 | 2A | Trade time-offset detection | todo |
@@ -83,6 +83,21 @@ Fill in during work: the files changed, the commands run with their result summa
     - `pytest -m live tests/test_providers.py`: Binance passed. Dukascopy is blocked by the WAF and stays pending.
     - `verify-instrument BTCUSDT`: OK, 1,440 of 1,440 rows for 2026-10-13, prices 81033.66 to 84168.0.
   - Tests: `tests/test_providers.py`, 25 passed.
+- **1F:**
+  - **Queue (`services/jobs/queue.py`):**
+    - `enqueue` uses ON CONFLICT DO NOTHING on the active-dedup partial index.
+    - `claim` takes a per-lane `pg_advisory_xact_lock`, checks capacity, then `FOR UPDATE SKIP LOCKED`.
+    - Also: `fail` (backoff with 50% to 100% jitter, capped, honours `retry_after`), `recover_expired`, `request_cancel`, `retry_failed`, `set_progress` (extends the lock and reports cancellation), and the `register_handler` / `JobContext` registry.
+  - `services/jobs/locks.AdvisoryLock` holds a session lock on a dedicated AUTOCOMMIT connection.
+  - `services/jobs/provider_limiter.TokenBucket` provides one bucket per provider per process.
+  - `workers/market_worker.py`:
+    - Takes the advisory lock and idles if another worker holds it.
+    - Each tick: heartbeat row, expired-lock recovery, extending the locks of its own running jobs, then claiming into a thread pool sized to the sum of the lane limits.
+    - `MARKET_WORKER_IN_PROCESS` starts it as a thread in the API.
+  - `services/backtest/errors.BacktestError` carries the stable codes, and a handler in `main.py` returns `{code, message, details?, job_id?}` plus `Retry-After`.
+  - `services/backtest/entitlements` (`check_feature`, `require_feature`) allows everyone for now.
+  - `api/deps.require_admin`; `services/user_roles.set_admin`; CLI `make-admin <email> [--revoke]`.
+  - Tests: `tests/test_bt_jobs.py`, 17 passed. Full suite: 413 passed.
 
 ## Pending human verification
 
@@ -112,3 +127,5 @@ _(none yet)_
 | 1A | ac61e7a | backtesting(1a): schema, config, instrument registry |
 | 1B | 754cc25 | backtesting(1b): live-trades helper and core reader exclusion |
 | 1C | 206355e | backtesting(1c): AI, sync and import reader exclusion |
+| 1D | df0e21b | backtesting(1d): resolver, validation, parquet store, coverage |
+| 1E | 0a0179d | backtesting(1e): binance and dukascopy adapters, fixtures, verify-instrument |

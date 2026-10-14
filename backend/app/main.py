@@ -39,6 +39,7 @@ from app.api.routers import (
 )
 from app.core.config import settings
 from app.core.security import decode_access_token
+from app.services.backtest.errors import BacktestError
 from app.services.brokers.errors import BrokerError
 from app.services.scheduler import shutdown_scheduler, start_scheduler
 from app.services.ws_hub import hub
@@ -62,6 +63,10 @@ async def lifespan(app: FastAPI):
         from app.workers.broker_worker import start_in_process
 
         start_in_process()
+    if settings.market_worker_in_process:
+        from app.workers.market_worker import start_in_process as start_market_worker
+
+        start_market_worker()
     yield
     shutdown_scheduler()
 
@@ -117,6 +122,11 @@ app.mount("/uploads", StaticFiles(directory=str(uploads_path)), name="uploads")
 @app.exception_handler(BrokerError)
 def broker_error_handler(_request, exc: BrokerError):
     return JSONResponse(status_code=exc.http_status, content=exc.as_dict())
+
+
+@app.exception_handler(BacktestError)
+def backtest_error_handler(_request, exc: BacktestError):
+    return JSONResponse(status_code=exc.status, content=exc.as_dict(), headers=exc.headers())
 
 
 @app.get("/api/health")

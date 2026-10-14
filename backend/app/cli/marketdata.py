@@ -53,6 +53,26 @@ def verify_instrument_cmd(args: argparse.Namespace) -> int:
     return 1 if failures else 0
 
 
+def _admin_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("email")
+    parser.add_argument("--revoke", action="store_true", help="set the role back to trader")
+
+
+@command("make-admin", "grant (or --revoke) the admin role for market-data operations", _admin_args)
+def make_admin_cmd(args: argparse.Namespace) -> int:
+    from app.core.db import SessionLocal
+    from app.services.user_roles import set_admin
+
+    with SessionLocal() as db:
+        try:
+            user, changed = set_admin(db, args.email, revoke=args.revoke)
+        except LookupError as exc:
+            print(str(exc))
+            return 1
+    print(f"{user.email}: role={user.role}" + ("" if changed else " (unchanged)"))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli.marketdata")
     sub = parser.add_subparsers(dest="command", required=True)
