@@ -209,6 +209,17 @@ Proposed: detected offsets are stored per **journal account** (`trades.account_i
 - `flag_outliers` now compares each bar against `max(median range, 1e-4 x close)`. That's 1 basis point: about 8 USD for BTC, about 1.1 pips for EURUSD. The same month now flags 5 bars.
 - Outliers are still flagged and kept, never dropped (02 section 7).
 
+## D-030: Time-offset tie-break (accepted, 2A)
+- When every sampled trade maps to the same UTC minutes under two candidates, the sample can't tell them apart. Examples: NY_CLOSE equals `Etc/GMT-3` from mid-March to early November, and UTC equals Europe/London in winter.
+- Such candidates are merged. The first in candidate order wins, and the runner-up is the best candidate whose mapping actually differs, so the confidence margin stays meaningful.
+- The order is UTC, the profile timezone, NY_CLOSE, `Etc/GMT-2`, `Etc/GMT-3`, then `TIME_OFFSET_CANDIDATES`. NY_CLOSE precedes the fixed offsets because DST-following server time is the common broker convention.
+- The seeded September BTCUSDT check (2A gate) depends on this rule.
+
+## D-031: Migration round trips preserve dev data (accepted, 2A)
+- Tests use the dev database (open question 3). The 0033 round trip used to wipe seeded coverage, and from Phase 3 it would also reset `trades.is_simulated`, which would turn simulated trades into live ones.
+- `test_bt_migrations` now copies every dropped table and the added trade columns into `_bt_backup_*` tables before the downgrade, and restores them after the upgrade. `test_round_trip_keeps_existing_rows` guards this.
+- New migrations must list their tables in FK order in `MIGRATIONS`.
+
 ## D-028: Deployment readiness documentation (accepted, rev 2)
 README_BACKTESTING (5D) includes a Deployment readiness section covering:
 

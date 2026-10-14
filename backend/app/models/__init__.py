@@ -43,6 +43,7 @@ from app.models.progress_tracker import (
     ProgressTrackerSettings,
 )
 from app.models.prop_settings import PropSettings
+from app.models.time_offset import AccountTimeOffset
 from app.models.trade import Trade, TradeExecution
 from app.models.trade_master import TradeMaster
 from app.models.user import User
@@ -92,6 +93,7 @@ __all__ = [
     "UnresolvedSymbol",
     "CandleCoverage",
     "CandleMonthStat",
+    "AccountTimeOffset",
     "AgentRun",
     "UserAgent",
     "UserNotification",

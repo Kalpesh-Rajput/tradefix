@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 2A (trade time-offset detection).
+- **Current sub-phase:** 2B (replay payload API and notes).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -24,7 +24,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 1F | Jobs queue, worker, entitlements, errors, make-admin | auto-passed |
 | 1G | Candle service core | auto-passed |
 | 1H | Candle API, health, gzip, CLI, seed (Gate 1) | auto-passed (Gate 1 NET partly pending: Dukascopy WAF) |
-| 2A | Trade time-offset detection | todo |
+| 2A | Trade time-offset detection | auto-passed (seeded NET check passed) |
 | 2B | Replay payload API and notes | todo |
 | 2C | Prefetch hooks and time-basis writers | todo |
 | 2D | CandleChart wrapper | todo |
@@ -125,6 +125,17 @@ Fill in during work: the files changed, the commands run with their result summa
     - `pytest -m seeded`: 7 BTCUSDT timeframes pass against the numpy reference; EURUSD and XAUUSD skip because they aren't seeded.
     - BTCUSDT September daily closes match Binance `/api/v3/klines?interval=1d` exactly (30 of 30 days, max relative difference 0).
   - Tests: `tests/test_candle_api.py` (17), `tests/test_seeded_candles.py` (marked seeded), and a regression test for the tick-pinned outlier case. Full suite: 453 passed.
+- **2A:**
+  - **Migration 0034 `account_time_offsets`:** keyed by journal account (D-023), with `broker_account_id`, `tz_kind` (iana, fixed or ny_close), `tz_value`, `confidence`, `match_rate`, `sample_size`, `runner_up` and its rate, `method`, the per-candidate `scores`, and `computed_at`. CHECK constraints guard the kind and confidence values.
+  - **`marketdata/time_offsets.py`:**
+    - Candidates (UTC, profile timezone, NY_CLOSE, `Etc/GMT-2`, `Etc/GMT-3`, `TIME_OFFSET_CANDIDATES`, with fixed `+HH:MM` supported) reinterpret the stored wall clock.
+    - A trade is scored only if stored candles cover its entry minute under every candidate. It hits when the entry price is inside the 1m bar within the tolerance: 2 pips for forex and metals, 0.05% otherwise.
+    - Confidence rules: high needs a rate of at least 0.8, a margin of at least 0.2 and at least 10 trades; medium needs at least 0.6 and a margin of at least 0.1; anything below `TIME_OFFSET_MIN_SAMPLE` or with a zero rate is unknown. Ties follow D-030.
+    - `effective_utc` follows the AUDIT section 3 fallback order and returns the rule it used.
+  - **Interfaces:** CLI `detect-offsets [--user email] [--account id] [--force-naive]` and `offsets-report`; `GET /api/admin/time-offsets` (admin only).
+  - **D-031:** migration round trips now preserve dev data. I found this when the full suite wiped the 1H seed; I re-seeded BTCUSDT.
+  - Bug found by running the CLI: `detect-offsets` printed after its session closed (DetachedInstanceError). Fixed.
+  - Tests: `tests/test_time_offsets.py` (13, plus 1 seeded). Full suite: 468 passed. `pytest -m seeded`: 8 passed (the NY-close account is detected with high confidence on real September BTCUSDT data).
 
 ## Pending human verification
 
@@ -162,3 +173,4 @@ _(none yet)_
 | 1E | 0a0179d | backtesting(1e): binance and dukascopy adapters, fixtures, verify-instrument |
 | 1F | 428571b | backtesting(1f): job queue, provider limiter, market worker, errors, entitlements, make-admin |
 | 1G | 382b2fd | backtesting(1g): candle service core, aggregation, cache, ingest jobs |
+| 1H | 291a6ad | backtesting(1h): candle API, health, gzip, CLI, seed |

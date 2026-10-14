@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.routers import (
     accounts,
+    admin_data,
     agents,
     ai,
     ai_insights,
@@ -118,6 +119,7 @@ app.include_router(mentor.router)
 app.include_router(media.router)
 app.include_router(fx.router)
 app.include_router(market_data.router)
+app.include_router(admin_data.router)
 
 uploads_path = Path(settings.upload_dir)
 uploads_path.mkdir(parents=True, exist_ok=True)

@@ -258,6 +258,61 @@ def unresolved_cmd(args: argparse.Namespace) -> int:
     return 0
 
 
+def _detect_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--user", help="user email")
+    parser.add_argument("--account", help="journal account id")
+    parser.add_argument("--force-naive", action="store_true", help="test every trade, even ones marked utc_aware")
+
+
+@command("detect-offsets", "detect each account's trade-time basis from stored candles", _detect_args)
+def detect_offsets_cmd(args: argparse.Namespace) -> int:
+    import uuid
+
+    from sqlalchemy import func, select
+
+    from app.core.db import SessionLocal
+    from app.models.user import User
+    from app.services.marketdata.time_offsets import detect_offsets
+
+    with SessionLocal() as db:
+        user_id = None
+        if args.user:
+            user_id = db.scalar(select(User.id).where(func.lower(User.email) == args.user.strip().lower()))
+            if user_id is None:
+                print(f"no user with email {args.user}")
+                return 1
+        try:
+            account_id = uuid.UUID(args.account) if args.account else None
+        except ValueError:
+            print(f"{args.account!r} is not an account id")
+            return 1
+        results = detect_offsets(db, user_id=user_id, account_id=account_id, force_naive=args.force_naive)
+        if not results:
+            print("no matching accounts")
+        for account, row in results:
+            if row is None:
+                print(f"SKIP    {account.name} ({account.id}): no naive trades with stored candles")
+            else:
+                print(f"{row.confidence.upper():<7} {account.name} ({account.id}): {row.tz_value} "
+                      f"rate={row.match_rate:.2f} n={row.sample_size} runner_up={row.runner_up} ({row.runner_up_rate})")
+    return 0
+
+
+@command("offsets-report", "list detected time offsets per account")
+def offsets_report_cmd(args: argparse.Namespace) -> int:
+    from app.core.db import SessionLocal
+    from app.services.marketdata.time_offsets import offsets_report
+
+    with SessionLocal() as db:
+        rows = offsets_report(db)
+    if not rows:
+        print("no offsets detected yet; run detect-offsets")
+    for row in rows:
+        print(f"{row['confidence']:<7} {row['user_email']} / {row['account_name']}: {row['tz_value']} "
+              f"rate={row['match_rate']:.2f} n={row['sample_size']} runner_up={row['runner_up']} {row['computed_at']:%Y-%m-%d}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli.marketdata")
     sub = parser.add_subparsers(dest="command", required=True)
