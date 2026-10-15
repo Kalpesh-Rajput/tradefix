@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** F6 auto-passed. The live BTCUSDT cross-check did not complete. Forex and gold stay disabled. NET and HUMAN rows below are still open.
+- **Current sub-phase:** F7 auto-passed on a paced run. The live BTCUSDT cross-check did not complete. Forex and gold stay disabled. NET and HUMAN rows below are still open.
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -53,6 +53,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | F4 | Dukascopy block cool-down and candle file import | auto-passed (HUMAN and NET pending) |
 | F5 | Binance and ECB daily cross-check | auto-passed (1 NET pending) |
 | F6 | Startup catch-up, dev launcher, worker notice | auto-passed |
+| F7 | Candle load test against the local API | auto-passed (replay mix not run) |
 
 ## Current sub-phase log
 
@@ -289,6 +290,13 @@ Fill in during work: the files changed, the commands run with their result summa
   - `GET /api/health` already reports `market_worker_age_s`. `GET /api/market-data/worker` adds a stale flag. Admins also get the age and `python scripts/dev.py`. After 180 seconds, preparing data and a waiting run say it is taking longer than expected. A stale heartbeat says the worker appears offline.
   - Gate AUTOMATED: `pytest -q --tb=line` — 594 passed, 24 deselected, 17 warnings, 46.31s, exit 0. `tests/test_catchup.py` covers a missing success, a recent success, a 30-hour-old success with the day key, and the trader/admin worker payload. Frontend `npm test` then `npm run typecheck` then `npm run build` exit 0 (76.1s combined). Build compiled in 5.6s, TypeScript in 6.0s, 51 pages. Last test script: `strategy preview ok`.
   - The dev command itself was not started. Seeing the slow and offline copy in the browser is still a human check.
+- **F7:**
+  - `python -m scripts.load_test_candles` signs in 20 users, then for 30 seconds mixes candle reads and session autosave. It writes `backend/scripts/load-test-results.json` with counts, errors, p50/p95/p99, and response sizes. Replay is included only when the user already has a journal trade. These users had none, so replay was not called.
+  - An unpaced run on `http://127.0.0.1:8001` (the API that was already running) sent 3,758 candle requests in 30 seconds. 1,358 came back 429 because the per-user limit is 120 a minute. p95 on that run was 0.242s. The script now waits 0.55s between requests, which stays under that limit. Session create had been pointed at the wrong path and at a 2025 date outside stored data.
+  - Paced run, same URL, 20 users, 30 seconds, exit 0. Candles: 300 requests, 0 errors, p50 0.021s, p95 0.062s, p99 0.114s, max body 27,609 bytes (about 8 hours of 1-minute bars, not 2,000). Session autosave: 569 requests, 0 errors, p50 0.019s, p95 0.053s, p99 0.088s. Spec 05 section 7 asks for candle p95 under 300ms and no errors at 20 users. This run met that. It did not measure a 2,000-bar body.
+  - Gzip: `GET /api/accounts/{id}/export` with `Accept-Encoding: gzip` returned `content-encoding: gzip`, status 200, and the same decoded bytes as the identity request (108 bytes). Streaming export was not broken.
+  - The market worker heartbeat was missing during the run (`/api/health` reported `market_worker: missing`). Reads were served from stored data. Restarting that API enqueued a real `topup:2026-10-15` job, which made the drill test’s hardcoded day collide with it. The drill now uses 2031-06-01. The queued top-up was left in place.
+  - Gate AUTOMATED: `pytest -q --tb=line` — 594 passed, 24 deselected, 17 warnings, 27.90s, exit 0. Frontend tests were not re-run; this task did not change frontend source.
 
 ## Pending human verification
 
@@ -371,3 +379,4 @@ _(none yet)_
 | F3 | 0408ba2 | backtesting(f3): fill-relative stops, filters and golden scenarios |
 | F4 | e34c21b | backtesting(f4): block cool-down and candle file import |
 | F5 | c14cbf1 | backtesting(f5): daily cross-check against Binance and ECB |
+| F6 | 7d33e70 | backtesting(f6): startup catch-up, dev launcher, and wait notices |

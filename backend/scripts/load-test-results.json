@@ -1,0 +1,40 @@
+{
+  "users": 20,
+  "duration_s": 30.0,
+  "base_url": "http://127.0.0.1:8001",
+  "endpoints": {
+    "candles": {
+      "count": 300,
+      "errors": 0,
+      "statuses": [
+        200
+      ],
+      "p50_s": 0.021332600037567317,
+      "p95_s": 0.06211359996814281,
+      "p99_s": 0.11362149997148663,
+      "bytes_p50": 27609.0,
+      "bytes_max": 27609
+    },
+    "session_autosave": {
+      "count": 569,
+      "errors": 0,
+      "statuses": [
+        200
+      ],
+      "p50_s": 0.019100500037893653,
+      "p95_s": 0.05289159994572401,
+      "p99_s": 0.08767820009961724,
+      "bytes_p50": 516.0,
+      "bytes_max": 516
+    }
+  },
+  "gzip": {
+    "checked": true,
+    "plain_status": 200,
+    "gzip_status": 200,
+    "plain_bytes": 108,
+    "gzip_decoded_bytes": 108,
+    "bodies_match": true,
+    "content_encoding": "gzip"
+  }
+}

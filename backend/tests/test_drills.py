@@ -107,13 +107,13 @@ def test_expired_worker_lock_requeues_ingest_and_backtest(db):  # noqa: F811
 
 def test_scheduled_jobs_share_a_day_key_and_log(db, caplog):  # noqa: F811
     with caplog.at_level(logging.INFO, logger="tradefix.marketdata"):
-        first = enqueue_topup(db, day="2026-10-15")
-        second = enqueue_topup(db, day="2026-10-15")
-        cross = enqueue_crosscheck(db, day="2026-10-15")
+        first = enqueue_topup(db, day="2031-06-01")
+        second = enqueue_topup(db, day="2031-06-01")
+        cross = enqueue_crosscheck(db, day="2031-06-01")
     assert first.created is True
     assert second.created is False and second.job.id == first.job.id
-    assert cross.created is True and cross.job.dedup_key == "crosscheck:2026-10-15"
-    assert any(getattr(record, "dedup_key", None) == "topup:2026-10-15" for record in caplog.records)
+    assert cross.created is True and cross.job.dedup_key == "crosscheck:2031-06-01"
+    assert any(getattr(record, "dedup_key", None) == "topup:2031-06-01" for record in caplog.records)
 
 
 def test_cross_check_flags_only_large_differences():

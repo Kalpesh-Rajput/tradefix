@@ -57,7 +57,7 @@ npm run build
 
 Next.js 16 has no `next lint` here. Typecheck is the lint gate (D-032).
 
-The 20-user candle load test is `python scripts/load_test_candles.py` against a running API. It is a live check and is still pending.
+The 20-user load test is `python -m scripts.load_test_candles` from `backend/` against a running API. It signs in test users and mixes candle reads with session autosave for 30 seconds. Replay is included when that user already has a journal trade.
 
 ## LICENSING_NOTES
 
