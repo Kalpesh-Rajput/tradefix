@@ -55,6 +55,24 @@ export type SimResult = {
   balance: number;
 };
 
+export type EngineSnapshot = {
+  balance: number;
+  position: {
+    id: string;
+    side: Side;
+    size: number;
+    entryPrice: number;
+    entryTime: number;
+    sl: number | null;
+    tp: number | null;
+    entryCommission: number;
+  } | null;
+  pending: { order: OrderRequest; queuedMarket: boolean }[];
+  trades: ClosedTrade[];
+};
+
+export type EngineView = EngineSnapshot;
+
 type Position = {
   id: string;
   side: Side;
@@ -91,6 +109,8 @@ export class OrderEngine {
   private trades: ClosedTrade[] = [];
   private warnings: string[] = [];
 
+  private inbox: Action[] = [];
+
   constructor(options: EngineOptions) {
     this.instrument = options.instrument;
     this.costs = options.costs;
@@ -98,6 +118,56 @@ export class OrderEngine {
     this.conversionRate = options.conversionRate ?? null;
     this.closeAtEnd = options.closeAtEnd ?? null;
     this.balance = options.initialBalance ?? 10_000;
+  }
+
+  /** Queue a place, cancel or close. It is applied at the end of the next stepped bar. */
+  accept(action: Action) {
+    this.inbox.push(action);
+  }
+
+  /** One bar, in the same order as `run`. */
+  step(bar: Bar) {
+    this.fillMarkets(bar);
+    this.triggerPending(bar);
+    this.protect(bar);
+    const actions = this.inbox;
+    this.inbox = [];
+    for (const action of actions) {
+      if (action.type === "close") this.closeAt(bar, "manual", bar.close, true);
+    }
+    for (const action of actions) {
+      if (action.type === "cancel") this.pending = this.pending.filter((item) => item.order.id !== action.orderId);
+      else if (action.type === "place" && action.order && action.order.size > 0) {
+        this.pending.push({ order: action.order, queuedMarket: action.order.kind === "market" });
+      }
+    }
+  }
+
+  closeNow(time: number, price: number, reason: "session end" | "manual") {
+    const bar: Bar = { time, open: price, high: Math.max(price, price), low: Math.min(price, price), close: price };
+    this.closeAt(bar, reason, price, reason === "manual");
+  }
+
+  setProtection(sl: number | null, tp: number | null) {
+    if (!this.position) return;
+    this.position = { ...this.position, sl, tp };
+  }
+
+  restore(state: EngineSnapshot) {
+    this.balance = state.balance;
+    this.position = state.position;
+    this.pending = state.pending.map((item) => ({ order: item.order, queuedMarket: item.queuedMarket }));
+    this.trades = [...state.trades];
+    this.inbox = [];
+  }
+
+  view(): EngineView {
+    return {
+      balance: this.balance,
+      position: this.position ? { ...this.position } : null,
+      pending: this.pending.map((item) => ({ order: { ...item.order }, queuedMarket: item.queuedMarket })),
+      trades: [...this.trades],
+    };
   }
 
   run(bars: readonly Bar[], actions: readonly Action[]): SimResult {

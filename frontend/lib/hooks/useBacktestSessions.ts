@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
-import type { MarketInstrument, SessionCreateInput, SessionSummary } from "@/lib/backtest/sessions";
+import type { MarketInstrument, SessionCreateInput, SessionDetail, SessionSummary } from "@/lib/backtest/sessions";
 
 const SESSIONS_KEY = ["backtest-sessions"] as const;
 
@@ -11,6 +11,14 @@ export function useBacktestSessions() {
   return useQuery({
     queryKey: SESSIONS_KEY,
     queryFn: () => api.get<SessionSummary[]>("/api/backtest/sessions"),
+  });
+}
+
+export function useBacktestSession(id: string) {
+  return useQuery({
+    queryKey: ["backtest-session", id],
+    queryFn: () => api.get<SessionDetail>(`/api/backtest/sessions/${id}`),
+    enabled: id.length > 0,
   });
 }
 

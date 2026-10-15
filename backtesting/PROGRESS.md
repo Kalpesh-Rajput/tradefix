@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 3E (session simulator).
+- **Current sub-phase:** 3F (session finish, summary, replay by reference).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -35,7 +35,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 3B | Browser order engine (TS) | auto-passed |
 | 3C | Session backend and descriptor endpoint | auto-passed |
 | 3D | Backtesting hub and session setup | auto-passed (HUMAN pending) |
-| 3E | Session simulator | todo |
+| 3E | Session simulator | auto-passed |
 | 3F | Session finish, summary, replay by reference (Gate 3) | todo |
 | 4A | Strategy schema and indicators | todo |
 | 4B | Strategy and run persistence | todo |
@@ -193,6 +193,10 @@ Fill in during work: the files changed, the commands run with their result summa
   - `/backtest` is the hub with Manual Sessions, Strategies, Runs and Setup Lab. Setup Lab is the previous expectancy table.
   - The session list loads from `GET /api/backtest/sessions` and can resume, rename (session notes), and delete. The setup form searches enabled instruments, checks balance, dates and costs, and creates a session.
   - Gate: `npm run typecheck` passes. HUMAN 3D is in HUMAN_QA.
+- **3E:**
+  - The session page replays stored candles and steps `OrderEngine` one minute at a time. The ticket sizes from risk and accepts stop and target in price, pips, or R. Entry, stop, target and pending lines are drawn on the chart.
+  - Step back stays disabled while a position or pending order is open. Autosave runs on pause, every 15 seconds while playing, when the tab hides, and before finish. Client ids are stable across retries.
+  - Gate: `npm run typecheck` passes. `scripts/test-session-persistence.ts` passes. `npm run test:order-engine` still passes.
 
 ## Pending human verification
 
@@ -246,3 +250,4 @@ _(none yet)_
 | 3A | 951d456 | backtesting(3a): shared rules and scenario fixtures |
 | 3B | bd34902 | backtesting(3b): typescript order engine and scenario runner |
 | 3C | fae0bdf | backtesting(3c): session backend and replay descriptor |
+| 3D | 84860c5 | backtesting(3d): hub, session list and setup form |

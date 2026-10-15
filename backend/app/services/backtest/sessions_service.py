@@ -171,8 +171,9 @@ def save_trades(
             continue
         _in_window(row, item.entry_ms)
         _in_window(row, item.exit_ms)
-        _inside_candle(spec, lookup, item.entry_ms, item.entry_price)
-        _inside_candle(spec, lookup, item.exit_ms, item.exit_price)
+        spread = _num(row.spread_pips)
+        _inside_candle(spec, lookup, item.entry_ms, item.entry_price, spread)
+        _inside_candle(spec, lookup, item.exit_ms, item.exit_price, spread)
         valued = _recompute(row, spec, item)
         trade = SessionTrade(
             id=item.id,
@@ -302,12 +303,13 @@ def _in_window(row: BacktestSession, time_ms: int) -> None:
         raise BacktestError("invalid_request", "A trade time is outside the session window.")
 
 
-def _inside_candle(spec: InstrumentSpec, lookup: BarLookup, time_ms: int, price: float) -> None:
+def _inside_candle(spec: InstrumentSpec, lookup: BarLookup, time_ms: int, price: float, spread_pips: float) -> None:
     span = lookup(time_ms)
     if span is None:
         raise BacktestError("data_unavailable", "No candle covers that trade time.")
     low, high = span
-    tol = tolerance(spec, price)
+    # Half the session spread is charged outside the bid candle. Allow that, plus the alignment tolerance.
+    tol = tolerance(spec, price) + spec.pip_size * spread_pips / 2
     if price < low - tol or price > high + tol:
         raise BacktestError("invalid_request", "A trade price is outside the candle at that time.")
 
