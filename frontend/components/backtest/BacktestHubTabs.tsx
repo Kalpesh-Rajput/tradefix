@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { SessionsList } from "@/components/backtest/session/SessionsList";
+import { StrategiesList } from "@/components/backtest/strategy/StrategiesList";
 import { SetupLabTab } from "@/components/backtest/SetupLabTab";
 
 const TABS = [
@@ -40,7 +41,7 @@ export function BacktestHubTabs() {
       </div>
       <div role="tabpanel" id={`backtest-panel-${tab}`} aria-labelledby={`backtest-tab-${tab}`}>
         {tab === "sessions" ? <SessionsList /> : null}
-        {tab === "strategies" ? <EmptyPanel title="No strategies yet" body="Saved strategies will be listed here once you build one." /> : null}
+        {tab === "strategies" ? <StrategiesList /> : null}
         {tab === "runs" ? <EmptyPanel title="No backtest runs yet" body="Finished and running backtests will be listed here." /> : null}
         {tab === "setup" ? <SetupLabTab /> : null}
       </div>
