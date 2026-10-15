@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 3D (backtesting hub and session setup).
+- **Current sub-phase:** 3E (session simulator).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -34,7 +34,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 3A | Shared rules and scenario format (Python) | auto-passed |
 | 3B | Browser order engine (TS) | auto-passed |
 | 3C | Session backend and descriptor endpoint | auto-passed |
-| 3D | Backtesting hub and session setup | todo |
+| 3D | Backtesting hub and session setup | auto-passed (HUMAN pending) |
 | 3E | Session simulator | todo |
 | 3F | Session finish, summary, replay by reference (Gate 3) | todo |
 | 4A | Strategy schema and indicators | todo |
@@ -189,6 +189,10 @@ Fill in during work: the files changed, the commands run with their result summa
   - Times must sit inside the session window and prices inside the 1-minute candle (injected lookup in tests). `finish` is idempotent. Delete cascades. A session over the cap returns `quota_exceeded`.
   - `GET /api/backtest/sessions/{id}/trades/{trade_id}/replay` builds the shared replay payload for the owner and returns 404 for another user or a missing trade. Save-to-journal writes `Trade(is_simulated=True, time_basis=utc_aware)`.
   - Gate: `tests/test_sessions_api.py` 7 passed. The 0036 round trip passed. `tests/test_backtest_rules.py` 12 passed.
+- **3D:**
+  - `/backtest` is the hub with Manual Sessions, Strategies, Runs and Setup Lab. Setup Lab is the previous expectancy table.
+  - The session list loads from `GET /api/backtest/sessions` and can resume, rename (session notes), and delete. The setup form searches enabled instruments, checks balance, dates and costs, and creates a session.
+  - Gate: `npm run typecheck` passes. HUMAN 3D is in HUMAN_QA.
 
 ## Pending human verification
 
@@ -204,6 +208,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 2D | HUMAN | One chart canvas in StrictMode, no console warnings, resize and theme switching work | HUMAN_QA "2D chart lifecycle" | pending |
 | 2F | HUMAN | Seeded trade loads; preparing, unresolved and error states render | HUMAN_QA "2F page shell" | pending |
 | 2G | HUMAN | Phase 2 manual steps 1 to 7 | HUMAN_QA Phase 2 steps 1–7 | pending |
+| 3D | HUMAN | Hub tabs, Setup Lab unchanged, setup validation | HUMAN_QA "3D hub" | pending |
 | 1H | NET | Cross-check EURUSD daily closes against a reference | Compare the `1d` closes from `/api/market-data/candles` with a public EURUSD daily close (for example ECB or broker statements) within 0.0005 | pending (same block) |
 
 ## Open questions (resolved by default when implementation started without answers)
@@ -240,3 +245,4 @@ _(none yet)_
 | 2G | 33d9947 | backtesting(2g): replay overlays, notes, shortcuts, entry points |
 | 3A | 951d456 | backtesting(3a): shared rules and scenario fixtures |
 | 3B | bd34902 | backtesting(3b): typescript order engine and scenario runner |
+| 3C | fae0bdf | backtesting(3c): session backend and replay descriptor |
