@@ -93,6 +93,27 @@ export function useCreateAlias() {
   });
 }
 
+export type CandleImportResult = {
+  rows_read: number;
+  rows_kept: number;
+  rejected: Record<string, number>;
+  range_start: number | null;
+  range_end: number | null;
+  gap_minutes: number;
+  dry_run: boolean;
+  duplicate: boolean;
+  price_side: string;
+  label: string;
+};
+
+export function useImportCandles() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (form: FormData) => api.postForm<CandleImportResult>("/api/admin/candle-imports", form),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
 export function useDeleteAlias() {
   const queryClient = useQueryClient();
   return useMutation({

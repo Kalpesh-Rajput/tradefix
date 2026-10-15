@@ -82,4 +82,37 @@ class CandleMonthStat(Base):
     gap_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     outliers: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     detail: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    price_side: Mapped[str | None] = mapped_column(String(16))
+    sources: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class ProviderCooldown(Base):
+    """One row per provider. While blocked_until is in the future, fetches are not attempted."""
+
+    __tablename__ = "provider_cooldowns"
+
+    provider: Mapped[str] = mapped_column(String(32), primary_key=True)
+    blocked_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    http_status: Mapped[int | None] = mapped_column(Integer)
+    excerpt: Mapped[str] = mapped_column(String(300), nullable=False, default="")
+    detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CandleImport(Base):
+    """One accepted file import. The content hash makes a repeat of the same bytes a no-op."""
+
+    __tablename__ = "candle_imports"
+    __table_args__ = (UniqueConstraint("instrument", "content_hash", name="uq_candle_import_hash"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    instrument: Mapped[str] = mapped_column(String(32), ForeignKey("instruments.symbol", ondelete="CASCADE"), nullable=False)
+    source: Mapped[str] = mapped_column(String(16), nullable=False)
+    label: Mapped[str] = mapped_column(String(120), nullable=False)
+    price_side: Mapped[str] = mapped_column(String(16), nullable=False)
+    timezone_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    preset: Mapped[str] = mapped_column(String(32), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    filenames: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    summary: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

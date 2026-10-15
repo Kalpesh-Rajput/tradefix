@@ -35,13 +35,26 @@ def _symbols(values: list[str]) -> list:
 def _verify_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("symbols", nargs="+")
     parser.add_argument("--write", action="store_true", help="stamp verified_on and enable on success")
+    parser.add_argument("--stored", action="store_true", help="check candles already stored instead of fetching")
+    parser.add_argument("--gaps-reviewed", action="store_true", help="with --stored, accept a month that still has gaps")
 
 
 @command("verify-instrument", "fetch one real recent day per symbol and sanity-check it", _verify_args)
 def verify_instrument_cmd(args: argparse.Namespace) -> int:
-    from app.services.marketdata.verify import verify_and_record
+    from app.core.db import SessionLocal
+    from app.services.marketdata.verify import verify_and_record, verify_stored
 
     failures = 0
+    if args.stored:
+        with SessionLocal() as db:
+            for spec in _symbols(args.symbols):
+                checks = verify_stored(db, spec, gaps_reviewed=args.gaps_reviewed, write=args.write)
+                ok = all(item.passed for item in checks)
+                print(("OK" if ok else "FAIL") + f" {spec.symbol} stored")
+                for item in checks:
+                    print(f"    {'PASS' if item.passed else 'FAIL'} {item.name}: {item.detail}")
+                failures += not ok
+        return 1 if failures else 0
     for spec in _symbols(args.symbols):
         result = verify_and_record(spec, write=args.write)
         status = "OK" if result.ok else "FAIL"
@@ -52,6 +65,48 @@ def verify_instrument_cmd(args: argparse.Namespace) -> int:
             print(f"    - {problem}")
         failures += not result.ok
     return 1 if failures else 0
+
+
+def _import_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("symbol")
+    parser.add_argument("path", help="a csv file, a zip of csv files, or a folder of csv files")
+    parser.add_argument("--preset", choices=["dukascopy", "histdata", "generic"], required=True)
+    parser.add_argument("--label", required=True, help="where the file came from, stored with the month")
+    parser.add_argument("--price-side", choices=["bid", "mid", "other"], default="bid")
+    parser.add_argument("--timezone", default="", help="IANA name; presets have their own default")
+    parser.add_argument("--time-format", default="", help="strptime format for the generic preset")
+    parser.add_argument("--separator", default=",")
+    parser.add_argument("--columns", default="", help="generic column order, e.g. time,open,high,low,close,volume")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--force", action="store_true", help="overwrite a month that was stored with a different price side")
+
+
+@command("import-candles", "import a 1-minute candle file into the instrument store", _import_args)
+def import_candles_cmd(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from app.core.db import SessionLocal
+    from app.services.marketdata.importer import CandleImportError, import_candles
+
+    spec = _symbols([args.symbol])[0]
+    with SessionLocal() as db:
+        try:
+            summary = import_candles(
+                db, spec, Path(args.path),
+                preset=args.preset, label=args.label, price_side=args.price_side,
+                timezone_name=args.timezone, time_format=args.time_format,
+                separator=args.separator, columns=args.columns,
+                dry_run=args.dry_run, force=args.force,
+            )
+        except CandleImportError as exc:
+            print(exc.message)
+            return 1
+    print(
+        f"rows_read={summary.rows_read} rows_kept={summary.rows_kept} rejected={summary.rejected} "
+        f"range={summary.range_start}..{summary.range_end} gap_minutes={summary.gap_minutes} "
+        f"dry_run={summary.dry_run} duplicate={summary.duplicate}"
+    )
+    return 0 if summary.rows_kept or summary.duplicate else 1
 
 
 def _admin_args(parser: argparse.ArgumentParser) -> None:

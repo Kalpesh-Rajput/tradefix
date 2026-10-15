@@ -12,6 +12,7 @@ from app.services.jobs.provider_limiter import throttle_for
 from app.services.marketdata.cache import candle_cache
 from app.services.marketdata.coverage import Range, find_gaps, record_fetch
 from app.services.marketdata.providers import Provider, ProviderError, get_provider
+from app.services.marketdata.providers.cooldown import raise_if_blocked
 from app.services.marketdata.registry import InstrumentSpec, get_instrument
 from app.services.marketdata.store import CandleStore, get_store
 
@@ -44,6 +45,7 @@ def fill_gaps(
     """Fetch every gap chunk by chunk; each chunk is recorded and committed before the next one, so a
     failure keeps earlier chunks and leaves the failed range uncovered."""
     store = store or get_store()
+    raise_if_blocked(db, spec.source)
     provider = provider or default_provider(spec.source)
     total = sum(b - a for a, b in gaps) or 1
     done = rows = chunks = 0

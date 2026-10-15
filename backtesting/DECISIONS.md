@@ -253,6 +253,15 @@ Pip, percent, ATR and R distances used to be applied to the signal bar’s close
 ## D-039: Filters use the signal bar, and the daily cap uses fills (accepted, F3)
 Hours and weekdays are checked on the signal bar’s UTC open. `min_bars_between` is the number of bars after a filled entry before another signal may place. `max_trades_per_day` counts filled entries by the UTC day of the fill, so a fill that crosses midnight belongs to the new day. A signal that fails a filter increments `skip_counts` for that reason. The run stores the counts and appends `skipped: <reason> (n)` to the warnings.
 
+## D-040: A Dukascopy block stops the fetch (accepted, F4)
+Before each chunk the adapter makes one probe request to the public data-file URL and does not follow redirects. HTTP 202, an AWS WAF or captcha marker, or an HTML page where a binary file was expected raises `provider_blocked`. The same check applies to the tool’s own output. The worker stores a cool-down of `DUKASCOPY_BLOCK_COOLDOWN_S` (default 6 hours) and does not retry. While the cool-down is active, later jobs fail immediately with no network call. The message is “provider blocked requests from this network; use file import or retry from another network”. Nothing in this path solves, bypasses, or waits out the challenge.
+
+## D-041: Candle files are imported, not downloaded (accepted, F4)
+`import-candles` and `POST /api/admin/candle-imports` read a csv, a zip of csv files, or a folder. Presets are Dukascopy’s manual export (UTC, `dd.MM.yyyy HH:mm:ss`) and HistData’s 1-minute ASCII (published as GMT-5 with no daylight-saving shift). A generic preset takes a separator, strptime format, IANA timezone, and column names. Times are stored in UTC. The content hash makes a second import of the same bytes a no-op. A month that already has a different `price_side` is refused unless `--force`, which is logged. Provenance (label, filenames, content hash) is stored on `candle_imports` and appended to `candle_month_stats.sources`. The HTTP endpoint only accepts an uploaded csv/zip or a path inside `MARKET_DATA_DIR`.
+
+## D-042: An instrument stays disabled until stored data passes (accepted, F4)
+Importing a file does not enable the instrument. `verify-instrument --stored` prints pass or fail for validation, price range, at least one full month (20,000 one-minute bars for forex and metals, 40,000 for crypto, and no open gaps), and a reviewed gap report. `--write` runs only when every check passed. `--gaps-reviewed` is how an operator accepts a month that still has gaps, after reading the report. EURUSD and XAUUSD stay disabled until a person completes that on a real file.
+
 ## D-028: Deployment readiness documentation (accepted, rev 2)
 README_BACKTESTING (5D) includes a Deployment readiness section covering:
 

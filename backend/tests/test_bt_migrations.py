@@ -45,6 +45,11 @@ MIGRATIONS = {
             ("backtest_runs", "skip_counts"),
         ],
     ),
+    "0039": (
+        "0038",
+        ["provider_cooldowns", "candle_imports"],
+        [("candle_month_stats", "price_side"), ("candle_month_stats", "sources")],
+    ),
 }
 
 
@@ -57,7 +62,7 @@ def _config() -> Config:
 def _schema():
     insp = inspect(ENGINE)
     tables = set(insp.get_table_names())
-    wanted = [name for name in ("trades", "backtest_runs") if name in tables]
+    wanted = [name for name in ("trades", "backtest_runs", "candle_month_stats") if name in tables]
     return tables, {t: {c["name"] for c in insp.get_columns(t)} for t in wanted}
 
 

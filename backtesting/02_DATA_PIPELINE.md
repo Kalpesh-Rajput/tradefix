@@ -106,6 +106,8 @@ Two ingestion modes:
 - Volume from Dukascopy forex is not comparable to real volume. Store it but never use it in indicators or the UI by default.
 - Keep this adapter behind the feature flag and licensing note from document 01.
 
+**Amended by D-040 and D-041 (F4):** one probe request runs before the tool. A challenge or HTTP 202 sets `provider_blocked` and a cool-down (`DUKASCOPY_BLOCK_COOLDOWN_S`, default 6 hours) with no retry loop. The file importer (`import-candles`, admin upload) is the supported way to load Dukascopy or HistData files on a blocked network. An instrument is enabled only after `verify-instrument --stored` passes (D-042).
+
 ## 8. Validation and quality checks
 
 Run on every batch before it is written:

@@ -101,3 +101,72 @@ def verify_and_record(spec: InstrumentSpec, *, write: bool, provider: Provider |
         mark_verified(spec.symbol, datetime.now(timezone.utc).date())
         result.written = True
     return result
+
+
+@dataclass
+class StoredCheck:
+    name: str
+    passed: bool
+    detail: str
+
+
+def month_is_full(row_count: int, gap_minutes: int, asset_class: str) -> bool:
+    """A full month is a complete open-market month, not a handful of imported bars."""
+    minimum = 40_000 if asset_class == "crypto" else 20_000
+    return gap_minutes == 0 and row_count >= minimum
+
+
+def verify_stored(
+    db,
+    spec: InstrumentSpec,
+    *,
+    store=None,
+    gaps_reviewed: bool = False,
+    write: bool = False,
+    registry_path=None,
+) -> list[StoredCheck]:
+    """Check candles already on disk. Enabling requires every check to pass, including a reviewed gap report."""
+    from sqlalchemy import select
+
+    from app.models.market_data import CandleMonthStat
+    from app.services.marketdata.coverage import covered_ranges
+    from app.services.marketdata.store import get_store
+
+    store = store or get_store()
+    checks: list[StoredCheck] = []
+    ranges = covered_ranges(db, spec.symbol, spec.source)
+    if not ranges:
+        checks.append(StoredCheck("coverage", False, "no stored coverage"))
+        return checks
+    start = min(a for a, _ in ranges)
+    end = max(b for _, b in ranges)
+    stored = store.read(spec.source, spec.symbol, start, end)
+    clean, report = validate_batch(stored, symbol=spec.symbol)
+    checks.append(
+        StoredCheck("validation", not report.rejected, "ok" if not report.rejected else str(report.rejected))
+    )
+    if len(clean):
+        price_min, price_max = float(clean.low.min()), float(clean.high.max())
+        low, high = PRICE_BOUNDS.get(spec.symbol, CLASS_BOUNDS[spec.asset_class])
+        in_range = low <= price_min and price_max <= high
+        checks.append(StoredCheck("price_range", in_range, f"{price_min}..{price_max} against {low}..{high}"))
+    else:
+        checks.append(StoredCheck("price_range", False, "no candles in the covered range"))
+    stats = list(
+        db.scalars(
+            select(CandleMonthStat).where(CandleMonthStat.instrument == spec.symbol, CandleMonthStat.source == spec.source)
+        )
+    )
+    full = [row for row in stats if month_is_full(row.row_count, row.gap_minutes, spec.asset_class)]
+    checks.append(
+        StoredCheck("full_month", bool(full), f"{len(full)} full month(s) of {len(stats)} stored")
+    )
+    gappy = [f"{row.year}-{row.month:02d}:{row.gap_minutes}" for row in stats if row.gap_minutes]
+    if gappy and not gaps_reviewed:
+        checks.append(StoredCheck("gaps_reviewed", False, "gap report not reviewed: " + ", ".join(gappy)))
+    else:
+        checks.append(StoredCheck("gaps_reviewed", True, "no open gaps" if not gappy else "reviewed: " + ", ".join(gappy)))
+    if write and all(item.passed for item in checks):
+        kwargs = {"path": registry_path} if registry_path is not None else {}
+        mark_verified(spec.symbol, datetime.now(timezone.utc).date(), **kwargs)
+    return checks

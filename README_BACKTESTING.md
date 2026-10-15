@@ -1,5 +1,7 @@
 # TradeFix backtesting
 
+The full walkthrough — what you run, how replay and backtests work, and how the pieces connect — is [backtesting/E2E.md](backtesting/E2E.md).
+
 Trade Replay, manual sessions and automated strategy runs share one candle store. Live journal trades stay separate: simulated trades are stored with `is_simulated` and are excluded from journal, analytics, export and AI readers.
 
 ## Setup
@@ -58,7 +60,8 @@ The 20-user candle load test is `python scripts/load_test_candles.py` against a 
 ## LICENSING_NOTES
 
 - **TradingView Lightweight Charts** is used for candle charts. The chart footer and `/notices` attribute it. The library is TradingView Lightweight Charts™.
-- **Dukascopy** historical data, via `dukascopy-node`, is documented for personal use. Do not enable it in a paid deployment unless you have a licence. Set `DUKASCOPY_ENABLED=false` to turn the adapter off.
+- **Dukascopy** historical data, via `dukascopy-node`, is documented for personal use. Do not enable it in a paid deployment unless you have a licence. Set `DUKASCOPY_ENABLED=false` to turn the adapter off. If the provider answers with a challenge or HTTP 202, the worker stops for `DUKASCOPY_BLOCK_COOLDOWN_S` (default 6 hours) and does not try to get around the block.
+- **Files you import** (a Dukascopy manual export, a HistData 1-minute file, or your own csv) are your responsibility. Confirm you have the right to store and use them before running `import-candles`. Importing a file does not enable the instrument; `verify-instrument --stored` has to pass first.
 - **Binance** public market data is fetched from the configured REST and archive hosts. Respect their request limits; the worker already throttles.
 
 ## Deployment readiness

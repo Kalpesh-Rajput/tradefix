@@ -20,6 +20,8 @@ These items are [NET] and the agent attempts them first. They appear here so you
 - [ ] Run `python -m app.cli.marketdata verify-instrument BTCUSDT EURUSD XAUUSD --write`. Check that `instruments.yaml` shows `verified_on` dates and `enabled: true` for all three.
 - [ ] Run `seed-demo`, then `python -m app.cli.marketdata coverage`. Check that all three instruments cover the whole month. Expected row counts: crypto about 43,000 to 44,640, forex about 28,000 to 32,000, with no unexplained gaps.
 - [ ] Cross-check: stored BTCUSDT daily closes match Binance daily klines, and EURUSD daily closes match a public reference, within the documented tolerance.
+- [ ] **F4 NEEDS-HUMAN:** import one full month of EURUSD and one full month of XAUUSD from a file you have the right to use. From `backend/`: `python -m app.cli.marketdata import-candles EURUSD <file-or-folder> --preset dukascopy --label "Dukascopy manual export" --price-side bid` (use `--preset histdata` for a HistData file). Then `python -m app.cli.marketdata verify-instrument EURUSD --stored` and read each PASS/FAIL line. Repeat for XAUUSD. Add `--gaps-reviewed --write` only after you have read the gap report and every other check passed. Until then both instruments stay disabled.
+- [ ] **F4 NEEDS-NETWORK:** from a network that is not challenged, run `python -m app.cli.marketdata verify-instrument EURUSD --write` once. If the log shows HTTP 202 or a challenge page, stop. Do not retry in a loop. The cool-down is 6 hours.
 
 ## Phase 2: Trade Replay
 

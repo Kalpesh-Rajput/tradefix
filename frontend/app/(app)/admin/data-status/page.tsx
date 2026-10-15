@@ -4,6 +4,7 @@ import { AliasesPanel } from "@/components/admin/data-status/AliasesPanel";
 import { BackfillForm } from "@/components/admin/data-status/BackfillForm";
 import { CoverageTable } from "@/components/admin/data-status/CoverageTable";
 import { FailuresList } from "@/components/admin/data-status/FailuresList";
+import { ImportPanel } from "@/components/admin/data-status/ImportPanel";
 import { TimeOffsetsReport } from "@/components/admin/data-status/TimeOffsetsReport";
 import { UnresolvedList } from "@/components/admin/data-status/UnresolvedList";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -41,6 +42,7 @@ export default function DataStatusPage() {
           <CoverageTable rows={status.data.instruments} />
           <FailuresList rows={status.data.failures} />
           <BackfillForm instruments={status.data.instruments} />
+          <ImportPanel instruments={status.data.instruments} />
           <AliasesPanel />
           <UnresolvedList />
           <TimeOffsetsReport />

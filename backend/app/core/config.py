@@ -128,6 +128,7 @@ class Settings(BaseSettings):
     dukascopy_tool_dir: str = "tools/dukascopy"
     dukascopy_requests_per_second: float = 0.5
     dukascopy_timeout_s: int = 300
+    dukascopy_block_cooldown_s: int = 6 * 3600
     market_worker_in_process: bool = False
     market_worker_poll_seconds: float = 2.0
     market_worker_lock_key: int = 740001

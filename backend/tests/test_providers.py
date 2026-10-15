@@ -12,6 +12,8 @@ import numpy as np
 import pytest
 
 from app.services.marketdata.providers import ProviderError, get_provider
+from app.services.marketdata.providers.base import ProviderBlocked
+from app.services.marketdata.providers.block_detect import classify_http, classify_text
 from app.services.marketdata.providers.binance import (
     BinanceProvider,
     Segment,
@@ -320,6 +322,44 @@ def test_dukascopy_failures(tmp_path, monkeypatch):
     with pytest.raises(ProviderError) as exc:
         list(provider.iter_chunks(EURUSD, D_2025_03_04, D_2025_03_04 + DAY))
     assert exc.value.code == "provider_disabled"
+
+
+class _ProbeResponse:
+    def __init__(self, status: int, headers: dict, content: bytes) -> None:
+        self.status_code = status
+        self.headers = headers
+        self.content = content
+
+
+def test_dukascopy_block_does_not_call_the_tool_or_retry(tmp_path):
+    calls: list = []
+    provider = DukascopyProvider(
+        runner=_runner("[]", calls),
+        prober=lambda url: _ProbeResponse(202, {"x-amzn-waf-action": "challenge"}, b"<html>awswaf challenge"),
+        tool_dir=_tool_dir(tmp_path), node="node", now_ms=lambda: NOW,
+    )
+    with pytest.raises(ProviderBlocked) as exc:
+        list(provider.iter_chunks(EURUSD, D_2025_03_04, D_2025_03_04 + DAY))
+    assert calls == []
+    assert exc.value.code == "provider_blocked" and exc.value.retryable is False and exc.value.http_status == 202
+    assert "awswaf" in (exc.value.excerpt or "")
+
+
+def test_dukascopy_tool_challenge_text_is_a_block(tmp_path):
+    def run(cmd, **kwargs):
+        return subprocess.CompletedProcess(cmd, 1, stdout="", stderr="blocked by captcha")
+
+    provider = DukascopyProvider(runner=run, tool_dir=_tool_dir(tmp_path), node="node", now_ms=lambda: NOW)
+    with pytest.raises(ProviderBlocked):
+        list(provider.iter_chunks(EURUSD, D_2025_03_04, D_2025_03_04 + DAY))
+
+
+def test_block_classifier_ignores_a_missing_file_and_binary():
+    assert classify_http(404, {}, b"not found") is None
+    assert classify_http(200, {}, b"\x1f\x8b\x08binary") is None
+    assert classify_http(200, {}, b"<html>captcha") is not None
+    assert classify_text("ordinary download error") is None
+    assert classify_text("<html>challenge-platform") is not None
 
 
 # --- verify-instrument ----------------------------------------------------------------------------

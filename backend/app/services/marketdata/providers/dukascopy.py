@@ -18,7 +18,8 @@ from typing import Callable, Iterator
 
 from app.core.config import backend_path, settings
 from app.services.marketdata.candles import MINUTE_MS, Candles
-from app.services.marketdata.providers.base import Chunk, ProviderError, Throttle, no_throttle
+from app.services.marketdata.providers.base import Chunk, ProviderBlocked, ProviderError, Throttle, no_throttle
+from app.services.marketdata.providers.block_detect import classify_http, classify_text
 from app.services.marketdata.registry import InstrumentSpec
 from app.services.marketdata.validation import closed_windows, validate_batch
 
@@ -69,6 +70,24 @@ def _date(ms: int) -> str:
     return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
 
 
+def probe_url(provider_id: str, day_from_ms: int) -> str:
+    """One public data-file URL for the first hour of a chunk. Months on this host are zero-based."""
+    moment = datetime.fromtimestamp(day_from_ms / 1000, tz=timezone.utc)
+    symbol = provider_id.upper()
+    return (
+        f"https://datafeed.dukascopy.com/datafeed/{symbol}/"
+        f"{moment.year}/{moment.month - 1:02d}/{moment.day:02d}/{moment.hour:02d}h_ticks.bi5"
+    )
+
+
+def http_probe(url: str):
+    """Single GET. Redirects are not followed: a challenge redirect is itself the answer."""
+    import httpx
+
+    with httpx.Client(timeout=20, follow_redirects=False) as client:
+        return client.get(url)
+
+
 class DukascopyProvider:
     name = "dukascopy"
 
@@ -81,6 +100,7 @@ class DukascopyProvider:
         chunk_days: int | None = None,
         now_ms: Callable[[], int] | None = None,
         node: str | None = None,
+        prober: Callable[[str], object] | None = None,
     ) -> None:
         self.throttle = throttle or no_throttle
         self.runner = runner
@@ -88,6 +108,7 @@ class DukascopyProvider:
         self.chunk_days = chunk_days or settings.dukascopy_chunk_days
         self.now_ms = now_ms or (lambda: int(time.time() * 1000))
         self.node = node
+        self.prober = prober
 
     def _command(self, spec: InstrumentSpec, day_from: int, day_to: int, out_dir: str) -> list[str]:
         node = self.node or shutil.which("node")
@@ -115,7 +136,25 @@ class DukascopyProvider:
             "-s",
         ]
 
+    def _probe(self, spec: InstrumentSpec, day_from: int) -> None:
+        if self.prober is None:
+            return
+        url = probe_url(spec.provider_id, day_from)
+        try:
+            response = self.prober(url)
+        except ProviderError:
+            raise
+        except Exception as exc:
+            raise ProviderError("provider_unreachable", f"dukascopy probe failed: {exc}") from exc
+        blocked = classify_http(getattr(response, "status_code", 0), dict(getattr(response, "headers", {})), getattr(response, "content", b"") or b"")
+        if blocked is None:
+            return
+        status, excerpt = blocked
+        logger.warning("dukascopy blocked http_status=%s excerpt=%s", status, excerpt)
+        raise ProviderBlocked(http_status=status, excerpt=excerpt)
+
     def fetch_window(self, spec: InstrumentSpec, day_from: int, day_to: int) -> Candles:
+        self._probe(spec, day_from)
         with tempfile.TemporaryDirectory(prefix="dukascopy-") as out_dir:
             command = self._command(spec, day_from, day_to, out_dir)
             self.throttle()
@@ -123,11 +162,20 @@ class DukascopyProvider:
                 result = self.runner(command, capture_output=True, text=True, timeout=settings.dukascopy_timeout_s)
             except subprocess.TimeoutExpired as exc:
                 raise ProviderError("provider_timeout", f"dukascopy download exceeded {settings.dukascopy_timeout_s}s") from exc
+            tool_text = f"{result.stderr or ''}\n{result.stdout or ''}"
+            blocked_text = classify_text(tool_text)
+            if blocked_text is not None:
+                logger.warning("dukascopy blocked http_status=%s excerpt=%s", result.returncode, blocked_text)
+                raise ProviderBlocked(http_status=None, excerpt=blocked_text)
             if result.returncode != 0:
-                tail = (result.stderr or result.stdout or "").strip()[-300:]
+                tail = tool_text.strip()[-300:]
                 raise ProviderError("provider_failed", f"dukascopy-node exited {result.returncode}: {tail}")
             output = Path(out_dir) / "candles.json"
             text = output.read_text(encoding="utf-8") if output.exists() else ""
+        file_block = classify_text(text)
+        if file_block is not None:
+            logger.warning("dukascopy blocked http_status=%s excerpt=%s", None, file_block)
+            raise ProviderBlocked(http_status=None, excerpt=file_block)
         candles = parse_tool_output(text)
         clean, report = validate_batch(candles, symbol=spec.symbol)
         if report.received and report.rejected_total / report.received > MAX_REJECTED_RATIO:

@@ -22,7 +22,8 @@ from app.core.config import settings
 from app.models.job import Job, WorkerHeartbeat
 from app.services.jobs import queue
 from app.services.jobs.locks import AdvisoryLock
-from app.services.marketdata.providers.base import ProviderError
+from app.services.marketdata.providers.base import ProviderBlocked, ProviderError
+from app.services.marketdata.providers.cooldown import record as record_cooldown
 
 logger = logging.getLogger("tradefix.market_worker")
 
@@ -70,6 +71,9 @@ def execute_job(db: Session, job: Job, worker_id: str) -> str:
         queue.defer(db, db.get(Job, job.id), exc.delay_s)
     except ProviderError as exc:
         db.rollback()
+        if isinstance(exc, ProviderBlocked):
+            record_cooldown(db, job.lane or "dukascopy", exc)
+            logger.warning("provider blocked http_status=%s excerpt=%s", exc.http_status, exc.excerpt)
         queue.fail(db, db.get(Job, job.id), exc.code, exc.message, retryable=exc.retryable, retry_after_s=exc.retry_after_s)
     except Exception as exc:
         db.rollback()

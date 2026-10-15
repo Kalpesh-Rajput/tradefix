@@ -13,7 +13,7 @@ def get_provider(source: str, *, throttle: Throttle | None = None) -> Provider:
 
         return BinanceProvider(throttle=throttle)
     if source == "dukascopy":
-        from app.services.marketdata.providers.dukascopy import DukascopyProvider
+        from app.services.marketdata.providers.dukascopy import DukascopyProvider, http_probe
 
-        return DukascopyProvider(throttle=throttle)
+        return DukascopyProvider(throttle=throttle, prober=http_probe)
     raise ProviderError("unknown_source", f"no adapter for source {source!r}", retryable=False)

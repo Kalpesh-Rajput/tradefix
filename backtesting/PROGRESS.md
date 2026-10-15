@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** F3 auto-passed. F1 still has one NEEDS-NETWORK check open. NET and HUMAN rows below are still open.
+- **Current sub-phase:** F4 auto-passed. Forex and gold stay disabled until a human imports a month. F1 still has one NEEDS-NETWORK check open. NET and HUMAN rows below are still open.
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -50,6 +50,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | F1 | Real candle loading for strategy runs | auto-passed (1 NET pending) |
 | F2 | Cached runs copy trades and breakdowns | auto-passed |
 | F3 | Engine stops, targets, filters and golden scenarios | auto-passed |
+| F4 | Dukascopy block cool-down and candle file import | auto-passed (HUMAN and NET pending) |
 
 ## Current sub-phase log
 
@@ -268,6 +269,13 @@ Fill in during work: the files changed, the commands run with their result summa
   - Scenarios 11–21 are hand-computed and `engines: ["python"]`. The TypeScript runner skips them. `tests/test_strategy_option_coverage.py` fails if a schema literal or optional field has no mapped test. The result hash uses `model_dump(mode="json")` so a stored definition matches a new request.
   - A 100,000-bar run finished in 0.63s (limit 10s).
   - Gate AUTOMATED: `pytest -q --tb=line` — 577 passed, 24 deselected, 17 warnings, 94.35s, exit 0. Frontend `npm test` then `npm run typecheck` exit 0 (65.6s). `npm run build` exit 0 (compiled in 6.2s, TypeScript in 9.6s, 51 pages).
+- **F4:**
+  - One Dukascopy probe runs before the tool. HTTP 202, a WAF or captcha marker, or HTML where a binary file was expected raises `provider_blocked` and does not call the downloader again. The worker records `provider_cooldowns` for `DUKASCOPY_BLOCK_COOLDOWN_S` (default 6 hours) and does not retry. A later job fails immediately with no network call (D-040).
+  - `import-candles` and `POST /api/admin/candle-imports` read a csv, zip, or folder. Presets: Dukascopy manual export (UTC) and HistData 1-minute ASCII (GMT-5, no DST). Generic mapping takes a timezone, strptime format, and columns. Same-byte re-import is a no-op. A different price side in an existing month is refused unless force, which is logged. Provenance is stored on the import row and on the month (D-041).
+  - `verify-instrument --stored` prints pass or fail for validation, price range, one full month, and a reviewed gap report. `--write` enables the instrument only when every line passed (D-042). EURUSD and XAUUSD are still disabled.
+  - Migration 0039 adds `provider_cooldowns`, `candle_imports`, and `candle_month_stats.price_side` / `sources`. The admin page has an import form.
+  - Gate AUTOMATED: `pytest -q --tb=line` — 586 passed, 24 deselected, 17 warnings, 51.45s, exit 0. Targeted import, provider and migration tests were 41 passed, 2 deselected, 11.30s. Frontend `npm test` then `npm run typecheck` then `npm run build` exit 0 (95.6s combined). Build compiled in 6.8s, TypeScript in 6.3s, 51 pages. Last test script: `strategy preview ok`.
+  - NEEDS-HUMAN: one full month of EURUSD and of XAUUSD, then `verify-instrument --stored`. NEEDS-NETWORK: one retry of Dukascopy from another network. Not run. See HUMAN_QA.
 
 ## Pending human verification
 
@@ -280,6 +288,8 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 1H | NET | Verify EURUSD and XAUUSD | `cd backend; .\venv\Scripts\python.exe -m app.cli.marketdata verify-instrument EURUSD XAUUSD --write` | pending: Dukascopy WAF (HTTP 202) |
 | 1H | NET | Seed EURUSD and XAUUSD (expect about 28,000 to 32,000 rows each) | `.\venv\Scripts\python.exe -m app.cli.marketdata seed-demo`, then `coverage EURUSD XAUUSD` | pending (same block) |
 | 1H | NET | Seeded aggregation for EURUSD and XAUUSD | `.\venv\Scripts\python.exe -m pytest -m seeded` (no skips) | pending (same block) |
+| F4 | HUMAN | Import one full month of EURUSD and XAUUSD, then stored verify | HUMAN_QA “F4 NEEDS-HUMAN” | pending: not imported; both stay disabled |
+| F4 | NET | Retry Dukascopy once from a network that is not challenged | HUMAN_QA “F4 NEEDS-NETWORK” | pending: this network still gets HTTP 202; no retry loop was run |
 | 2D | HUMAN | One chart canvas in StrictMode, no console warnings, resize and theme switching work | HUMAN_QA "2D chart lifecycle" | pending |
 | 2F | HUMAN | Seeded trade loads; preparing, unresolved and error states render | HUMAN_QA "2F page shell" | pending |
 | 2G | HUMAN | Phase 2 manual steps 1 to 7 | HUMAN_QA Phase 2 steps 1–7 | pending |
@@ -343,3 +353,4 @@ _(none yet)_
 | 5D | 7ba938b | backtesting(5d): backtesting readme, notices and final report |
 | F1 | 2b15ff6 | backtesting(f1): real candle loading for strategy runs |
 | F2 | 3ee5b9e | backtesting(f2): cache hits copy trades and breakdowns |
+| F3 | 0408ba2 | backtesting(f3): fill-relative stops, filters and golden scenarios |

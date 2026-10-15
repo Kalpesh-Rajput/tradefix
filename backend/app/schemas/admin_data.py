@@ -77,3 +77,16 @@ class TimeOffsetOut(BaseModel):
     method: str
     scores: dict[str, float]
     computed_at: datetime | None
+
+
+class CandleImportOut(BaseModel):
+    rows_read: int
+    rows_kept: int
+    rejected: dict[str, int]
+    range_start: int | None
+    range_end: int | None
+    gap_minutes: int
+    dry_run: bool
+    duplicate: bool
+    price_side: str
+    label: str
