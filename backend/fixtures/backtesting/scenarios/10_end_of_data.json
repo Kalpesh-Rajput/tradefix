@@ -1,0 +1,68 @@
+{
+  "id": "10",
+  "description": "An open position is closed at the last close. Automated runs say end of data; manual sessions say session end.",
+  "cases": [
+    {
+      "name": "end-of-data",
+      "close_at_end": "end of data",
+      "instrument": {
+        "symbol": "EURUSD",
+        "asset_class": "forex",
+        "pip_size": 0.0001,
+        "contract_size": 100000,
+        "quote_currency": "USD",
+        "price_decimals": 5
+      },
+      "candles": [
+        {"time": 0, "open": 1.1, "high": 1.1, "low": 1.1, "close": 1.1},
+        {"time": 60000, "open": 1.1, "high": 1.101, "low": 1.099, "close": 1.1005},
+        {"time": 120000, "open": 1.101, "high": 1.106, "low": 1.1, "close": 1.105}
+      ],
+      "actions": [
+        {"at": 0, "type": "place", "order": {"id": "b1", "side": "buy", "kind": "market", "size": 1}}
+      ],
+      "expected": {
+        "fills": [
+          {"order_id": "b1", "time": 60000, "price": 1.1, "reason": "market"},
+          {"order_id": "b1", "time": 120000, "price": 1.105, "reason": "end of data"}
+        ],
+        "trades": [
+          {"id": "b1", "side": "buy", "entry_price": 1.1, "exit_price": 1.105, "pips": 50, "r_multiple": null, "pnl": 500, "pnl_currency": "USD", "exit_reason": "end of data"}
+        ],
+        "warnings": ["no_stop"],
+        "stats": {"net_profit": 500, "trade_count": 1, "wins": 1}
+      }
+    },
+    {
+      "name": "session-end",
+      "close_at_end": "session end",
+      "instrument": {
+        "symbol": "EURUSD",
+        "asset_class": "forex",
+        "pip_size": 0.0001,
+        "contract_size": 100000,
+        "quote_currency": "USD",
+        "price_decimals": 5
+      },
+      "candles": [
+        {"time": 0, "open": 1.1, "high": 1.1, "low": 1.1, "close": 1.1},
+        {"time": 60000, "open": 1.1, "high": 1.101, "low": 1.099, "close": 1.1005},
+        {"time": 120000, "open": 1.101, "high": 1.106, "low": 1.1, "close": 1.105}
+      ],
+      "actions": [
+        {"at": 0, "type": "place", "order": {"id": "b1", "side": "buy", "kind": "market", "size": 1, "sl": 1.09}}
+      ],
+      "expected": {
+        "fills": [
+          {"order_id": "b1", "time": 60000, "price": 1.1, "reason": "market"},
+          {"order_id": "b1", "time": 120000, "price": 1.105, "reason": "session end"}
+        ],
+        "trades": [
+          {"id": "b1", "side": "buy", "entry_price": 1.1, "exit_price": 1.105, "pips": 50, "r_multiple": 0.5, "pnl": 500, "pnl_currency": "USD", "exit_reason": "session end"}
+        ],
+        "warnings": [],
+        "stats": {"net_profit": 500, "trade_count": 1, "wins": 1}
+      }
+    }
+  ]
+}

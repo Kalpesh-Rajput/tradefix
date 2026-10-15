@@ -1,0 +1,32 @@
+{
+  "id": "07",
+  "description": "Two pips of spread, one pip of stop slippage, and 7 of commission per side.",
+  "instrument": {
+    "symbol": "EURUSD",
+    "asset_class": "forex",
+    "pip_size": 0.0001,
+    "contract_size": 100000,
+    "quote_currency": "USD",
+    "price_decimals": 5
+  },
+  "costs": {"spread_pips": 2, "commission_per_lot": 7, "slippage_pips": 1},
+  "candles": [
+    {"time": 0, "open": 1.1, "high": 1.1, "low": 1.1, "close": 1.1},
+    {"time": 60000, "open": 1.1, "high": 1.101, "low": 1.099, "close": 1.1},
+    {"time": 120000, "open": 1.095, "high": 1.096, "low": 1.08, "close": 1.081}
+  ],
+  "actions": [
+    {"at": 0, "type": "place", "order": {"id": "b1", "side": "buy", "kind": "market", "size": 1, "sl": 1.09, "tp": 1.2}}
+  ],
+  "expected": {
+    "fills": [
+      {"order_id": "b1", "time": 60000, "price": 1.1002, "reason": "market"},
+      {"order_id": "b1", "time": 120000, "price": 1.0898, "reason": "sl"}
+    ],
+    "trades": [
+      {"id": "b1", "side": "buy", "entry_price": 1.1002, "exit_price": 1.0898, "pips": -104, "r_multiple": -1.019607843137, "pnl": -1054, "pnl_currency": "USD", "exit_reason": "sl"}
+    ],
+    "warnings": [],
+    "stats": {"net_profit": -1054, "trade_count": 1, "wins": 0}
+  }
+}

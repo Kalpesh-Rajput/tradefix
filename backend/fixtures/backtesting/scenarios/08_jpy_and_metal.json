@@ -1,0 +1,66 @@
+{
+  "id": "08",
+  "description": "JPY pip and contract math with a missing conversion, then a metal quoted in USD.",
+  "cases": [
+    {
+      "name": "usdjpy",
+      "instrument": {
+        "symbol": "USDJPY",
+        "asset_class": "forex",
+        "pip_size": 0.01,
+        "contract_size": 100000,
+        "quote_currency": "JPY",
+        "price_decimals": 3
+      },
+      "candles": [
+        {"time": 0, "open": 150, "high": 150.1, "low": 149.9, "close": 150},
+        {"time": 60000, "open": 150, "high": 150.2, "low": 149.9, "close": 150.1},
+        {"time": 120000, "open": 150.2, "high": 150.6, "low": 150.1, "close": 150.5}
+      ],
+      "actions": [
+        {"at": 0, "type": "place", "order": {"id": "j1", "side": "buy", "kind": "market", "size": 1, "sl": 149.5, "tp": 150.5}}
+      ],
+      "expected": {
+        "fills": [
+          {"order_id": "j1", "time": 60000, "price": 150, "reason": "market"},
+          {"order_id": "j1", "time": 120000, "price": 150.5, "reason": "tp"}
+        ],
+        "trades": [
+          {"id": "j1", "side": "buy", "entry_price": 150, "exit_price": 150.5, "pips": 50, "r_multiple": 1, "pnl": 50000, "pnl_currency": "JPY", "exit_reason": "tp"}
+        ],
+        "warnings": ["conversion_unavailable"],
+        "stats": {"net_profit": 50000, "trade_count": 1, "wins": 1}
+      }
+    },
+    {
+      "name": "xauusd",
+      "instrument": {
+        "symbol": "XAUUSD",
+        "asset_class": "metal",
+        "pip_size": 0.1,
+        "contract_size": 100,
+        "quote_currency": "USD",
+        "price_decimals": 2
+      },
+      "candles": [
+        {"time": 0, "open": 2000, "high": 2001, "low": 1999, "close": 2000},
+        {"time": 60000, "open": 2000, "high": 2002, "low": 1998, "close": 2001},
+        {"time": 120000, "open": 2001, "high": 2011, "low": 2000, "close": 2010}
+      ],
+      "actions": [
+        {"at": 0, "type": "place", "order": {"id": "g1", "side": "buy", "kind": "market", "size": 1, "sl": 1990, "tp": 2010}}
+      ],
+      "expected": {
+        "fills": [
+          {"order_id": "g1", "time": 60000, "price": 2000, "reason": "market"},
+          {"order_id": "g1", "time": 120000, "price": 2010, "reason": "tp"}
+        ],
+        "trades": [
+          {"id": "g1", "side": "buy", "entry_price": 2000, "exit_price": 2010, "pips": 100, "r_multiple": 1, "pnl": 1000, "pnl_currency": "USD", "exit_reason": "tp"}
+        ],
+        "warnings": [],
+        "stats": {"net_profit": 1000, "trade_count": 1, "wins": 1}
+      }
+    }
+  ]
+}

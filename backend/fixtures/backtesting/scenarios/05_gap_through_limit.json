@@ -1,0 +1,31 @@
+{
+  "id": "05",
+  "description": "A buy limit gaps through. The fill is the open, which is better than the limit.",
+  "instrument": {
+    "symbol": "EURUSD",
+    "asset_class": "forex",
+    "pip_size": 0.0001,
+    "contract_size": 100000,
+    "quote_currency": "USD",
+    "price_decimals": 5
+  },
+  "candles": [
+    {"time": 0, "open": 1.11, "high": 1.111, "low": 1.109, "close": 1.11},
+    {"time": 60000, "open": 1.095, "high": 1.096, "low": 1.094, "close": 1.096}
+  ],
+  "actions": [
+    {"at": 0, "type": "place", "order": {"id": "l1", "side": "buy", "kind": "limit", "size": 1, "price": 1.1, "sl": 1.09}},
+    {"at": 1, "type": "close"}
+  ],
+  "expected": {
+    "fills": [
+      {"order_id": "l1", "time": 60000, "price": 1.095, "reason": "limit"},
+      {"order_id": "l1", "time": 60000, "price": 1.096, "reason": "manual"}
+    ],
+    "trades": [
+      {"id": "l1", "side": "buy", "entry_price": 1.095, "exit_price": 1.096, "pips": 10, "r_multiple": 0.2, "pnl": 100, "pnl_currency": "USD", "exit_reason": "manual"}
+    ],
+    "warnings": [],
+    "stats": {"net_profit": 100, "trade_count": 1, "wins": 1}
+  }
+}

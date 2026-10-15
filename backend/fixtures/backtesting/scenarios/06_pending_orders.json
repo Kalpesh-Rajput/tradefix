@@ -1,0 +1,48 @@
+{
+  "id": "06",
+  "description": "Buy limit, sell limit, sell stop, and a buy stop that is cancelled before it can trigger.",
+  "instrument": {
+    "symbol": "EURUSD",
+    "asset_class": "forex",
+    "pip_size": 0.0001,
+    "contract_size": 100000,
+    "quote_currency": "USD",
+    "price_decimals": 5
+  },
+  "candles": [
+    {"time": 0, "open": 1.1, "high": 1.1, "low": 1.1, "close": 1.1},
+    {"time": 60000, "open": 1.096, "high": 1.097, "low": 1.094, "close": 1.0955},
+    {"time": 120000, "open": 1.096, "high": 1.112, "low": 1.0955, "close": 1.111},
+    {"time": 180000, "open": 1.108, "high": 1.109, "low": 1.104, "close": 1.106},
+    {"time": 240000, "open": 1.1, "high": 1.101, "low": 1.099, "close": 1.0995},
+    {"time": 300000, "open": 1.095, "high": 1.096, "low": 1.089, "close": 1.09},
+    {"time": 360000, "open": 1.101, "high": 1.102, "low": 1.1005, "close": 1.1015},
+    {"time": 420000, "open": 1.1, "high": 1.12, "low": 1.099, "close": 1.115}
+  ],
+  "actions": [
+    {"at": 0, "type": "place", "order": {"id": "bl", "side": "buy", "kind": "limit", "size": 1, "price": 1.095, "sl": 1.09, "tp": 1.11}},
+    {"at": 0, "type": "place", "order": {"id": "bs", "side": "buy", "kind": "stop", "size": 1, "price": 1.12, "sl": 1.11}},
+    {"at": 0, "type": "place", "order": {"id": "ss", "side": "sell", "kind": "stop", "size": 1, "price": 1.08, "sl": 1.09}},
+    {"at": 0, "type": "cancel", "order_id": "bs"},
+    {"at": 2, "type": "place", "order": {"id": "sl2", "side": "sell", "kind": "limit", "size": 1, "price": 1.105, "sl": 1.115, "tp": 1.1}},
+    {"at": 4, "type": "cancel", "order_id": "ss"},
+    {"at": 4, "type": "place", "order": {"id": "ss2", "side": "sell", "kind": "stop", "size": 1, "price": 1.09, "sl": 1.1, "tp": 1.08}}
+  ],
+  "expected": {
+    "fills": [
+      {"order_id": "bl", "time": 60000, "price": 1.095, "reason": "limit"},
+      {"order_id": "bl", "time": 120000, "price": 1.11, "reason": "tp"},
+      {"order_id": "sl2", "time": 180000, "price": 1.108, "reason": "limit"},
+      {"order_id": "sl2", "time": 240000, "price": 1.1, "reason": "tp"},
+      {"order_id": "ss2", "time": 300000, "price": 1.09, "reason": "stop"},
+      {"order_id": "ss2", "time": 360000, "price": 1.101, "reason": "sl"}
+    ],
+    "trades": [
+      {"id": "bl", "side": "buy", "entry_price": 1.095, "exit_price": 1.11, "pips": 150, "r_multiple": 3, "pnl": 1500, "pnl_currency": "USD", "exit_reason": "tp"},
+      {"id": "sl2", "side": "sell", "entry_price": 1.108, "exit_price": 1.1, "pips": 80, "r_multiple": 1.142857142857, "pnl": 800, "pnl_currency": "USD", "exit_reason": "tp"},
+      {"id": "ss2", "side": "sell", "entry_price": 1.09, "exit_price": 1.101, "pips": -110, "r_multiple": -1.1, "pnl": -1100, "pnl_currency": "USD", "exit_reason": "sl"}
+    ],
+    "warnings": [],
+    "stats": {"net_profit": 1200, "trade_count": 3, "wins": 2}
+  }
+}

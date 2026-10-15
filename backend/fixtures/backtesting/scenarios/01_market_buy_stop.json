@@ -1,0 +1,31 @@
+{
+  "id": "01",
+  "description": "Market buy fills at the next bar open. The stop is hit later. Loss is 70 pips, -1 R and -700.",
+  "instrument": {
+    "symbol": "EURUSD",
+    "asset_class": "forex",
+    "pip_size": 0.0001,
+    "contract_size": 100000,
+    "quote_currency": "USD",
+    "price_decimals": 5
+  },
+  "candles": [
+    {"time": 0, "open": 1.1, "high": 1.101, "low": 1.099, "close": 1.1005},
+    {"time": 60000, "open": 1.102, "high": 1.103, "low": 1.101, "close": 1.1025},
+    {"time": 120000, "open": 1.1025, "high": 1.1035, "low": 1.09, "close": 1.091}
+  ],
+  "actions": [
+    {"at": 0, "type": "place", "order": {"id": "b1", "side": "buy", "kind": "market", "size": 1, "sl": 1.095, "tp": 1.12}}
+  ],
+  "expected": {
+    "fills": [
+      {"order_id": "b1", "time": 60000, "price": 1.102, "reason": "market"},
+      {"order_id": "b1", "time": 120000, "price": 1.095, "reason": "sl"}
+    ],
+    "trades": [
+      {"id": "b1", "side": "buy", "entry_price": 1.102, "exit_price": 1.095, "pips": -70, "r_multiple": -1, "pnl": -700, "pnl_currency": "USD", "exit_reason": "sl"}
+    ],
+    "warnings": [],
+    "stats": {"net_profit": -700, "trade_count": 1, "wins": 0}
+  }
+}
