@@ -7,14 +7,16 @@ import logging
 import json
 import time
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.backtest import BacktestRun, BacktestRunTrade
+from app.models.market_data import CandleCoverage, CandleMonthStat
 from app.models.user import User
+from app.services.backtest.bar_loader import LoadedBars, load_strategy_bars, required_warmup
 from app.services.backtest.downsample import downsample_minmax
 from app.services.backtest.engine import run_strategy
 from app.services.backtest.errors import BacktestError, not_found
@@ -24,22 +26,78 @@ from app.services.backtest.rules import Bar, InstrumentSpec
 from app.services.backtest.strategy_schema import StrategyDefinition, parse_strategy
 from app.services.backtest.strategies_service import estimated_bars, get_strategy, validate_definition
 from app.services.jobs import queue
+from app.services.marketdata.aggregation import timeframe_ms
+from app.services.marketdata.coverage import find_gaps
+from app.services.marketdata.ingest_jobs import enqueue_ingest
 from app.services.marketdata.read_api import enabled_instrument
 from app.services.marketdata.replay_service import ReplayTradeDescriptor, build_replay_payload
+
+ACTIVE_RUN = ("queued", "running", "waiting_data")
 
 logger = logging.getLogger("tradefix.backtest")
 
 JOB_TYPE = "backtest.run"
 
 
-def load_bars(symbol: str, timeframe: str, start_ms: int, end_ms: int) -> list[Bar]:
-    """Default loader returns no candles. The worker and tests replace this with stored data."""
-    return []
+def load_bars(db: Session, symbol: str, timeframe: str, start_ms: int, end_ms: int, *, warmup_bars: int = 0) -> LoadedBars:
+    """Stored candles for the run, plus the warm-up bars before the requested range."""
+    spec = enabled_instrument(symbol)
+    return load_strategy_bars(db, spec, timeframe, start_ms, end_ms, warmup_bars=warmup_bars)
 
 
-def result_hash(definition: dict, symbol: str, timeframe: str, start_ms: int, end_ms: int) -> str:
+def coverage_version(db: Session, symbol: str, source: str, start_ms: int, end_ms: int) -> str:
+    """Hash of the coverage rows and month stats overlapping the range. This is the data version in the result hash."""
+    ranges = db.scalars(
+        select(CandleCoverage)
+        .where(
+            CandleCoverage.instrument == symbol,
+            CandleCoverage.source == source,
+            CandleCoverage.covered_to > start_ms,
+            CandleCoverage.covered_from < end_ms,
+        )
+        .order_by(CandleCoverage.covered_from)
+    ).all()
+    months = [
+        row
+        for row in db.scalars(
+            select(CandleMonthStat)
+            .where(CandleMonthStat.instrument == symbol, CandleMonthStat.source == source)
+            .order_by(CandleMonthStat.year, CandleMonthStat.month)
+        ).all()
+        if _month_overlaps(row.year, row.month, start_ms, end_ms)
+    ]
+    payload = {
+        "ranges": [
+            {"from": row.covered_from, "to": row.covered_to, "rows": int(row.row_count), "updated": _iso(row.updated_at)}
+            for row in ranges
+        ],
+        "months": [
+            {"year": row.year, "month": row.month, "rows": row.row_count, "updated": _iso(row.updated_at)} for row in months
+        ],
+    }
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _month_overlaps(year: int, month: int, start_ms: int, end_ms: int) -> bool:
+    start = datetime(year, month, 1, tzinfo=timezone.utc)
+    nxt = datetime(year + 1, 1, 1, tzinfo=timezone.utc) if month == 12 else datetime(year, month + 1, 1, tzinfo=timezone.utc)
+    return int(nxt.timestamp() * 1000) > start_ms and int(start.timestamp() * 1000) < end_ms
+
+
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value is not None else None
+
+
+def result_hash(definition: dict, symbol: str, timeframe: str, start_ms: int, end_ms: int, coverage: str = "") -> str:
     payload = json.dumps(
-        {"definition": definition, "symbol": symbol, "timeframe": timeframe, "start_ms": start_ms, "end_ms": end_ms},
+        {
+            "definition": definition,
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "start_ms": start_ms,
+            "end_ms": end_ms,
+            "coverage_version": coverage,
+        },
         sort_keys=True,
         separators=(",", ":"),
     )
@@ -58,10 +116,21 @@ def start_run(db: Session, user: User, payload: dict) -> BacktestRun:
         raise BacktestError("invalid_strategy", "The strategy needs changes.", details={"errors": checked["errors"]})
     definition = parse_strategy(definition_body)
     running = db.scalar(
-        select(func.count()).select_from(BacktestRun).where(BacktestRun.user_id == user.id, BacktestRun.status.in_(("queued", "running")))
+        select(func.count()).select_from(BacktestRun).where(BacktestRun.user_id == user.id, BacktestRun.status.in_(ACTIVE_RUN))
     ) or 0
     assert_run_quota(db, user, running=running)
-    digest = result_hash(definition.model_dump(), definition.market.symbol, definition.market.timeframe, definition.market.start_ms, definition.market.end_ms)
+    spec = enabled_instrument(definition.market.symbol.upper())
+    warmup = required_warmup(definition)
+    window_start = max(0, definition.market.start_ms - warmup * timeframe_ms(definition.market.timeframe))
+    version = coverage_version(db, spec.symbol, spec.source, window_start, definition.market.end_ms)
+    digest = result_hash(
+        definition.model_dump(),
+        definition.market.symbol,
+        definition.market.timeframe,
+        definition.market.start_ms,
+        definition.market.end_ms,
+        version,
+    )
     cached = _cached(db, user, digest)
     if cached is not None:
         return _copy_cached(db, user, cached, definition, strategy_id)
@@ -110,22 +179,89 @@ def _execute(ctx: queue.JobContext) -> dict:
     run = _run_for(ctx)
     definition = parse_strategy(run.definition)
     if estimated_bars(definition) > settings.backtest_max_bars_per_run:
-        _finish(ctx, "failed", "limit_exceeded", "That range is too long for one run.")
-        raise _stopped("limit_exceeded", "That range is too long for one run.")
+        _fail(ctx, "limit_exceeded", "That range is too long for one run.")
+    await_market_data(ctx, run, definition)
     deadline = time.monotonic() + settings.backtest_time_limit_s
     ctx.progress(20, "indicators")
     _check_time(ctx, deadline)
     spec = enabled_instrument(run.symbol)
+    warmup = required_warmup(definition)
+    loaded = load_bars(ctx.db, run.symbol, run.timeframe, run.start_ms, run.end_ms, warmup_bars=warmup)
+    bars, trade_start, first_ms, last_ms = _loaded_parts(loaded)
+    needed = warmup + settings.backtest_min_bars
+    if len(bars) < needed:
+        start = datetime.fromtimestamp(run.start_ms / 1000, timezone.utc).date().isoformat()
+        end = datetime.fromtimestamp(run.end_ms / 1000, timezone.utc).date().isoformat()
+        _fail(
+            ctx,
+            "insufficient_data",
+            f"{run.symbol} {run.timeframe} from {start} to {end} has {len(bars)} bars; "
+            f"this run needs at least {needed} ({warmup} warm-up plus {settings.backtest_min_bars}).",
+        )
     instrument = InstrumentSpec(spec.symbol, spec.asset_class, spec.pip_size, spec.contract_size, spec.quote_currency, spec.price_decimals)
-    bars = load_bars(run.symbol, run.timeframe, run.start_ms, run.end_ms)
     ctx.progress(60, "simulation")
-    engine = run_strategy(definition, bars, instrument)
+    engine = run_strategy(definition, bars, instrument, trade_start_index=trade_start)
     _check_time(ctx, deadline)
-    _persist(ctx.db, run, engine, definition, len(bars))
+    version = coverage_version(ctx.db, spec.symbol, spec.source, _window_start(run, warmup), run.end_ms)
+    run.coverage_version = version
+    run.result_hash = result_hash(definition.model_dump(), run.symbol, run.timeframe, run.start_ms, run.end_ms, version)
+    run.warmup_bars = warmup
+    run.first_bar_ms = first_ms
+    run.last_bar_ms = last_ms
+    _persist(ctx.db, run, engine, definition, len(bars) - trade_start)
     ctx.progress(100, "done")
     ctx.db.commit()
     logger.info("backtest finished", extra={"job_id": str(ctx.job.id), "run_id": str(run.id), "status": "succeeded", "job_type": JOB_TYPE})
     return {"status": "succeeded", "run_id": str(run.id)}
+
+
+def _loaded_parts(loaded: LoadedBars | list[Bar]) -> tuple[list[Bar], int, int | None, int | None]:
+    if isinstance(loaded, list):
+        first = loaded[0].time if loaded else None
+        last = loaded[-1].time if loaded else None
+        return loaded, 0, first, last
+    return loaded.bars, loaded.trade_start_index, loaded.first_bar_ms, loaded.last_bar_ms
+
+
+def _window_start(run: BacktestRun, warmup: int) -> int:
+    step = timeframe_ms(run.timeframe)
+    return max(0, run.start_ms - warmup * step)
+
+
+def await_market_data(ctx: queue.JobContext, run: BacktestRun, definition: StrategyDefinition) -> None:
+    """Enqueue a deduplicated ingest when the 1-minute range is missing, and wait without holding a worker slot."""
+    spec = enabled_instrument(run.symbol)
+    warmup = required_warmup(definition)
+    start = _window_start(run, warmup)
+    gaps = find_gaps(ctx.db, spec.symbol, spec.source, start, run.end_ms)
+    if not gaps:
+        run.status = "running"
+        return
+    now = queue.utcnow()
+    if run.waiting_since is not None:
+        waited = (now - run.waiting_since).total_seconds()
+        if waited >= settings.backtest_data_wait_max_s:
+            _fail(ctx, "data_unavailable", _unavailable(run, "the wait limit passed before the candles were stored"))
+        if run.data_job_id is not None:
+            from app.models.job import Job
+
+            data_job = ctx.db.get(Job, run.data_job_id)
+            if data_job is not None and data_job.status in ("failed", "cancelled"):
+                detail = data_job.error_message or data_job.status
+                _fail(ctx, "data_unavailable", _unavailable(run, detail))
+    else:
+        enqueued = enqueue_ingest(ctx.db, spec, gaps[0][0], gaps[-1][1], owner_user_id=run.user_id)
+        run.data_job_id = enqueued.job.id
+        run.waiting_since = now
+    run.status = "waiting_data"
+    ctx.db.commit()
+    raise queue.JobDeferred(settings.backtest_data_poll_s)
+
+
+def _unavailable(run: BacktestRun, reason: str) -> str:
+    start = datetime.fromtimestamp(run.start_ms / 1000, timezone.utc).date().isoformat()
+    end = datetime.fromtimestamp(run.end_ms / 1000, timezone.utc).date().isoformat()
+    return f"Market data for {run.symbol} {run.timeframe} from {start} to {end} is unavailable: {reason}."
 
 
 def _run_for(ctx: queue.JobContext) -> BacktestRun:
@@ -149,14 +285,19 @@ def _stopped(code: str, message: str) -> BacktestError:
     return error
 
 
+def _fail(ctx: queue.JobContext, code: str, message: str) -> None:
+    _finish(ctx, "failed", code, message)
+    raise _stopped(code, message)
+
+
 def _finish(ctx: queue.JobContext, status: str, code: str | None, message: str | None) -> None:
     ctx.db.rollback()
     run = ctx.db.get(BacktestRun, uuid.UUID(ctx.payload["run_id"]))
     if run is None or run.status in ("succeeded", "failed", "cancelled"):
         return
     run.status = status
+    run.error_code = code
     run.error_message = message
-    run.warnings = [code] if code else list(run.warnings or [])
     run.finished_at = queue.utcnow()
     ctx.db.commit()
 

@@ -42,6 +42,15 @@ def _definition(**overrides):
     return parse_strategy(body)
 
 
+def test_warmup_bars_do_not_open_trades():
+    start = datetime(2026, 1, 5, tzinfo=timezone.utc)
+    bars = _bars([12, 13, 14, 15, 16, 17], start)
+    engine = run_strategy(_definition(), bars, INSTRUMENT, trade_start_index=4)
+    assert engine.trades == [] or engine.trades[0].entry_time >= bars[4].time
+    if engine.position is not None:
+        assert engine.position.entry_time >= bars[4].time
+
+
 def test_one_position_ignores_a_second_signal():
     start = datetime(2026, 1, 5, tzinfo=timezone.utc)  # Monday
     engine = run_strategy(_definition(), _bars([9, 12, 13, 14, 15], start), INSTRUMENT)

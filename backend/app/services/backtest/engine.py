@@ -18,7 +18,13 @@ from app.services.backtest.rules import (
 from app.services.backtest.strategy_schema import Condition, Operand, RuleGroup, StrategyDefinition
 
 
-def run_strategy(definition: StrategyDefinition, bars: list[Bar], instrument: InstrumentSpec) -> RuleEngine:
+def run_strategy(
+    definition: StrategyDefinition,
+    bars: list[Bar],
+    instrument: InstrumentSpec,
+    *,
+    trade_start_index: int = 0,
+) -> RuleEngine:
     engine = RuleEngine(
         instrument,
         Costs(definition.costs.spread_pips, definition.costs.commission_per_lot, definition.costs.slippage_pips),
@@ -29,7 +35,7 @@ def run_strategy(definition: StrategyDefinition, bars: list[Bar], instrument: In
     warmup = _warmup(definition)
     last_entry = -10**9
     for index, bar in enumerate(bars):
-        if index >= warmup and _filters_allow(definition, bar, index, last_entry):
+        if index >= max(warmup, trade_start_index) and _filters_allow(definition, bar, index, last_entry):
             long_signal = definition.direction in ("long", "both") and _group_true(definition.long_entry, series, index)
             short_signal = definition.direction in ("short", "both") and _group_true(definition.short_entry, series, index)
             position = engine.position

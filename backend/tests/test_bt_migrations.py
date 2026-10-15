@@ -29,6 +29,22 @@ MIGRATIONS = {
     "0035": ("0034", ["trade_replay_notes"], []),
     "0036": ("0035", ["backtest_sessions", "session_orders", "session_trades", "usage_counters"], []),
     "0037": ("0036", ["strategies", "backtest_runs", "backtest_run_trades"], []),
+    "0038": (
+        "0037",
+        [],
+        [
+            ("backtest_runs", "error_code"),
+            ("backtest_runs", "data_job_id"),
+            ("backtest_runs", "waiting_since"),
+            ("backtest_runs", "first_bar_ms"),
+            ("backtest_runs", "last_bar_ms"),
+            ("backtest_runs", "warmup_bars"),
+            ("backtest_runs", "coverage_version"),
+            ("backtest_runs", "cached_from_run_id"),
+            ("backtest_runs", "served_from_cache"),
+            ("backtest_runs", "skip_counts"),
+        ],
+    ),
 }
 
 
@@ -41,7 +57,8 @@ def _config() -> Config:
 def _schema():
     insp = inspect(ENGINE)
     tables = set(insp.get_table_names())
-    return tables, {t: {c["name"] for c in insp.get_columns(t)} for t in ("trades",)}
+    wanted = [name for name in ("trades", "backtest_runs") if name in tables]
+    return tables, {t: {c["name"] for c in insp.get_columns(t)} for t in wanted}
 
 
 def _affected(revision: str) -> tuple[list[str], dict[str, list[str]]]:
@@ -56,26 +73,28 @@ def _affected(revision: str) -> tuple[list[str], dict[str, list[str]]]:
 
 def _backup(revision: str) -> None:
     tables, columns = _affected(revision)
+    column_only = {table: cols for table, cols in columns.items() if table not in tables}
     with ENGINE.begin() as conn:
-        for table in [*tables, *columns]:
+        for table in [*tables, *column_only]:
             conn.execute(text(f'DROP TABLE IF EXISTS "{BACKUP_PREFIX}{table}"'))
         for table in tables:
             conn.execute(text(f'CREATE TABLE "{BACKUP_PREFIX}{table}" AS TABLE "{table}"'))
-        for table, cols in columns.items():
+        for table, cols in column_only.items():
             picked = ", ".join(f'"{c}"' for c in cols)
             conn.execute(text(f'CREATE TABLE "{BACKUP_PREFIX}{table}" AS SELECT id, {picked} FROM "{table}"'))
 
 
 def _restore(revision: str) -> None:
     tables, columns = _affected(revision)
+    column_only = {table: cols for table, cols in columns.items() if table not in tables}
     with ENGINE.begin() as conn:
         for table in tables:
             conn.execute(text(f'DELETE FROM "{table}"'))
             conn.execute(text(f'INSERT INTO "{table}" SELECT * FROM "{BACKUP_PREFIX}{table}"'))
-        for table, cols in columns.items():
+        for table, cols in column_only.items():
             assignments = ", ".join(f'"{c}" = b."{c}"' for c in cols)
             conn.execute(text(f'UPDATE "{table}" t SET {assignments} FROM "{BACKUP_PREFIX}{table}" b WHERE t.id = b.id'))
-        for table in [*tables, *columns]:
+        for table in [*tables, *column_only]:
             conn.execute(text(f'DROP TABLE "{BACKUP_PREFIX}{table}"'))
 
 

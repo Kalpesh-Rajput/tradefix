@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** complete. NET and HUMAN rows below are still open.
+- **Current sub-phase:** F1 auto-passed. One NEEDS-NETWORK check is still open. NET and HUMAN rows below are still open.
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -47,6 +47,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 5B | Admin data-status UI | auto-passed (HUMAN pending) |
 | 5C | Scheduler lock, top-up, drills, observability | auto-passed (NET pending) |
 | 5D | Documentation and final report | auto-passed (HUMAN pending) |
+| F1 | Real candle loading for strategy runs | auto-passed (1 NET pending) |
 
 ## Current sub-phase log
 
@@ -245,6 +246,15 @@ Fill in during work: the files changed, the commands run with their result summa
   - `/notices` attributes TradingView Lightweight Charts, and the chart footer links to it.
   - `backtesting/FINAL_REPORT.md` lists automated results, every open NET and HUMAN item, the 0.48s 100k-bar run, config defaults and the known gaps.
   - Gate: `tests/test_env_example.py` checks every Settings field appears in `.env.example`. HUMAN fresh checkout and section 8 sign-off are pending.
+- **F1:**
+  - `bar_loader.py` loads `[start - warmup, end)` through `get_candles` in chunks of `CANDLE_MAX_BARS_PER_REQUEST`. Warm-up bars are passed as `trade_start_index` and cannot open a trade. `coverage_version` (sha256 of overlapping coverage and month stats) is stored and included in `result_hash`.
+  - A gap sets the run to `waiting_data`, enqueues one ingest job, and raises `JobDeferred`. The worker requeues with `next_run_at` and gives the attempt back. Provider failure, a cancelled ingest, or `BACKTEST_DATA_WAIT_MAX_S` fails the run as `data_unavailable`. Fewer than warm-up plus `BACKTEST_MIN_BARS` fails as `insufficient_data` and names the instrument, timeframe, dates, and bar count. Validate returns `data_ready` and `data_note` instead of an error (D-034).
+  - Migration 0038 adds the run columns and allows status `waiting_data`. The round trip is in `tests/test_bt_migrations.py`.
+  - Alembic `env.py` calls `fileConfig(..., disable_existing_loggers=False)`. The default disabled loggers created before an in-process migration, which made `test_scheduled_jobs_share_a_day_key_and_log` fail only in the full suite.
+  - The run page shows “Waiting for market data”, and `data_unavailable` / `insufficient_data` failures. It keeps polling while `waiting_data`.
+  - Worker `tick` reserves the running slot before submitting, so an inline test worker cannot deadlock on the lock.
+  - Gate AUTOMATED: `pytest -q --tb=line` — 567 passed, 24 deselected, 17 warnings, 30.29s, exit 0. `tests/test_backtest_run_data.py` covers the stored-parquet hand result (entry 102, exit 179, pnl 77), a two-chunk load, waiting then success, provider failure, zero bars, and cancel while waiting. Frontend `npm test` exit 0 (64.1s, last script `strategy preview ok`). `npm run typecheck` exit 0. `npm run build` exit 0 (compiled in 41s, TypeScript in 20.2s, 51 pages).
+  - NEEDS-NETWORK: three templates over the seeded BTCUSDT month. Not run. See the pending table and HUMAN_QA.
 
 ## Pending human verification
 
@@ -268,6 +278,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 5C | NET | 20-user candle load test, p95 within 2x the target | `cd backend; .\venv\Scripts\python.exe scripts/load_test_candles.py --base-url http://127.0.0.1:8000 --token <jwt>` | pending: not run against a live API in this session |
 | 5D | HUMAN | Fresh checkout following README_BACKTESTING, then section 8 sign-off | HUMAN_QA 5D | pending |
 | 1H | NET | Cross-check EURUSD daily closes against a reference | Compare the `1d` closes from `/api/market-data/candles` with a public EURUSD daily close (for example ECB or broker statements) within 0.0005 | pending (same block) |
+| F1 | NET | Three strategy templates on seeded BTCUSDT | From `backend/`: `python -m app.cli.marketdata coverage BTCUSDT`. With the API, worker, and frontend running, open `/backtest/strategies/new`, run each template over the seeded month, and confirm a non-zero bar count and a plausible trade count. | pending: not run from the app in this session |
 
 ## Open questions (resolved by default when implementation started without answers)
 

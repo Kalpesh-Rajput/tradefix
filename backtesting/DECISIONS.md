@@ -232,6 +232,18 @@ Proposed: detected offsets are stored per **journal account** (`trades.account_i
 - Adding ESLint now would lint all existing user code, which is outside this feature. So every "`npm run lint` passes" gate in PLAN is satisfied by `npm run typecheck` (`tsc --noEmit`, with strict settings from `tsconfig.json`), together with `npm run build`.
 - An open item in PROGRESS asks the owner to choose an ESLint setup. When one exists, the gates switch back to it.
 
+## D-033: A run waits for candles without holding a worker slot (accepted, F1)
+Strategy runs load real candles. When the 1-minute range (including indicator warm-up) is not covered, the run is set to `waiting_data`, a deduplicated `candles.ingest` job is enqueued, and the backtest job raises `JobDeferred`. The worker puts that job back to `queued` with `next_run_at` and does not consume an attempt. The default poll is `BACKTEST_DATA_POLL_S` (5 seconds). If the ingest job fails or is cancelled, or `BACKTEST_DATA_WAIT_MAX_S` (30 minutes) passes, the run fails with `data_unavailable`. Cancelling a queued waiting job cancels the run. `waiting_data` counts toward the per-user concurrency cap.
+
+## D-034: Validate no longer rejects an uncovered range (accepted, F1)
+`POST /api/strategies/validate` used to fail a range that was outside stored coverage. A run can now prepare that data, so validate stays ok and returns `data_ready: false` plus `data_note`. Manual sessions still require the start to be inside coverage.
+
+## D-035: `insufficient_data` (accepted, F1)
+If the loaded series is shorter than the warm-up lookback plus `BACKTEST_MIN_BARS` (50), the run fails with code `insufficient_data`. The message names the instrument, timeframe, dates and the bar count. The run is never marked succeeded with an empty result. HTTP status for the code, if it is raised directly, is 422.
+
+## D-036: Coverage version is part of the result hash (accepted, F1)
+`coverage_version` is a sha256 of the overlapping coverage rows and month stats (bounds, row counts, `updated_at`). `result_hash` includes it, and a finished run stores the version it actually used. Warm-up lookback counts the longest indicator (MACD is at least 35 bars, because the implementation always uses 12/26/9), plus price offsets and ATR or swing stop periods.
+
 ## D-028: Deployment readiness documentation (accepted, rev 2)
 README_BACKTESTING (5D) includes a Deployment readiness section covering:
 

@@ -28,12 +28,51 @@ def _out(db: Session, row) -> dict:
         "metrics": row.metrics,
         "equity": row.equity,
         "warnings": row.warnings,
+        "error_code": row.error_code,
         "error_message": row.error_message,
         "bars_processed": row.bars_processed,
         "job_id": str(row.job_id) if row.job_id else None,
-        "progress": job.progress if job else (100 if row.status == "succeeded" else 0),
-        "progress_message": job.progress_message if job else row.status,
+        "progress": _progress(row, job, data_job := _job(db, row.data_job_id)),
+        "progress_message": _message(row, job, data_job),
+        "first_bar_ms": row.first_bar_ms,
+        "last_bar_ms": row.last_bar_ms,
+        "warmup_bars": row.warmup_bars,
+        "coverage_version": row.coverage_version,
+        "served_from_cache": bool(row.served_from_cache),
+        "data_job": _data_job(data_job),
     }
+
+
+def _job(db: Session, job_id):
+    return db.get(Job, job_id) if job_id else None
+
+
+def _data_job(job: Job | None) -> dict | None:
+    if job is None:
+        return None
+    return {
+        "id": str(job.id),
+        "status": job.status,
+        "progress": job.progress,
+        "progress_message": job.progress_message,
+        "error_message": job.error_message,
+    }
+
+
+def _progress(row, job: Job | None, data_job: Job | None) -> int:
+    if row.status == "waiting_data" and data_job is not None:
+        return data_job.progress
+    if job is not None:
+        return job.progress
+    return 100 if row.status == "succeeded" else 0
+
+
+def _message(row, job: Job | None, data_job: Job | None) -> str | None:
+    if row.status == "waiting_data":
+        return (data_job.progress_message if data_job is not None else None) or "Waiting for market data"
+    if job is not None:
+        return job.progress_message
+    return row.status
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

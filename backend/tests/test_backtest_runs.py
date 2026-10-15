@@ -51,6 +51,8 @@ def _bars(*closes: float) -> list[Bar]:
 @pytest.fixture()
 def env(db, monkeypatch):  # noqa: F811
     monkeypatch.setattr(strategies_service, "covered_ranges", lambda *_a, **_k: [(0, 9_000_000_000_000)])
+    monkeypatch.setattr(runs_service, "await_market_data", lambda *_a, **_k: None)
+    monkeypatch.setattr(settings, "backtest_min_bars", 0)
     monkeypatch.setattr(runs_service, "load_bars", lambda *_a, **_k: _bars(9, 12, 13, 14))
     user = make_user(db)
     app.dependency_overrides[get_db] = lambda: db

@@ -124,7 +124,10 @@ class Strategy(Base):
 class BacktestRun(Base):
     __tablename__ = "backtest_runs"
     __table_args__ = (
-        CheckConstraint("status IN ('queued', 'running', 'succeeded', 'failed', 'cancelled')", name="ck_bt_run_status"),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'waiting_data', 'succeeded', 'failed', 'cancelled')",
+            name="ck_bt_run_status",
+        ),
         Index("ix_backtest_runs_user", "user_id", "created_at"),
     )
 
@@ -142,8 +145,20 @@ class BacktestRun(Base):
     metrics: Mapped[dict | None] = mapped_column(JSONB)
     equity: Mapped[list | None] = mapped_column(JSONB)
     warnings: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    error_code: Mapped[str | None] = mapped_column(String(64))
     error_message: Mapped[str | None] = mapped_column(Text)
     bars_processed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    data_job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    waiting_since: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    first_bar_ms: Mapped[int | None] = mapped_column(BigInteger)
+    last_bar_ms: Mapped[int | None] = mapped_column(BigInteger)
+    warmup_bars: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    coverage_version: Mapped[str | None] = mapped_column(String(64))
+    cached_from_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("backtest_runs.id", ondelete="SET NULL")
+    )
+    served_from_cache: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    skip_counts: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

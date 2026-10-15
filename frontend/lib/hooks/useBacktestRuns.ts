@@ -22,7 +22,8 @@ export type BacktestRun = {
   strategy_id: string | null;
   symbol: string;
   timeframe: string;
-  status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+  status: "queued" | "running" | "waiting_data" | "succeeded" | "failed" | "cancelled";
+  error_code: string | null;
   start_ms: number;
   end_ms: number;
   metrics: RunMetrics | null;
@@ -66,7 +67,7 @@ export function useBacktestRun(id: string) {
     enabled: id.length > 0,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      return status === "queued" || status === "running" ? 2000 : false;
+      return status === "queued" || status === "running" || status === "waiting_data" ? 2000 : false;
     },
   });
 }

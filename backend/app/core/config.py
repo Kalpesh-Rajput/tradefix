@@ -156,6 +156,9 @@ class Settings(BaseSettings):
     backtest_time_limit_s: int = 120
     backtest_cache_window_hours: int = 24
     backtest_equity_points: int = 1000
+    backtest_min_bars: int = 50
+    backtest_data_wait_max_s: int = 1800
+    backtest_data_poll_s: float = 5.0
     strategy_max_conditions: int = 10
     strategy_max_indicators: int = 6
     indicator_period_min: int = 2

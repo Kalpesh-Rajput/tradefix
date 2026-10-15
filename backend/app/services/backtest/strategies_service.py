@@ -43,12 +43,13 @@ def validate_definition(db: Session, payload: dict) -> dict:
     except BacktestError as exc:
         errors.append({"field": "market.symbol", "message": exc.message})
         spec = None
+    data_ready = False
     if spec is not None:
         ranges = covered_ranges(db, spec.symbol, spec.source)
         start, end = definition.market.start_ms, definition.market.end_ms
-        if not any(a <= start and end <= b for a, b in ranges):
-            errors.append({"field": "market", "message": "That range is outside the stored market data."})
-    return {"ok": not errors, "errors": errors, "estimated_bars": bars}
+        data_ready = any(a <= start and end <= b for a, b in ranges)
+    note = None if data_ready or spec is None else "Market data for this range will be prepared when the run starts."
+    return {"ok": not errors, "errors": errors, "estimated_bars": bars, "data_ready": data_ready, "data_note": note}
 
 
 def create_strategy(db: Session, user: User, payload: dict) -> Strategy:

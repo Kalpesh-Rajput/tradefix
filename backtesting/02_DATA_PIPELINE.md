@@ -148,6 +148,7 @@ Input: instrument, timeframe, start, end (or limit with an anchor and direction)
 - **Completeness rule:** a bucket is returned as a candle only if it is fully closed relative to the "until" cutoff (or relative to now when no cutoff is given). The in-progress bucket is never returned as final.
 - Hard limit on bars per request from configuration. Responses state whether more data exists before or after.
 - An **in-memory LRU cache** (bounded size) keyed by instrument, timeframe and range holds recent aggregated windows. Historical data is immutable, so cached entries stay valid; the current month's cache entries are invalidated when a top-up writes to that month.
+- Strategy runs call this service for the strategy timeframe. They request the date range plus the warm-up bars, in chunks no larger than the per-request bar cap, and concatenate them.
 
 ## 10. Job system
 

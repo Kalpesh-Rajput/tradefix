@@ -12,6 +12,7 @@ STATUS_BY_CODE: dict[str, int] = {
     "instrument_not_supported": 422,
     "data_preparing": 202,
     "data_unavailable": 503,
+    "insufficient_data": 422,
     "range_outside_available_data": 422,
     "limit_exceeded": 422,
     "quota_exceeded": 429,

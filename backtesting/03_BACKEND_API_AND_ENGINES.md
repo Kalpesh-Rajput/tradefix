@@ -131,6 +131,8 @@ Both engines implement exactly these rules, and shared scenario fixtures (docume
 - No signal is evaluated until all indicators have enough warm-up bars; the warm-up count is the longest lookback used.
 - At the end of the range, any open position is closed at the last bar's close with exit reason "end of data".
 - Session filters and weekday filters use UTC.
+- The worker loads stored candles for the requested range plus the warm-up lookback (`bar_loader.py`), in chunks of `CANDLE_MAX_BARS_PER_REQUEST`. Warm-up bars are stepped so indicators are valid, and they cannot open a trade (`trade_start_index`).
+- If that 1-minute range is not covered, the run status is `waiting_data` until the ingest job finishes (D-033). A short series fails with `insufficient_data` (D-035). It is not a successful empty run.
 
 ## 6. Manual session logic (browser plus server)
 
@@ -157,7 +159,7 @@ The schema version is part of every definition. Validation is strict: unknown fi
 | **risk** | initial balance, risk percent per trade or fixed lot size, maximum position size |
 | **costs** | spread in pips, commission per lot per side, slippage in pips |
 
-**Validation limits (configurable):** at most 10 conditions per entry rule set, at most 6 distinct indicators, indicator periods between 2 and 500, date range inside available data, estimated bars not above the per-run cap.
+**Validation limits (configurable):** at most 10 conditions per entry rule set, at most 6 distinct indicators, indicator periods between 2 and 500, estimated bars not above the per-run cap. A range that is not stored yet is allowed: validate reports `data_ready: false` and the run prepares the data (D-034).
 
 ## 8. Indicators (implement ourselves, with unit tests)
 
@@ -169,7 +171,7 @@ SMA, EMA, RSI (Wilder smoothing), MACD (line, signal, histogram), ATR (Wilder), 
 - **Process:** compute all indicator series once; evaluate entry conditions as boolean series over closed bars; then run an **event loop** over bars that applies section 5 for fills, SL/TP, filters, sizing and costs. Track equity at every bar close.
 - **Output:** trades (with MAE and MFE in pips and R), equity curve, drawdown series, and the metrics below.
 - **Execution:** inside a job. The worker checks cancellation periodically, enforces a **wall-clock time limit** (configurable, default 120 seconds) and a bar cap, updates progress (data loading, indicators, simulation) and writes results in one transaction.
-- **Determinism and caching:** results depend only on the definition and the data version. Compute a **result hash** from the definition and the coverage version of the candles used; if an identical successful run exists for the same user within a configured window, return it instead of recomputing.
+- **Determinism and caching:** results depend only on the definition and the data version. Compute a **result hash** from the definition and the coverage version of the candles used (D-036); if an identical successful run exists for the same user within a configured window, return it instead of recomputing. The finished run records `first_bar_ms`, `last_bar_ms` and `coverage_version`.
 
 ### Metrics
 
@@ -184,7 +186,8 @@ Net profit, return percent, number of trades, win rate, average win, average los
 | unresolved_symbol | Trade symbol cannot be mapped to a supported instrument | 422 |
 | instrument_not_supported | Instrument not in registry or disabled | 422 |
 | data_preparing | Data is being fetched; poll the job | 202 |
-| data_unavailable | Provider failure after retries or no data exists for the range | 503 or 404 |
+| data_unavailable | Provider failure after retries, the data wait expired, or no data exists for the range | 503 or 404 |
+| insufficient_data | The loaded series is shorter than the warm-up plus the minimum bar count | 422 |
 | range_outside_available_data | Requested range starts before earliest data | 422 |
 | limit_exceeded | Too many bars requested or backtest bars cap hit | 422 |
 | quota_exceeded | Daily or concurrent quota hit | 429 |

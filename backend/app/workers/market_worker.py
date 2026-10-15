@@ -66,6 +66,8 @@ def execute_job(db: Session, job: Job, worker_id: str) -> str:
     except queue.JobCancelled:
         db.rollback()
         queue.mark_cancelled(db, db.get(Job, job.id))
+    except queue.JobDeferred as exc:
+        queue.defer(db, db.get(Job, job.id), exc.delay_s)
     except ProviderError as exc:
         db.rollback()
         queue.fail(db, db.get(Job, job.id), exc.code, exc.message, retryable=exc.retryable, retry_after_s=exc.retry_after_s)
@@ -132,8 +134,14 @@ class MarketWorker:
                 job = queue.claim(db, self.worker_id)
                 if job is None:
                     break
+                # Reserve the slot before submit. A fast (or inline) job can finish and remove the
+                # placeholder before this method stores the future; storing it under the lock would deadlock.
                 with self._running_lock:
-                    self.running[job.id] = self.pool.submit(self._run_claimed, job.id)
+                    self.running[job.id] = None
+                future = self.pool.submit(self._run_claimed, job.id)
+                with self._running_lock:
+                    if job.id in self.running:
+                        self.running[job.id] = future
                 claimed += 1
                 capacity -= 1
         finally:

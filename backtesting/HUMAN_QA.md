@@ -52,6 +52,7 @@ The steps below are from 05 section 5, Phase 3.
 
 ## Phase 4: Automated backtesting
 
+- [ ] **4E builder / F1 NEEDS-NETWORK:** with the API, worker and frontend running and BTCUSDT seeded, run each of the three templates over the seeded month. Confirm the run page shows a non-zero bar count and a plausible trade count. Commands, from `backend/` with the venv python: `python -m app.cli.marketdata coverage BTCUSDT`, then in the app open `/backtest/strategies/new`, pick each template, set the seeded month, and run it.
 - [ ] **4E builder:** the three starter templates fill the form, validate, save and run. Each field error shows next to its field.
 
 The steps below are from 05 section 5, Phase 4.

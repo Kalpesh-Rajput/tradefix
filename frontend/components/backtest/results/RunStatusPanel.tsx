@@ -9,14 +9,23 @@ const STAGE: Record<string, string> = {
   done: "Done",
 };
 
+const FAILURE: Record<string, string> = {
+  data_unavailable: "Market data unavailable",
+  insufficient_data: "Not enough candles",
+};
+
 export function RunStatusPanel({ run, onCancel, cancelling }: { run: BacktestRun; onCancel: () => void; cancelling: boolean }) {
-  const active = run.status === "queued" || run.status === "running";
-  const label = STAGE[run.progress_message ?? ""] ?? run.progress_message ?? run.status;
+  const waiting = run.status === "waiting_data";
+  const active = run.status === "queued" || run.status === "running" || waiting;
+  const label = waiting
+    ? "Candles for this range are still being prepared. This run continues when they are stored."
+    : (STAGE[run.progress_message ?? ""] ?? run.progress_message ?? run.status);
+  const heading = waiting ? "Waiting for market data" : active ? "Run in progress" : (FAILURE[run.error_code ?? ""] ?? run.status);
   return (
     <section className="dash-card space-y-3 p-4" aria-live="polite">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-medium text-foreground">{active ? "Run in progress" : run.status}</h2>
+          <h2 className="text-sm font-medium text-foreground">{heading}</h2>
           <p className="text-sm text-muted">{label}</p>
         </div>
         {active ? (

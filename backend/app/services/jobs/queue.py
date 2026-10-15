@@ -34,6 +34,14 @@ class JobCancelled(Exception):
     pass
 
 
+class JobDeferred(Exception):
+    """The handler released the job. Requeue it later without using an attempt or a lane slot."""
+
+    def __init__(self, delay_s: float) -> None:
+        super().__init__(delay_s)
+        self.delay_s = delay_s
+
+
 @dataclass(frozen=True)
 class Enqueued:
     job: Job
@@ -204,6 +212,16 @@ def fail(
         job.finished_at = utcnow()
         logger.error("job failed", extra={"job_id": str(job.id), "type": job.type, "code": code, "attempts": job.attempts})
     db.commit()
+
+
+def defer(db: Session, job: Job, delay_s: float) -> None:
+    """Put a running job back on the queue. The claim's attempt is undone so waiting does not burn retries."""
+    job.status = "queued"
+    job.next_run_at = utcnow() + timedelta(seconds=max(0.0, delay_s))
+    job.attempts = max(0, job.attempts - 1)
+    job.locked_by = job.locked_until = None
+    db.commit()
+    logger.info("job deferred", extra={"job_id": str(job.id), "type": job.type, "delay_s": delay_s})
 
 
 def mark_cancelled(db: Session, job: Job) -> None:
