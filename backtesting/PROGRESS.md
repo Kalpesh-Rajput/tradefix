@@ -316,3 +316,4 @@ _(none yet)_
 | 5A | 881d1e4 | backtesting(5a): admin data status, backfill, aliases and retry |
 | 5B | 1f1996f | backtesting(5b): admin data-status page |
 | 5C | 11d164e | backtesting(5c): scheduler lock, top-up, cross-check and drills |
+| 5D | 7ba938b | backtesting(5d): backtesting readme, notices and final report |
