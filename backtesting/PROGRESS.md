@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 4D (run jobs and backtest API).
+- **Current sub-phase:** 4E (strategy builder UI).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -40,7 +40,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 4A | Strategy schema and indicators | auto-passed |
 | 4B | Strategy and run persistence | auto-passed |
 | 4C | Python engine and metrics | auto-passed |
-| 4D | Run jobs, backtest API, descriptor endpoint | todo |
+| 4D | Run jobs, backtest API, descriptor endpoint | auto-passed |
 | 4E | Strategy builder UI | todo |
 | 4F | Results UI and runs list (Gate 4) | todo |
 | 5A | Admin and operations API | todo |
@@ -214,6 +214,11 @@ Fill in during work: the files changed, the commands run with their result summa
   - Metrics match a two-trade hand calculation, including profit factor with no losses and drawdown. Downsampling keeps the first point, the last point, and the extremes.
   - Look-ahead: SMA, EMA and RSI values before bar 30 stay the same when later bars change. A 100,000-bar run finished in 0.48s.
   - Gate: `tests/test_engine.py`, `tests/test_metrics.py`, and `tests/test_backtest_rules.py` passed.
+- **4D:**
+  - `backtest.run` is a worker job. Progress reports loading, indicators, simulation and done. Cancel, the time limit and the bar cap persist the run status before the worker records the job outcome.
+  - A matching succeeded run inside the cache window is copied instead of queued. Concurrency and the daily counter both return 429, and resetting the counter allows another run.
+  - `GET /api/backtests/{id}/trades` pages and filters by side. The replay descriptor is owner-scoped.
+  - Gate: `tests/test_backtest_runs.py` — 2 passed.
 
 ## Pending human verification
 
@@ -273,3 +278,4 @@ _(none yet)_
 | 3F | b4f253c | backtesting(3f): session summary and replay by reference |
 | 4A | 05749a5 | backtesting(4a): strategy schema and indicators |
 | 4B | 729a688 | backtesting(4b): strategy persistence and validate |
+| 4C | 5f965fd | backtesting(4c): strategy engine, metrics and downsample |
