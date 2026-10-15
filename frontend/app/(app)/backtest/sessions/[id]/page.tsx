@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AutosaveIndicator } from "@/components/backtest/session/AutosaveIndicator";
 import { OrderTicket } from "@/components/backtest/session/OrderTicket";
 import { PositionsTabs } from "@/components/backtest/session/PositionsTabs";
+import { SessionSummary } from "@/components/backtest/session/SessionSummary";
 import { SessionTopBar } from "@/components/backtest/session/SessionTopBar";
 import { useSessionPersistence } from "@/components/backtest/session/useSessionPersistence";
 import { CandleChart, type CandleChartHandle } from "@/components/chart";
@@ -235,11 +236,21 @@ export default function SessionPage() {
           }}
         />
       </div>
+      {finished && view ? (
+        <SessionSummary
+          sessionId={id}
+          currency={session.data.currency}
+          initialBalance={session.data.initial_balance}
+          trades={view.trades}
+          warnings={session.data.warnings}
+        />
+      ) : null}
       {view && book ? (
         <PositionsTabs
           view={view}
           orders={book.orders}
           currency={session.data.currency}
+          sessionId={id}
           onCancel={(orderId) => {
             book.requestCancel(orderId);
             setTick((value) => value + 1);

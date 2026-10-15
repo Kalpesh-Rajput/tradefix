@@ -6,6 +6,7 @@ import { summarize } from "@/lib/backtest/stats";
 import type { BookOrder } from "@/lib/backtest/sessionBook";
 import type { ClosedTrade, EngineView } from "@/lib/backtest/orderEngine";
 import { money } from "@/lib/backtest/sessions";
+import Link from "next/link";
 
 const TABS = ["Positions", "Pending orders", "History", "Stats"] as const;
 
@@ -14,11 +15,13 @@ export function PositionsTabs({
   orders,
   currency,
   onCancel,
+  sessionId,
 }: {
   view: EngineView;
   orders: readonly BookOrder[];
   currency: string;
   onCancel: (id: string) => void;
+  sessionId?: string;
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Positions");
   const stats = summarize(view.trades);
@@ -87,7 +90,17 @@ export function PositionsTabs({
                   <td className="py-1.5 font-mono">{trade.entryPrice}</td>
                   <td className="py-1.5 font-mono">{trade.exitPrice}</td>
                   <td className="py-1.5 text-muted">{trade.exitReason}</td>
-                  <td className={`py-1.5 text-right font-mono ${trade.pnl >= 0 ? "text-positive" : "text-negative"}`}>{money(trade.pnl, currency)}</td>
+                  <td className={`py-1.5 text-right font-mono ${trade.pnl >= 0 ? "text-positive" : "text-negative"}`}>
+                    {money(trade.pnl, currency)}
+                    {sessionId ? (
+                      <>
+                        {" "}
+                        <Link href={`/replay/session/${sessionId}/${trade.id}`} className="text-primary hover:underline">
+                          Replay
+                        </Link>
+                      </>
+                    ) : null}
+                  </td>
                 </tr>
               ))}
             </tbody>

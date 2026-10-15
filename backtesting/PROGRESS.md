@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 3F (session finish, summary, replay by reference).
+- **Current sub-phase:** 4A (strategy schema and indicators).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -36,7 +36,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 3C | Session backend and descriptor endpoint | auto-passed |
 | 3D | Backtesting hub and session setup | auto-passed (HUMAN pending) |
 | 3E | Session simulator | auto-passed |
-| 3F | Session finish, summary, replay by reference (Gate 3) | todo |
+| 3F | Session finish, summary, replay by reference (Gate 3) | auto-passed (HUMAN pending) |
 | 4A | Strategy schema and indicators | todo |
 | 4B | Strategy and run persistence | todo |
 | 4C | Python engine and metrics | todo |
@@ -197,6 +197,10 @@ Fill in during work: the files changed, the commands run with their result summa
   - The session page replays stored candles and steps `OrderEngine` one minute at a time. The ticket sizes from risk and accepts stop and target in price, pips, or R. Entry, stop, target and pending lines are drawn on the chart.
   - Step back stays disabled while a position or pending order is open. Autosave runs on pause, every 15 seconds while playing, when the tab hides, and before finish. Client ids are stable across retries.
   - Gate: `npm run typecheck` passes. `scripts/test-session-persistence.ts` passes. `npm run test:order-engine` still passes.
+- **3F:**
+  - Finish confirms, closes an open position with reason "session end", saves, then calls the finish endpoint. The summary shows net, balance, win rate, expectancy, an equity curve, and a replay link for each trade.
+  - `/replay/session/[sessionId]/[tradeId]` loads the replay only from `GET /api/backtest/sessions/{sessionId}/trades/{tradeId}/replay`. The URL carries ids, not prices.
+  - Gate 3: `npm run typecheck`, `npm test`, and `npm run build` pass. HUMAN Phase 3 steps 1–5 are in HUMAN_QA.
 
 ## Pending human verification
 
@@ -213,6 +217,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 2F | HUMAN | Seeded trade loads; preparing, unresolved and error states render | HUMAN_QA "2F page shell" | pending |
 | 2G | HUMAN | Phase 2 manual steps 1 to 7 | HUMAN_QA Phase 2 steps 1–7 | pending |
 | 3D | HUMAN | Hub tabs, Setup Lab unchanged, setup validation | HUMAN_QA "3D hub" | pending |
+| 3F | HUMAN | Phase 3 manual steps 1 to 5 | HUMAN_QA Phase 3 steps 1–5 | pending |
 | 1H | NET | Cross-check EURUSD daily closes against a reference | Compare the `1d` closes from `/api/market-data/candles` with a public EURUSD daily close (for example ECB or broker statements) within 0.0005 | pending (same block) |
 
 ## Open questions (resolved by default when implementation started without answers)
@@ -251,3 +256,4 @@ _(none yet)_
 | 3B | bd34902 | backtesting(3b): typescript order engine and scenario runner |
 | 3C | fae0bdf | backtesting(3c): session backend and replay descriptor |
 | 3D | 84860c5 | backtesting(3d): hub, session list and setup form |
+| 3E | 8f05eef | backtesting(3e): session simulator, ticket and autosave |
