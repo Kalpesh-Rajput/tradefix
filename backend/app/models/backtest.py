@@ -107,6 +107,72 @@ class SessionTrade(Base):
     notes: Mapped[str | None] = mapped_column(Text)
 
 
+class Strategy(Base):
+    __tablename__ = "strategies"
+    __table_args__ = (Index("ix_strategies_user", "user_id", "updated_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    definition: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class BacktestRun(Base):
+    __tablename__ = "backtest_runs"
+    __table_args__ = (
+        CheckConstraint("status IN ('queued', 'running', 'succeeded', 'failed', 'cancelled')", name="ck_bt_run_status"),
+        Index("ix_backtest_runs_user", "user_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    strategy_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("strategies.id", ondelete="SET NULL"))
+    definition: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    symbol: Mapped[str] = mapped_column(String(32), nullable=False)
+    timeframe: Mapped[str] = mapped_column(String(4), nullable=False)
+    start_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    end_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")
+    job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    result_hash: Mapped[str | None] = mapped_column(String(64))
+    metrics: Mapped[dict | None] = mapped_column(JSONB)
+    equity: Mapped[list | None] = mapped_column(JSONB)
+    warnings: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    error_message: Mapped[str | None] = mapped_column(Text)
+    bars_processed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class BacktestRunTrade(Base):
+    __tablename__ = "backtest_run_trades"
+    __table_args__ = (Index("ix_backtest_run_trades_run", "run_id", "seq"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("backtest_runs.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    side: Mapped[str] = mapped_column(String(8), nullable=False)
+    size: Mapped[float] = mapped_column(Numeric(18, 6), nullable=False)
+    entry_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    entry_price: Mapped[float] = mapped_column(Numeric(18, 8), nullable=False)
+    exit_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    exit_price: Mapped[float] = mapped_column(Numeric(18, 8), nullable=False)
+    sl: Mapped[float | None] = mapped_column(Numeric(18, 8))
+    tp: Mapped[float | None] = mapped_column(Numeric(18, 8))
+    exit_reason: Mapped[str] = mapped_column(String(16), nullable=False)
+    pnl: Mapped[float] = mapped_column(Numeric(18, 4), nullable=False)
+    pips: Mapped[float] = mapped_column(Numeric(18, 4), nullable=False)
+    r_multiple: Mapped[float | None] = mapped_column(Numeric(18, 6))
+    bars_held: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    mae_pips: Mapped[float] = mapped_column(Numeric(18, 4), nullable=False, default=0)
+    mfe_pips: Mapped[float] = mapped_column(Numeric(18, 4), nullable=False, default=0)
+
+
 class UsageCounter(Base):
     __tablename__ = "usage_counters"
 

@@ -28,6 +28,7 @@ MIGRATIONS = {
     "0034": ("0033", ["account_time_offsets"], []),
     "0035": ("0034", ["trade_replay_notes"], []),
     "0036": ("0035", ["backtest_sessions", "session_orders", "session_trades", "usage_counters"], []),
+    "0037": ("0036", ["strategies", "backtest_runs", "backtest_run_trades"], []),
 }
 
 

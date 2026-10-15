@@ -38,6 +38,7 @@ from app.api.routers import (
     recaps,
     replay,
     backtest_sessions,
+    strategies,
     notebook_folders,
     trades,
     watchlist,
@@ -124,6 +125,7 @@ app.include_router(market_data.router)
 app.include_router(admin_data.router)
 app.include_router(replay.router)
 app.include_router(backtest_sessions.router)
+app.include_router(strategies.router)
 
 uploads_path = Path(settings.upload_dir)
 uploads_path.mkdir(parents=True, exist_ok=True)

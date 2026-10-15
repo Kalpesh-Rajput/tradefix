@@ -17,7 +17,7 @@ from app.models.broker import (
     SyncRun,
 )
 from app.models.agent_run import AgentRun
-from app.models.backtest import BacktestSession, SessionOrder, SessionTrade, TradeReplayNote, UsageCounter
+from app.models.backtest import BacktestRun, BacktestRunTrade, BacktestSession, SessionOrder, SessionTrade, Strategy, TradeReplayNote, UsageCounter
 from app.models.user_agent import UserAgent
 from app.models.user_notification import UserNotification
 from app.models.ai_document import AiDocument
@@ -100,6 +100,9 @@ __all__ = [
     "SessionOrder",
     "SessionTrade",
     "UsageCounter",
+    "Strategy",
+    "BacktestRun",
+    "BacktestRunTrade",
     "AgentRun",
     "UserAgent",
     "UserNotification",

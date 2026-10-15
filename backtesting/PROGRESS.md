@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 4B (strategy and run persistence).
+- **Current sub-phase:** 4C (Python engine and metrics).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -38,7 +38,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 3E | Session simulator | auto-passed |
 | 3F | Session finish, summary, replay by reference (Gate 3) | auto-passed (HUMAN pending) |
 | 4A | Strategy schema and indicators | auto-passed |
-| 4B | Strategy and run persistence | todo |
+| 4B | Strategy and run persistence | auto-passed |
 | 4C | Python engine and metrics | todo |
 | 4D | Run jobs, backtest API, descriptor endpoint | todo |
 | 4E | Strategy builder UI | todo |
@@ -205,6 +205,10 @@ Fill in during work: the files changed, the commands run with their result summa
   - `strategy_schema.py` is schema version 1 with `extra=forbid`. It caps conditions and indicators from config, and requires a long or short entry that matches the direction.
   - `indicators.py` implements SMA, EMA, Wilder RSI, MACD, Wilder ATR, Bollinger (population deviation), Stochastic, ADX with +DI and −DI, highest high and lowest low. Warm-up values are NaN.
   - Gate: `tests/test_indicators.py` and `tests/test_strategy_schema.py` — 9 passed.
+- **4B:**
+  - Migration 0037 adds `strategies`, `backtest_runs` and `backtest_run_trades`. Strategy CRUD enforces the per-user cap and stores the validated definition.
+  - `POST /api/strategies/validate` returns field errors and the estimated bar count. A range outside stored candles or above the bar cap is not ok.
+  - Gate: `tests/test_strategies_api.py` 2 passed. The 0037 round trip passed.
 
 ## Pending human verification
 
@@ -262,3 +266,4 @@ _(none yet)_
 | 3D | 84860c5 | backtesting(3d): hub, session list and setup form |
 | 3E | 8f05eef | backtesting(3e): session simulator, ticket and autosave |
 | 3F | b4f253c | backtesting(3f): session summary and replay by reference |
+| 4A | 05749a5 | backtesting(4a): strategy schema and indicators |
