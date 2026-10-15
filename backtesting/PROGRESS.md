@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** F1 auto-passed. One NEEDS-NETWORK check is still open. NET and HUMAN rows below are still open.
+- **Current sub-phase:** F2 auto-passed. F1 still has one NEEDS-NETWORK check open. NET and HUMAN rows below are still open.
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -48,6 +48,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 5C | Scheduler lock, top-up, drills, observability | auto-passed (NET pending) |
 | 5D | Documentation and final report | auto-passed (HUMAN pending) |
 | F1 | Real candle loading for strategy runs | auto-passed (1 NET pending) |
+| F2 | Cached runs copy trades and breakdowns | auto-passed |
 
 ## Current sub-phase log
 
@@ -255,6 +256,11 @@ Fill in during work: the files changed, the commands run with their result summa
   - Worker `tick` reserves the running slot before submitting, so an inline test worker cannot deadlock on the lock.
   - Gate AUTOMATED: `pytest -q --tb=line` — 567 passed, 24 deselected, 17 warnings, 30.29s, exit 0. `tests/test_backtest_run_data.py` covers the stored-parquet hand result (entry 102, exit 179, pnl 77), a two-chunk load, waiting then success, provider failure, zero bars, and cancel while waiting. Frontend `npm test` exit 0 (64.1s, last script `strategy preview ok`). `npm run typecheck` exit 0. `npm run build` exit 0 (compiled in 41s, TypeScript in 20.2s, 51 pages).
   - NEEDS-NETWORK: three templates over the seeded BTCUSDT month. Not run. See the pending table and HUMAN_QA.
+- **F2:**
+  - `metrics.breakdowns` stores weekday P&L (Monday = 0), UTC hour P&L, monthly equity change, an R histogram (`-2,-1,0,1,2,3`), and the drawdown series. The run page reads those instead of recomputing from the current page of trades.
+  - A cache hit copies metrics, equity, warnings, skip counts, bar bounds, coverage version, and trade rows with `INSERT ... SELECT`, capped at `BACKTEST_MAX_TRADES_PER_RUN` (D-037). `served_from_cache` and `cached_from_run_id` are set. Deleting the source nulls the reference and leaves the copy’s trades. `force_fresh: true` queues a new run. The daily counter still increments.
+  - The run page shows “Served from cache” and a “Run fresh” button.
+  - Gate AUTOMATED: `pytest -q --tb=line` — 569 passed, 24 deselected, 17 warnings, 27.59s, exit 0. `tests/test_backtest_runs.py` checks the copied trade values, the quota count (2 for the hit, 3 after a fresh run), deletion of the source, and the one-row cap. `tests/test_metrics.py` checks a Monday 15:00 UTC breakdown. Frontend `npm test` then `npm run typecheck` exit 0 (100.9s). `npm run build` exit 0 (compiled in 3.8s, TypeScript in 4.6s, 51 pages).
 
 ## Pending human verification
 
@@ -328,3 +334,4 @@ _(none yet)_
 | 5B | 1f1996f | backtesting(5b): admin data-status page |
 | 5C | 11d164e | backtesting(5c): scheduler lock, top-up, cross-check and drills |
 | 5D | 7ba938b | backtesting(5d): backtesting readme, notices and final report |
+| F1 | 2b15ff6 | backtesting(f1): real candle loading for strategy runs |

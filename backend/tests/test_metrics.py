@@ -25,6 +25,20 @@ def test_metrics_match_a_two_trade_list():
     assert stats["worst_trade"] == -40
 
 
+def test_breakdowns_follow_the_entry_time():
+    # 2024-06-03 15:00 UTC is a Monday.
+    monday = 1_717_426_800_000
+    trades = [{"pnl": 25.0, "r": 1.5, "bars_held": 1, "entry_ms": monday}]
+    equity = [(monday - 3_600_000, 1000.0), (monday, 1025.0)]
+    stats = summarize_trades(trades, initial=1000, equity=equity)
+    breakdowns = stats["breakdowns"]
+    assert breakdowns["weekday_pnl"][0] == 25
+    assert breakdowns["hour_pnl"][15] == 25
+    assert breakdowns["monthly"] == [{"month": "2024-06", "change": 25}]
+    assert breakdowns["r_histogram"] == [0, 0, 0, 1, 0, 0]
+    assert breakdowns["drawdown"][-1]["v"] == 0
+
+
 def test_no_losses_leaves_profit_factor_open():
     stats = summarize_trades([{"pnl": 10.0, "r": 1.0}], initial=100, equity=[(0, 100.0), (1, 110.0)])
     assert stats["profit_factor"] is None

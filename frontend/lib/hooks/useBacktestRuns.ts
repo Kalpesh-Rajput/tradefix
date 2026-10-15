@@ -4,6 +4,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 
+export type RunBreakdowns = {
+  weekday_pnl: number[];
+  hour_pnl: number[];
+  monthly: { month: string; change: number }[];
+  r_histogram: number[];
+  drawdown: { t: number; v: number }[];
+};
+
 export type RunMetrics = {
   net_profit?: number;
   return_pct?: number;
@@ -14,6 +22,7 @@ export type RunMetrics = {
   average_r?: number | null;
   max_drawdown?: number;
   max_drawdown_pct?: number;
+  breakdowns?: RunBreakdowns;
 };
 
 export type BacktestRun = {
@@ -31,6 +40,7 @@ export type BacktestRun = {
   warnings: string[];
   error_message: string | null;
   bars_processed: number;
+  served_from_cache: boolean;
   job_id: string | null;
   progress: number;
   progress_message: string | null;

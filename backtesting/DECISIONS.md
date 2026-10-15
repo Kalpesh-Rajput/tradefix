@@ -244,6 +244,9 @@ If the loaded series is shorter than the warm-up lookback plus `BACKTEST_MIN_BAR
 ## D-036: Coverage version is part of the result hash (accepted, F1)
 `coverage_version` is a sha256 of the overlapping coverage rows and month stats (bounds, row counts, `updated_at`). `result_hash` includes it, and a finished run stores the version it actually used. Warm-up lookback counts the longest indicator (MACD is at least 35 bars, because the implementation always uses 12/26/9), plus price offsets and ATR or swing stop periods.
 
+## D-037: A cache hit counts as a run and copies the trades (accepted, F2)
+A matching succeeded run inside the cache window is not free. `record_run_created` still increments the daily counter, because the user received a result. The new row copies metrics, equity, warnings, skip counts, and trade rows with `INSERT ... SELECT`, limited to `BACKTEST_MAX_TRADES_PER_RUN`. `cached_from_run_id` uses `ON DELETE SET NULL`, so deleting the source does not delete the copy. `force_fresh: true` on `POST /api/backtests` skips the lookup and queues a new job. Weekday, UTC hour, month, R histogram and the drawdown series are stored on `metrics.breakdowns` from the full trade list, so the results page does not recompute them from one page of trades.
+
 ## D-028: Deployment readiness documentation (accepted, rev 2)
 README_BACKTESTING (5D) includes a Deployment readiness section covering:
 

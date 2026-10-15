@@ -285,7 +285,7 @@ The server:
 
 1. Validates again.
 2. Refuses if you already have a queued, running, or waiting-for-data backtest (`BACKTEST_MAX_CONCURRENT_PER_USER`, default 1) or if today’s counter is at `BACKTEST_RUNS_PER_DAY`.
-3. Hashes the definition plus symbol, timeframe, and range. If you already have a **succeeded** run with that hash inside `BACKTEST_CACHE_WINDOW_HOURS` (default 24), it copies the metrics and equity and returns immediately. It does not copy the trade rows.
+3. Hashes the definition plus symbol, timeframe, range, and coverage version. If you already have a **succeeded** run with that hash inside `BACKTEST_CACHE_WINDOW_HOURS` (default 24), it copies the metrics, equity, warnings, and trade rows and returns immediately, marked **Served from cache**. **Run fresh** sends `force_fresh: true` and skips that copy. A cache hit still uses one of today’s runs.
 4. Otherwise it inserts a `backtest_runs` row and a `backtest.run` job on the `backtest` lane.
 
 The worker then:

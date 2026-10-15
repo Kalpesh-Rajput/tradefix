@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from app.api.deps import get_current_user
 from app.core.config import settings
 from app.core.db import get_db
 from app.main import app
+from app.models.backtest import BacktestRun, BacktestRunTrade, UsageCounter
 from app.models.job import Job
 from app.schemas.market_data import InstrumentOut
 from app.schemas.replay import AlignmentOut, ReplayPayload, ReplayTradeOut, TimeBasisOut
@@ -92,7 +95,30 @@ def test_execute_cache_and_descriptor(env, monkeypatch):
     assert cached.status_code == 201
     assert cached.json()["status"] == "succeeded"
     assert cached.json()["id"] != created["id"]
+    assert cached.json()["served_from_cache"] is True
     assert cached.json()["metrics"] == detail.json()["metrics"]
+    assert cached.json()["equity"] == detail.json()["equity"]
+    assert cached.json()["warnings"] == detail.json()["warnings"]
+    copied = client.get(f"/api/backtests/{cached.json()['id']}/trades", params={"limit": 10, "offset": 0})
+    assert copied.json()["total"] == trades.json()["total"]
+    assert copied.json()["trades"][0]["entry_price"] == trades.json()["trades"][0]["entry_price"]
+    assert copied.json()["trades"][0]["pnl"] == trades.json()["trades"][0]["pnl"]
+    counter = db.get(UsageCounter, (user.id, date.today()))
+    assert counter is not None and counter.backtest_runs == 2
+
+    fresh = client.post("/api/backtests", json={**_body(), "force_fresh": True})
+    assert fresh.status_code == 201
+    assert fresh.json()["status"] == "queued"
+    assert fresh.json()["served_from_cache"] is False
+    assert db.get(UsageCounter, (user.id, date.today())).backtest_runs == 3
+
+    assert client.delete(f"/api/backtests/{created['id']}").status_code == 204
+    db.expire_all()
+    kept = db.get(BacktestRun, uuid.UUID(cached.json()["id"]))
+    assert kept is not None and kept.cached_from_run_id is None
+    after = client.get(f"/api/backtests/{cached.json()['id']}/trades", params={"limit": 10, "offset": 0})
+    assert after.json()["total"] == copied.json()["total"]
+    assert after.json()["trades"][0]["pnl"] == copied.json()["trades"][0]["pnl"]
 
     def ready(db_, descriptor):
         return ReplayPayload(
@@ -117,15 +143,52 @@ def test_execute_cache_and_descriptor(env, monkeypatch):
         )
 
     monkeypatch.setattr(runs_service, "build_replay_payload", ready)
-    seq = trades.json()["trades"][0]["seq"]
-    owned = client.get(f"/api/backtests/{created['id']}/trades/{seq}/replay")
+    seq = copied.json()["trades"][0]["seq"]
+    owned = client.get(f"/api/backtests/{cached.json()['id']}/trades/{seq}/replay")
     assert owned.status_code == 200 and owned.json()["source"] == "run"
     other = make_user(db)
     app.dependency_overrides[get_current_user] = lambda: other
-    assert client.get(f"/api/backtests/{created['id']}/trades/{seq}/replay").status_code == 404
+    assert client.get(f"/api/backtests/{cached.json()['id']}/trades/{seq}/replay").status_code == 404
     app.dependency_overrides[get_current_user] = lambda: user
-    assert client.get(f"/api/backtests/{created['id']}/trades/999/replay").status_code == 404
+    assert client.get(f"/api/backtests/{cached.json()['id']}/trades/999/replay").status_code == 404
     assert client.get(f"/api/backtests/{uuid.uuid4()}/trades/1/replay").status_code == 404
+
+
+def test_cache_copy_stops_at_the_stored_trade_cap(env, monkeypatch):
+    db, user, _client = env
+    monkeypatch.setattr(settings, "backtest_max_trades_per_run", 1)
+    source = BacktestRun(
+        user_id=user.id,
+        definition=_body()["definition"],
+        symbol="BTCUSDT",
+        timeframe="1h",
+        start_ms=0,
+        end_ms=3_600_000,
+        status="succeeded",
+        result_hash="cap",
+        metrics={"net_profit": 1},
+        equity=[{"t": 0, "v": 1}],
+        warnings=["past performance does not predict future results"],
+        skip_counts={"invalid_stop": 2},
+        bars_processed=4,
+    )
+    db.add(source)
+    db.flush()
+    for seq in (1, 2):
+        db.add(BacktestRunTrade(
+            run_id=source.id, user_id=user.id, seq=seq, side="buy", size=1,
+            entry_ms=seq, entry_price=10, exit_ms=seq + 1, exit_price=11,
+            exit_reason="end of data", pnl=1, pips=1,
+        ))
+    db.flush()
+    from app.services.backtest.strategy_schema import parse_strategy
+
+    copied = runs_service._copy_cached(db, user, source, parse_strategy(_body()["definition"]), None)
+    rows = list(db.scalars(select(BacktestRunTrade).where(BacktestRunTrade.run_id == copied.id).order_by(BacktestRunTrade.seq)))
+    assert len(rows) == 1 and rows[0].seq == 1
+    assert copied.served_from_cache is True
+    assert copied.skip_counts == {"invalid_stop": 2}
+    assert copied.cached_from_run_id == source.id
 
 
 def test_cancel_time_limit_bar_cap_and_quota(env, monkeypatch):

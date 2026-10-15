@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import logging
 import json
@@ -9,7 +10,8 @@ import time
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, insert, literal, select
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -131,9 +133,10 @@ def start_run(db: Session, user: User, payload: dict) -> BacktestRun:
         definition.market.end_ms,
         version,
     )
-    cached = _cached(db, user, digest)
-    if cached is not None:
-        return _copy_cached(db, user, cached, definition, strategy_id)
+    if not payload.get("force_fresh"):
+        cached = _cached(db, user, digest)
+        if cached is not None:
+            return _copy_cached(db, user, cached, definition, strategy_id)
     if checked["estimated_bars"] > settings.backtest_max_bars_per_run:
         raise BacktestError("limit_exceeded", "That range is too long for one run.")
     run = BacktestRun(
@@ -408,17 +411,67 @@ def _copy_cached(db: Session, user: User, cached: BacktestRun, definition: Strat
         end_ms=cached.end_ms,
         status="succeeded",
         result_hash=cached.result_hash,
-        metrics=cached.metrics,
-        equity=cached.equity,
+        metrics=copy.deepcopy(cached.metrics),
+        equity=copy.deepcopy(cached.equity),
         warnings=list(cached.warnings or []),
+        skip_counts=dict(cached.skip_counts or {}),
         bars_processed=cached.bars_processed,
+        first_bar_ms=cached.first_bar_ms,
+        last_bar_ms=cached.last_bar_ms,
+        warmup_bars=cached.warmup_bars,
+        coverage_version=cached.coverage_version,
+        served_from_cache=True,
+        cached_from_run_id=cached.id,
         finished_at=queue.utcnow(),
     )
     db.add(run)
+    db.flush()
+    _copy_trade_rows(db, cached.id, run.id)
     record_run_created(db, user)
     db.commit()
     db.refresh(run)
     return run
+
+
+def _copy_trade_rows(db: Session, source_id: uuid.UUID, dest_id: uuid.UUID) -> None:
+    """Copy stored trades with INSERT ... SELECT. The cap matches how many trades a run is allowed to keep."""
+    src = BacktestRunTrade
+    query = (
+        select(
+            func.gen_random_uuid(),
+            literal(dest_id, type_=PG_UUID(as_uuid=True)),
+            src.user_id,
+            src.seq,
+            src.side,
+            src.size,
+            src.entry_ms,
+            src.entry_price,
+            src.exit_ms,
+            src.exit_price,
+            src.sl,
+            src.tp,
+            src.exit_reason,
+            src.pnl,
+            src.pips,
+            src.r_multiple,
+            src.bars_held,
+            src.mae_pips,
+            src.mfe_pips,
+        )
+        .where(src.run_id == source_id)
+        .order_by(src.seq)
+        .limit(settings.backtest_max_trades_per_run)
+    )
+    db.execute(
+        insert(BacktestRunTrade).from_select(
+            [
+                "id", "run_id", "user_id", "seq", "side", "size",
+                "entry_ms", "entry_price", "exit_ms", "exit_price", "sl", "tp",
+                "exit_reason", "pnl", "pips", "r_multiple", "bars_held", "mae_pips", "mfe_pips",
+            ],
+            query,
+        )
+    )
 
 
 def _persist(db: Session, run: BacktestRun, engine, definition: StrategyDefinition, bar_count: int) -> None:
@@ -449,7 +502,7 @@ def _persist(db: Session, run: BacktestRun, engine, definition: StrategyDefiniti
             mfe_pips=0,
         )
         db.add(row)
-        trades.append({"pnl": trade.pnl, "r": trade.r_multiple, "bars_held": 0})
+        trades.append({"pnl": trade.pnl, "r": trade.r_multiple, "bars_held": 0, "entry_ms": trade.entry_time, "exit_ms": trade.exit_time})
     run.metrics = summarize_trades(trades, initial=definition.risk.initial_balance, equity=equity_points)
     run.equity = [{"t": t, "v": v} for t, v in downsample_minmax(equity_points, settings.backtest_equity_points)]
     run.warnings = warnings_for(

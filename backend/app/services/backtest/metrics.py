@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from datetime import datetime, timezone
 
 
 def _mean(values: list[float]) -> float | None:
@@ -47,6 +48,7 @@ def summarize_trades(trades: list[dict], *, initial: float, equity: list[tuple[i
         "best_trade": max(pnls) if pnls else None,
         "worst_trade": min(pnls) if pnls else None,
         "sharpe_indicative": sharpe,
+        "breakdowns": _breakdowns(trades, equity),
     }
 
 
@@ -94,6 +96,44 @@ def _drawdown(equity: list[tuple[int, float]]) -> dict:
             start_ms, end_ms = peak_ms, time_ms
     pct = (worst / peak * 100) if peak else 0
     return {"amount": worst, "pct": pct, "start_ms": start_ms, "end_ms": end_ms}
+
+
+def _breakdowns(trades: list[dict], equity: list[tuple[int, float]]) -> dict:
+    """Weekday, UTC hour, month, R histogram and drawdown from the full result, not a page of trades."""
+    weekday = [0.0] * 7
+    hour = [0.0] * 24
+    for trade in trades:
+        when = datetime.fromtimestamp(int(trade.get("entry_ms") or 0) / 1000, timezone.utc)
+        pnl = float(trade["pnl"])
+        weekday[when.weekday()] += pnl
+        hour[when.hour] += pnl
+    months: dict[str, float] = {}
+    for index in range(1, len(equity)):
+        key = datetime.fromtimestamp(equity[index][0] / 1000, timezone.utc).strftime("%Y-%m")
+        months[key] = months.get(key, 0.0) + (equity[index][1] - equity[index - 1][1])
+    edges = (-2, -1, 0, 1, 2, 3)
+    histogram = [0] * len(edges)
+    for trade in trades:
+        if trade.get("r") is None:
+            continue
+        value = float(trade["r"])
+        for index, start in enumerate(edges):
+            end = edges[index + 1] if index + 1 < len(edges) else 99
+            if start <= value < end:
+                histogram[index] += 1
+                break
+    peak = None
+    drawdown = []
+    for time_ms, value in equity:
+        peak = value if peak is None else max(peak, value)
+        drawdown.append({"t": time_ms, "v": peak - value})
+    return {
+        "weekday_pnl": weekday,
+        "hour_pnl": hour,
+        "monthly": [{"month": key, "change": value} for key, value in months.items()],
+        "r_histogram": histogram,
+        "drawdown": drawdown,
+    }
 
 
 def _daily_returns(equity: list[tuple[int, float]]) -> list[float]:
