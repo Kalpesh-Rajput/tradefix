@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import json
 import time
 import uuid
@@ -25,6 +26,8 @@ from app.services.backtest.strategies_service import estimated_bars, get_strateg
 from app.services.jobs import queue
 from app.services.marketdata.read_api import enabled_instrument
 from app.services.marketdata.replay_service import ReplayTradeDescriptor, build_replay_payload
+
+logger = logging.getLogger("tradefix.backtest")
 
 JOB_TYPE = "backtest.run"
 
@@ -121,6 +124,7 @@ def _execute(ctx: queue.JobContext) -> dict:
     _persist(ctx.db, run, engine, definition, len(bars))
     ctx.progress(100, "done")
     ctx.db.commit()
+    logger.info("backtest finished", extra={"job_id": str(ctx.job.id), "run_id": str(run.id), "status": "succeeded", "job_type": JOB_TYPE})
     return {"status": "succeeded", "run_id": str(run.id)}
 
 

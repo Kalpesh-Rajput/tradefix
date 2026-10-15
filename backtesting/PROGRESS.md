@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 5C (scheduler, top-up, cross-check, drills).
+- **Current sub-phase:** 5D (README, attribution, final report).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -45,7 +45,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 4F | Results UI and runs list (Gate 4) | auto-passed (HUMAN pending) |
 | 5A | Admin and operations API | auto-passed |
 | 5B | Admin data-status UI | auto-passed (HUMAN pending) |
-| 5C | Scheduler lock, top-up, drills, observability | todo |
+| 5C | Scheduler lock, top-up, drills, observability | auto-passed (NET pending) |
 | 5D | Documentation and final report | todo |
 
 ## Current sub-phase log
@@ -235,6 +235,11 @@ Fill in during work: the files changed, the commands run with their result summa
   - `/admin/data-status` shows coverage, failed jobs with retry, a backfill form, aliases, unresolved symbols and the time-offset report. A non-admin sees an access message and the queries stay idle.
   - Admins reach it from the Backtesting header.
   - Gate: `npx tsc --noEmit -p .` and `npm run build` pass. HUMAN 5B is pending.
+- **5C:**
+  - `start_scheduler` takes the scheduler advisory lock and returns without starting when another process holds it. Nightly top-up and daily cross-check jobs use dedup keys `topup:<date>` and `crosscheck:<date>`.
+  - A top-up that skips a night fills the missing range once. A second run does not add rows. Provider failures (429, 418, 451, Dukascopy tool failure) and a disk-full write leave the new range unstored. An expired worker lock requeues ingest and backtest jobs.
+  - Ingest, top-up and backtest completion write structured log lines. A repeat candle-cache read is a hit and faster than the cold load.
+  - Gate: `tests/test_scheduler_lock.py` and `tests/test_drills.py` — 11 passed. The 20-user load test script is `backend/scripts/load_test_candles.py` and is pending as NET.
 
 ## Pending human verification
 
@@ -255,6 +260,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 4E | HUMAN | Three templates validate, save and run; field errors sit next to their fields | HUMAN_QA 4E | pending |
 | 4F | HUMAN | Phase 4 manual steps 1 to 5, including the spreadsheet recomputation | HUMAN_QA Phase 4 steps 1–5 | pending |
 | 5B | HUMAN | Admin page shows coverage, gaps and failures, and retry works | HUMAN_QA 5B | pending |
+| 5C | NET | 20-user candle load test, p95 within 2x the target | `cd backend; .\venv\Scripts\python.exe scripts/load_test_candles.py --base-url http://127.0.0.1:8000 --token <jwt>` | pending: not run against a live API in this session |
 | 1H | NET | Cross-check EURUSD daily closes against a reference | Compare the `1d` closes from `/api/market-data/candles` with a public EURUSD daily close (for example ECB or broker statements) within 0.0005 | pending (same block) |
 
 ## Open questions (resolved by default when implementation started without answers)
@@ -302,3 +308,4 @@ _(none yet)_
 | 4E | 23901ea | backtesting(4e): strategy builder, templates and live validation |
 | 4F | 655da67 | backtesting(4f): run results, runs list and replay by reference |
 | 5A | 881d1e4 | backtesting(5a): admin data status, backfill, aliases and retry |
+| 5B | 1f1996f | backtesting(5b): admin data-status page |

@@ -86,5 +86,5 @@ def handle_ingest(ctx: queue.JobContext, *, store: CandleStore | None = None, pr
         ctx.progress(percent, f"{chunks} chunk(s) stored ({via})")
 
     result = fill_gaps(ctx.db, spec, gaps, store=store, provider=provider_factory(spec.source), on_chunk=report)
-    logger.info("ingest job done", extra={"symbol": spec.symbol, **result})
+    logger.info("ingest job done", extra={"job_id": str(ctx.job.id), "symbol": spec.symbol, "job_type": JOB_TYPE, **result})
     return result
