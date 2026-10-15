@@ -9,7 +9,7 @@ Trade Replay, manual sessions and automated strategy runs share one candle store
 From `backend/`, with the project virtualenv:
 
 1. Copy `.env.example` to `.env` and set `DATABASE_URL` and `JWT_SECRET`.
-2. Install Python dependencies and apply migrations: `alembic upgrade head` (head includes `0037` strategies and runs).
+2. Install Python dependencies and apply migrations: `alembic upgrade head` (head is `0040`: strategies, runs, candle imports, and cross-check results).
 3. Install the Dukascopy tool once: `npm ci --prefix tools/dukascopy`. Dukascopy data is for personal use. Leave `DUKASCOPY_ENABLED=false` until that licence is acceptable.
 4. Create an admin: `python -m app.cli.marketdata make-admin you@example.com`.
 5. Start the API: `uvicorn app.main:app --reload`.
@@ -29,7 +29,7 @@ python -m app.cli.marketdata top-up
 
 `seed-demo` loads the previous full month for BTCUSDT, EURUSD and XAUUSD. EURUSD and XAUUSD stay disabled until `verify-instrument --write` succeeds. On this development network Dukascopy returns an AWS WAF challenge, so those two symbols are still pending.
 
-Other commands: `backfill`, `coverage --reset`, `verify`, `add-alias`, `unresolved`.
+Other commands: `backfill`, `coverage --reset`, `verify`, `verify-instrument --stored`, `import-candles`, `add-alias`, `unresolved`. `import-candles` reads a file you already have. It does not download from Dukascopy, and it does not enable the instrument.
 
 ## Using the features
 
@@ -78,4 +78,4 @@ Browser tests are `npm run test:e2e` from `frontend/` after `npx playwright inst
 
 ## Known limits
 
-Stop types `atr` and `swing`, and a take-profit of type `atr`, currently use a pip-sized offset rather than a true ATR or swing calculation. `max_trades_per_day` is stored on the strategy and is not yet enforced by the engine. A 100,000-bar strategy run on this machine finished in 0.48 seconds.
+Stops and targets of type `atr` use the signal bar’s ATR. A `swing` stop uses the low or high over the lookback and then `buffer_pips`. `max_trades_per_day` counts filled entries by UTC day. The schema does not have a separate exit rule set; the engine can still close on an opposite signal, a maximum number of bars, or the stop and target. A 100,000-bar strategy run on this machine finished in 0.63 seconds. The earlier 0.48 second figure was measured before those rules were added.

@@ -268,6 +268,12 @@ Enabled crypto is compared with Binance daily klines (high, low, and close), not
 ## D-044: Startup catch-up and one dev command (accepted, F6)
 The nightly top-up runs at 00:35 UTC. A machine that is off then would skip a day, so API startup calls `catch_up_topup` when the last successful `candles.topup` is missing or older than `TOPUP_CATCHUP_HOURS` (default 26). It uses the same `topup:<day>` dedup key, so a job already queued today is not duplicated. Pytest sets `PYTEST_CURRENT_TEST`, and startup skips the catch-up in that case so the test suite does not enqueue a real job. `python scripts/dev.py` starts the API, one market worker, and the frontend. If the advisory lock is already held, it does not start a second worker. `GET /api/market-data/worker` reports whether the heartbeat is stale. Admins also receive the age and the start command. After `DATA_WAIT_NOTICE_S` (default 180) a preparing or waiting run says it is taking longer than expected, and a stale heartbeat says the worker appears offline.
 
+## D-045: Browser tests use a separate database and never fetch (accepted, F8)
+`ENVIRONMENT=test` makes every provider the in-process `FakeProvider`, which raises `provider_disabled` and does not open a socket. `scripts/e2e_seed.py` writes candles and two users into `DATABASE_URL` and `MARKET_DATA_DIR`. Those must be a database and folder that are not the development ones. Playwright is configured not to start a server, so it cannot attach to the API already on port 8001 by accident. The specs were not run: this database role cannot create `tradefix_e2e`.
+
+## D-046: There is no exit rule set in schema version 1 (accepted, F9)
+Spec 03 lists “exit when an exit rule set becomes true” as an optional exit. The strategy schema has no exit rule set, so the engine does not evaluate one. A position still closes on the stop, the target, an opposite signal, or `max_bars_in_trade`. Adding an exit rule set would be a schema change, not a silent interpretation of an existing field.
+
 ## D-028: Deployment readiness documentation (accepted, rev 2)
 README_BACKTESTING (5D) includes a Deployment readiness section covering:
 
