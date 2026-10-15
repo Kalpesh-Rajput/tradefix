@@ -1,0 +1,117 @@
+{
+  "id": "13",
+  "description": "Swing stop long, lowest low of 3 bars ending at the signal, plus buffer",
+  "mode": "strategy",
+  "engines": [
+    "python"
+  ],
+  "instrument": {
+    "symbol": "BTCUSDT",
+    "asset_class": "crypto",
+    "pip_size": 0.01,
+    "contract_size": 1,
+    "quote_currency": "USDT",
+    "price_decimals": 2
+  },
+  "candles": [
+    {
+      "time": 0,
+      "open": 100,
+      "high": 101,
+      "low": 90,
+      "close": 100
+    },
+    {
+      "time": 3600000,
+      "open": 100,
+      "high": 101,
+      "low": 95,
+      "close": 100
+    },
+    {
+      "time": 7200000,
+      "open": 100,
+      "high": 101,
+      "low": 92,
+      "close": 100
+    },
+    {
+      "time": 10800000,
+      "open": 100,
+      "high": 101,
+      "low": 98,
+      "close": 100
+    },
+    {
+      "time": 14400000,
+      "open": 100,
+      "high": 102,
+      "low": 96,
+      "close": 101
+    }
+  ],
+  "definition": {
+    "schema_version": 1,
+    "name": "case",
+    "market": {
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "start_ms": 0,
+      "end_ms": 1
+    },
+    "direction": "long",
+    "long_entry": {
+      "combine": "all",
+      "conditions": [
+        {
+          "left": {
+            "kind": "price",
+            "field": "close"
+          },
+          "operator": "gt",
+          "right": {
+            "kind": "constant",
+            "value": 0
+          }
+        }
+      ]
+    },
+    "stop_loss": {
+      "type": "swing",
+      "value": 1,
+      "period": 3,
+      "buffer_pips": 10
+    },
+    "take_profit": {
+      "type": "pips",
+      "value": 100000
+    },
+    "risk": {
+      "initial_balance": 10000,
+      "fixed_size": 1
+    },
+    "costs": {
+      "spread_pips": 0,
+      "commission_per_lot": 0,
+      "slippage_pips": 0
+    }
+  },
+  "expected": {
+    "fills": [],
+    "trades": [
+      {
+        "id": "buy-3",
+        "side": "buy",
+        "entry_price": 100,
+        "exit_price": 101,
+        "pips": 100,
+        "r_multiple": 0.1234567901234568,
+        "pnl": 1,
+        "pnl_currency": "USD",
+        "exit_reason": "end of data"
+      }
+    ],
+    "warnings": [],
+    "skip_counts": {}
+  }
+}

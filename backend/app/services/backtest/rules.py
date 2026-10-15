@@ -42,6 +42,22 @@ class Bar:
 
 
 @dataclass(frozen=True)
+class Bracket:
+    """Stop and target resolved from the fill, not from the signal price. Absent on manual orders."""
+
+    stop_offset: float | None = None
+    stop_percent: float | None = None
+    stop_price: float | None = None
+    target_offset: float | None = None
+    target_r: float | None = None
+    min_distance: float = 0.0
+    risk_money: float | None = None
+    max_size: float | None = None
+    contract_sized: bool = False
+    contract_size: float = 1.0
+
+
+@dataclass(frozen=True)
 class OrderRequest:
     id: str
     side: Side
@@ -50,6 +66,7 @@ class OrderRequest:
     price: float | None = None
     sl: float | None = None
     tp: float | None = None
+    bracket: Bracket | None = None
 
 
 @dataclass(frozen=True)
@@ -175,6 +192,7 @@ class RuleEngine:
         self.fills: list[Fill] = []
         self.trades: list[ClosedTrade] = []
         self.warnings: list[str] = []
+        self.skip_counts: dict[str, int] = {}
         self._inbox: list[Action] = []
 
     def accept(self, action: Action) -> None:
@@ -226,7 +244,7 @@ class RuleEngine:
         return SimResult(fills=list(self.fills), trades=list(self.trades), warnings=list(self.warnings), balance=self.balance)
 
     def _place(self, order: OrderRequest) -> None:
-        if order.size <= 0:
+        if order.size <= 0 and not (order.bracket is not None and order.bracket.risk_money is not None):
             return
         if order.kind == "market":
             self._pending.append(_Pending(order, queued_market=True))
@@ -260,9 +278,19 @@ class RuleEngine:
 
     def _open(self, order: OrderRequest, bar: Bar, raw: float, reason: str, *, slipped: bool) -> None:
         price = _worse(raw, order.side, self.instrument.pip_size, self.costs, slipped)
-        commission = self.costs.commission_per_lot * order.size
-        self.fills.append(Fill(order.id, bar.time, order.side, price, raw, order.size, reason))
-        self._position = _Position(order.id, order.side, order.size, price, bar.time, order.sl, order.tp, commission)
+        sl, tp, size = order.sl, order.tp, order.size
+        if order.bracket is not None:
+            resolved = _resolve_bracket(order.bracket, price, order.side, size)
+            if resolved is None:
+                self.skip_counts["invalid_stop"] = self.skip_counts.get("invalid_stop", 0) + 1
+                return
+            sl, tp, size = resolved
+        if size <= 0:
+            self.skip_counts["invalid_stop"] = self.skip_counts.get("invalid_stop", 0) + 1
+            return
+        commission = self.costs.commission_per_lot * size
+        self.fills.append(Fill(order.id, bar.time, order.side, price, raw, size, reason))
+        self._position = _Position(order.id, order.side, size, price, bar.time, sl, tp, commission)
 
     def _protect(self, bar: Bar) -> None:
         position = self._position
@@ -298,6 +326,34 @@ class RuleEngine:
         self.trades.append(trade)
         self.balance += trade.pnl
         self._position = None
+
+
+def _resolve_bracket(bracket: Bracket, fill: float, side: Side, size: float) -> tuple[float, float | None, float] | None:
+    """Stop and target from the fill. None means the stop is unusable and the trade is skipped."""
+    sign = 1 if side == "buy" else -1
+    if bracket.stop_price is not None:
+        stop = bracket.stop_price
+    elif bracket.stop_percent is not None:
+        stop = fill - sign * fill * bracket.stop_percent / 100
+    elif bracket.stop_offset is not None:
+        stop = fill - sign * bracket.stop_offset
+    else:
+        return None
+    distance = sign * (fill - stop)
+    if distance <= 0 or distance < bracket.min_distance:
+        return None
+    if bracket.target_r is not None:
+        target = fill + sign * bracket.target_r * distance
+    elif bracket.target_offset is not None:
+        target = fill + sign * bracket.target_offset
+    else:
+        target = None
+    if bracket.risk_money is not None:
+        units = bracket.risk_money / distance
+        size = units / bracket.contract_size if bracket.contract_sized else units
+    if bracket.max_size is not None:
+        size = min(size, bracket.max_size)
+    return stop, target, size
 
 
 def _trigger_price(order: OrderRequest, bar: Bar) -> float | None:

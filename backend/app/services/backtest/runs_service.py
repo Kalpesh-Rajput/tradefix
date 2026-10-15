@@ -91,6 +91,7 @@ def _iso(value: datetime | None) -> str | None:
 
 
 def result_hash(definition: dict, symbol: str, timeframe: str, start_ms: int, end_ms: int, coverage: str = "") -> str:
+    """`definition` must be `model_dump(mode="json")` so a stored round trip hashes like a new request."""
     payload = json.dumps(
         {
             "definition": definition,
@@ -126,7 +127,7 @@ def start_run(db: Session, user: User, payload: dict) -> BacktestRun:
     window_start = max(0, definition.market.start_ms - warmup * timeframe_ms(definition.market.timeframe))
     version = coverage_version(db, spec.symbol, spec.source, window_start, definition.market.end_ms)
     digest = result_hash(
-        definition.model_dump(),
+        definition.model_dump(mode="json"),
         definition.market.symbol,
         definition.market.timeframe,
         definition.market.start_ms,
@@ -207,7 +208,7 @@ def _execute(ctx: queue.JobContext) -> dict:
     _check_time(ctx, deadline)
     version = coverage_version(ctx.db, spec.symbol, spec.source, _window_start(run, warmup), run.end_ms)
     run.coverage_version = version
-    run.result_hash = result_hash(definition.model_dump(), run.symbol, run.timeframe, run.start_ms, run.end_ms, version)
+    run.result_hash = result_hash(definition.model_dump(mode="json"), run.symbol, run.timeframe, run.start_ms, run.end_ms, version)
     run.warmup_bars = warmup
     run.first_bar_ms = first_ms
     run.last_bar_ms = last_ms
@@ -505,12 +506,16 @@ def _persist(db: Session, run: BacktestRun, engine, definition: StrategyDefiniti
         trades.append({"pnl": trade.pnl, "r": trade.r_multiple, "bars_held": 0, "entry_ms": trade.entry_time, "exit_ms": trade.exit_time})
     run.metrics = summarize_trades(trades, initial=definition.risk.initial_balance, equity=equity_points)
     run.equity = [{"t": t, "v": v} for t, v in downsample_minmax(equity_points, settings.backtest_equity_points)]
+    run.skip_counts = dict(getattr(engine, "skip_counts", {}) or {})
     run.warnings = warnings_for(
         trades,
         spread_pips=definition.costs.spread_pips,
         slippage_pips=definition.costs.slippage_pips,
         range_ms=run.end_ms - run.start_ms,
     )
+    for reason, count in sorted(run.skip_counts.items()):
+        if count:
+            run.warnings.append(f"skipped: {reason.replace('_', ' ')} ({count})")
     run.bars_processed = bar_count
     run.status = "succeeded"
     run.finished_at = queue.utcnow()

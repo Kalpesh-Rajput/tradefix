@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** F2 auto-passed. F1 still has one NEEDS-NETWORK check open. NET and HUMAN rows below are still open.
+- **Current sub-phase:** F3 auto-passed. F1 still has one NEEDS-NETWORK check open. NET and HUMAN rows below are still open.
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -49,6 +49,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 5D | Documentation and final report | auto-passed (HUMAN pending) |
 | F1 | Real candle loading for strategy runs | auto-passed (1 NET pending) |
 | F2 | Cached runs copy trades and breakdowns | auto-passed |
+| F3 | Engine stops, targets, filters and golden scenarios | auto-passed |
 
 ## Current sub-phase log
 
@@ -261,6 +262,12 @@ Fill in during work: the files changed, the commands run with their result summa
   - A cache hit copies metrics, equity, warnings, skip counts, bar bounds, coverage version, and trade rows with `INSERT ... SELECT`, capped at `BACKTEST_MAX_TRADES_PER_RUN` (D-037). `served_from_cache` and `cached_from_run_id` are set. Deleting the source nulls the reference and leaves the copy’s trades. `force_fresh: true` queues a new run. The daily counter still increments.
   - The run page shows “Served from cache” and a “Run fresh” button.
   - Gate AUTOMATED: `pytest -q --tb=line` — 569 passed, 24 deselected, 17 warnings, 27.59s, exit 0. `tests/test_backtest_runs.py` checks the copied trade values, the quota count (2 for the hit, 3 after a fresh run), deletion of the source, and the one-row cap. `tests/test_metrics.py` checks a Monday 15:00 UTC breakdown. Frontend `npm test` then `npm run typecheck` exit 0 (100.9s). `npm run build` exit 0 (compiled in 3.8s, TypeScript in 4.6s, 51 pages).
+- **F3:**
+  - Stops and targets are a fill-time bracket. Pips, percent and ATR are distances from the fill. A swing stop is the lowest low or highest high over N bars ending at the signal bar, then `buffer_pips`. ATR and swing require `period`. A wrong-side, zero, or too-close stop increments `skip_counts.invalid_stop` and does not open a trade (D-038). `BACKTEST_MIN_STOP_PIPS` defaults to 0.
+  - Hours and weekdays use the signal bar’s UTC open. `min_bars_between` and `max_trades_per_day` use filled entries, and the day is the fill’s UTC day (D-039). Skip counts are stored and appended to the warnings.
+  - Scenarios 11–21 are hand-computed and `engines: ["python"]`. The TypeScript runner skips them. `tests/test_strategy_option_coverage.py` fails if a schema literal or optional field has no mapped test. The result hash uses `model_dump(mode="json")` so a stored definition matches a new request.
+  - A 100,000-bar run finished in 0.63s (limit 10s).
+  - Gate AUTOMATED: `pytest -q --tb=line` — 577 passed, 24 deselected, 17 warnings, 94.35s, exit 0. Frontend `npm test` then `npm run typecheck` exit 0 (65.6s). `npm run build` exit 0 (compiled in 6.2s, TypeScript in 9.6s, 51 pages).
 
 ## Pending human verification
 
@@ -335,3 +342,4 @@ _(none yet)_
 | 5C | 11d164e | backtesting(5c): scheduler lock, top-up, cross-check and drills |
 | 5D | 7ba938b | backtesting(5d): backtesting readme, notices and final report |
 | F1 | 2b15ff6 | backtesting(f1): real candle loading for strategy runs |
+| F2 | 3ee5b9e | backtesting(f2): cache hits copy trades and breakdowns |

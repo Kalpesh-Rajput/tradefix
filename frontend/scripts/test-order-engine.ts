@@ -77,12 +77,16 @@ function near(actual: number, expected: number, tolerance: number) {
 }
 
 const files = readdirSync(dir).filter((name) => name.endsWith(".json")).sort();
+const orderFiles = files.filter((name) => {
+  const raw = JSON.parse(readFileSync(join(dir, name), "utf8")) as { mode?: string; engines?: string[] };
+  return raw.mode !== "strategy" && (raw.engines == null || raw.engines.includes("typescript"));
+});
 assert.deepEqual(
-  files.map((name) => name.slice(0, 2)),
+  orderFiles.map((name) => name.slice(0, 2)),
   ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
 );
 
-for (const name of files) {
+for (const name of orderFiles) {
   const parsed = scenarioFile.safeParse(JSON.parse(readFileSync(join(dir, name), "utf8")));
   assert.equal(parsed.success, true, parsed.success ? "" : parsed.error.message);
   if (!parsed.success) continue;

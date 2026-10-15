@@ -224,7 +224,11 @@ export function StrategyForm({ strategyId, initial }: { strategyId?: string; ini
       <section className="grid gap-4 sm:grid-cols-2">
         <h2 className="text-sm font-medium text-foreground sm:col-span-2">Exit, filters, risk</h2>
         <Field label="Stop type" errors={fieldErrors("stop_loss")}>
-          <select className={FIELD} value={definition.stop_loss.type} onChange={(event) => patch({ stop_loss: { ...definition.stop_loss, type: event.target.value as StrategyDefinition["stop_loss"]["type"] } })}>
+          <select className={FIELD} value={definition.stop_loss.type} onChange={(event) => {
+            const type = event.target.value as StrategyDefinition["stop_loss"]["type"];
+            const needsPeriod = type === "atr" || type === "swing";
+            patch({ stop_loss: { ...definition.stop_loss, type, period: needsPeriod ? definition.stop_loss.period ?? 14 : null, buffer_pips: type === "swing" ? definition.stop_loss.buffer_pips ?? 0 : 0 } });
+          }}>
             {["pips", "atr", "percent", "swing"].map((type) => (
               <option key={type} value={type}>{type}</option>
             ))}
@@ -233,8 +237,24 @@ export function StrategyForm({ strategyId, initial }: { strategyId?: string; ini
         <Field label="Stop value" errors={fieldErrors("stop_loss.value")}>
           <input className={FIELD} type="number" min={0} step="any" value={definition.stop_loss.value} onChange={(event) => patch({ stop_loss: { ...definition.stop_loss, value: Number(event.target.value) } })} />
         </Field>
+        {definition.stop_loss.type === "atr" || definition.stop_loss.type === "swing" ? (
+          <Field label="Stop period" errors={fieldErrors("stop_loss.period")}>
+            <input className={FIELD} type="number" min={2} value={definition.stop_loss.period ?? 14} onChange={(event) => patch({ stop_loss: { ...definition.stop_loss, period: Number(event.target.value) } })} />
+          </Field>
+        ) : null}
+        {definition.stop_loss.type === "swing" ? (
+          <Field label="Swing buffer (pips)" errors={fieldErrors("stop_loss.buffer_pips")}>
+            <input className={FIELD} type="number" min={0} step="any" value={definition.stop_loss.buffer_pips ?? 0} onChange={(event) => patch({ stop_loss: { ...definition.stop_loss, buffer_pips: Number(event.target.value) } })} />
+          </Field>
+        ) : null}
+        <Field label="Minimum stop distance (pips)" errors={fieldErrors("stop_loss.min_distance_pips")}>
+          <input className={FIELD} type="number" min={0} step="any" value={definition.stop_loss.min_distance_pips ?? 0} onChange={(event) => patch({ stop_loss: { ...definition.stop_loss, min_distance_pips: Number(event.target.value) } })} />
+        </Field>
         <Field label="Target type" errors={fieldErrors("take_profit")}>
-          <select className={FIELD} value={definition.take_profit.type} onChange={(event) => patch({ take_profit: { ...definition.take_profit, type: event.target.value as StrategyDefinition["take_profit"]["type"] } })}>
+          <select className={FIELD} value={definition.take_profit.type} onChange={(event) => {
+            const type = event.target.value as StrategyDefinition["take_profit"]["type"];
+            patch({ take_profit: { ...definition.take_profit, type, period: type === "atr" ? definition.take_profit.period ?? 14 : null } });
+          }}>
             {["r", "pips", "atr"].map((type) => (
               <option key={type} value={type}>{type}</option>
             ))}
@@ -243,6 +263,11 @@ export function StrategyForm({ strategyId, initial }: { strategyId?: string; ini
         <Field label="Target value" errors={fieldErrors("take_profit.value")}>
           <input className={FIELD} type="number" min={0} step="any" value={definition.take_profit.value} onChange={(event) => patch({ take_profit: { ...definition.take_profit, value: Number(event.target.value) } })} />
         </Field>
+        {definition.take_profit.type === "atr" ? (
+          <Field label="Target period" errors={fieldErrors("take_profit.period")}>
+            <input className={FIELD} type="number" min={2} value={definition.take_profit.period ?? 14} onChange={(event) => patch({ take_profit: { ...definition.take_profit, period: Number(event.target.value) } })} />
+          </Field>
+        ) : null}
         <Field label="Weekdays (0 Mon – 6 Sun, comma separated)" errors={fieldErrors("filters.weekdays")}>
           <input className={FIELD} value={definition.filters.weekdays.join(", ")} onChange={(event) => patch({ filters: { ...definition.filters, weekdays: parseNumbers(event.target.value) } })} />
         </Field>
@@ -251,6 +276,9 @@ export function StrategyForm({ strategyId, initial }: { strategyId?: string; ini
         </Field>
         <Field label="Min bars between entries" errors={fieldErrors("filters.min_bars_between")}>
           <input className={FIELD} type="number" min={0} value={definition.filters.min_bars_between} onChange={(event) => patch({ filters: { ...definition.filters, min_bars_between: Number(event.target.value) } })} />
+        </Field>
+        <Field label="Max trades per UTC day" errors={fieldErrors("filters.max_trades_per_day")}>
+          <input className={FIELD} type="number" min={1} value={definition.filters.max_trades_per_day ?? ""} onChange={(event) => patch({ filters: { ...definition.filters, max_trades_per_day: event.target.value === "" ? null : Number(event.target.value) } })} />
         </Field>
         <Field label="Starting balance" errors={fieldErrors("risk.initial_balance")}>
           <input className={FIELD} type="number" min={0} step="any" value={definition.risk.initial_balance} onChange={(event) => patch({ risk: { ...definition.risk, initial_balance: Number(event.target.value) } })} />

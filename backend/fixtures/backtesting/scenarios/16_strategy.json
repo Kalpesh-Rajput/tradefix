@@ -1,0 +1,99 @@
+{
+  "id": "16",
+  "description": "Swing stop on the wrong side of the fill is skipped",
+  "mode": "strategy",
+  "engines": [
+    "python"
+  ],
+  "instrument": {
+    "symbol": "BTCUSDT",
+    "asset_class": "crypto",
+    "pip_size": 0.01,
+    "contract_size": 1,
+    "quote_currency": "USDT",
+    "price_decimals": 2
+  },
+  "candles": [
+    {
+      "time": 0,
+      "open": 160,
+      "high": 161,
+      "low": 150,
+      "close": 160
+    },
+    {
+      "time": 3600000,
+      "open": 160,
+      "high": 161,
+      "low": 150,
+      "close": 160
+    },
+    {
+      "time": 7200000,
+      "open": 160,
+      "high": 161,
+      "low": 150,
+      "close": 160
+    },
+    {
+      "time": 10800000,
+      "open": 100,
+      "high": 101,
+      "low": 99,
+      "close": 100
+    }
+  ],
+  "definition": {
+    "schema_version": 1,
+    "name": "case",
+    "market": {
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "start_ms": 0,
+      "end_ms": 1
+    },
+    "direction": "long",
+    "long_entry": {
+      "combine": "all",
+      "conditions": [
+        {
+          "left": {
+            "kind": "price",
+            "field": "close"
+          },
+          "operator": "gt",
+          "right": {
+            "kind": "constant",
+            "value": 150
+          }
+        }
+      ]
+    },
+    "stop_loss": {
+      "type": "swing",
+      "value": 1,
+      "period": 2
+    },
+    "take_profit": {
+      "type": "pips",
+      "value": 100000
+    },
+    "risk": {
+      "initial_balance": 10000,
+      "fixed_size": 1
+    },
+    "costs": {
+      "spread_pips": 0,
+      "commission_per_lot": 0,
+      "slippage_pips": 0
+    }
+  },
+  "expected": {
+    "fills": [],
+    "trades": [],
+    "warnings": [],
+    "skip_counts": {
+      "invalid_stop": 1
+    }
+  }
+}

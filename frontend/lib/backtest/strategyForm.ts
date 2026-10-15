@@ -43,7 +43,7 @@ export type StrategyDefinition = {
   direction: "long" | "short" | "both";
   long_entry: RuleGroup | null;
   short_entry: RuleGroup | null;
-  stop_loss: { type: "pips" | "atr" | "percent" | "swing"; value: number; period?: number | null };
+  stop_loss: { type: "pips" | "atr" | "percent" | "swing"; value: number; period?: number | null; buffer_pips?: number; min_distance_pips?: number };
   take_profit: { type: "r" | "pips" | "atr"; value: number; period?: number | null };
   max_bars?: number | null;
   exit_on_opposite: boolean;
@@ -103,6 +103,8 @@ export const strategySchema = z
         type: z.enum(["pips", "atr", "percent", "swing"]),
         value: z.number().positive(),
         period: z.number().int().nullable().optional(),
+        buffer_pips: z.number().min(0).default(0),
+        min_distance_pips: z.number().min(0).default(0),
       })
       .strict(),
     take_profit: z
@@ -199,7 +201,7 @@ function shell(name: string, description: string, entry: RuleGroup): StrategyDef
     direction: "long",
     long_entry: entry,
     short_entry: null,
-    stop_loss: { type: "pips", value: 100 },
+    stop_loss: { type: "pips", value: 100, buffer_pips: 0, min_distance_pips: 0 },
     take_profit: { type: "r", value: 2 },
     exit_on_opposite: false,
     filters: { hours: [], weekdays: [], min_bars_between: 0 },

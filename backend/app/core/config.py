@@ -159,6 +159,7 @@ class Settings(BaseSettings):
     backtest_min_bars: int = 50
     backtest_data_wait_max_s: int = 1800
     backtest_data_poll_s: float = 5.0
+    backtest_min_stop_pips: float = 0
     strategy_max_conditions: int = 10
     strategy_max_indicators: int = 6
     indicator_period_min: int = 2

@@ -99,6 +99,7 @@ class Expected(BaseModel):
     trades: list[ExpectedTrade]
     warnings: list[str] = []
     stats: ExpectedStats | None = None
+    skip_counts: dict[str, int] = Field(default_factory=dict)
 
 
 class ScenarioCase(BaseModel):
@@ -134,6 +135,9 @@ class ScenarioFile(BaseModel):
     actions: list[ActionIn] | None = None
     expected: Expected | None = None
     cases: list[ScenarioCase] | None = None
+    mode: Literal["orders", "strategy"] = "orders"
+    engines: list[str] = Field(default_factory=lambda: ["python", "typescript"])
+    definition: dict | None = None
 
     def resolved_cases(self) -> list[ScenarioCase]:
         if self.cases:

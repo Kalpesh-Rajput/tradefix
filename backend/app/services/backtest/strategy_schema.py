@@ -63,12 +63,34 @@ class StopLoss(_Strict):
     type: Literal["pips", "atr", "percent", "swing"]
     value: float = Field(gt=0)
     period: int | None = None
+    buffer_pips: float = Field(default=0, ge=0)
+    min_distance_pips: float = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def _needs_period(self) -> "StopLoss":
+        if self.type in ("atr", "swing") and self.period is None:
+            raise ValueError("period is required")
+        if self.type != "swing" and self.buffer_pips != 0:
+            raise ValueError("buffer_pips is only for a swing stop")
+        if self.period is not None and self.type in ("atr", "swing"):
+            if not settings.indicator_period_min <= self.period <= settings.indicator_period_max:
+                raise ValueError("Stop period is out of range")
+        return self
 
 
 class TakeProfit(_Strict):
     type: Literal["r", "pips", "atr"]
     value: float = Field(gt=0)
     period: int | None = None
+
+    @model_validator(mode="after")
+    def _needs_period(self) -> "TakeProfit":
+        if self.type == "atr" and self.period is None:
+            raise ValueError("period is required")
+        if self.period is not None and self.type == "atr":
+            if not settings.indicator_period_min <= self.period <= settings.indicator_period_max:
+                raise ValueError("Target period is out of range")
+        return self
 
 
 class Filters(_Strict):

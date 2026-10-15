@@ -247,6 +247,12 @@ If the loaded series is shorter than the warm-up lookback plus `BACKTEST_MIN_BAR
 ## D-037: A cache hit counts as a run and copies the trades (accepted, F2)
 A matching succeeded run inside the cache window is not free. `record_run_created` still increments the daily counter, because the user received a result. The new row copies metrics, equity, warnings, skip counts, and trade rows with `INSERT ... SELECT`, limited to `BACKTEST_MAX_TRADES_PER_RUN`. `cached_from_run_id` uses `ON DELETE SET NULL`, so deleting the source does not delete the copy. `force_fresh: true` on `POST /api/backtests` skips the lookup and queues a new job. Weekday, UTC hour, month, R histogram and the drawdown series are stored on `metrics.breakdowns` from the full trade list, so the results page does not recompute them from one page of trades.
 
+## D-038: Stops and targets are measured from the fill (accepted, F3)
+Pip, percent, ATR and R distances used to be applied to the signal bar’s close. The order is only a request until the next bar, and the fill is that bar’s open plus spread and slippage. The stop and target are now computed from that fill. An ATR distance is the signal bar’s ATR times the multiple. A swing stop is the lowest low (long) or highest high (short) over N bars ending at the signal bar, then shifted by `buffer_pips`. It does not use the fill bar. A stop on the wrong side of the fill, at zero distance, or closer than `min_distance_pips` and `BACKTEST_MIN_STOP_PIPS` skips the trade and increments `skip_counts.invalid_stop`. Position size for a risk percent is the risk money divided by that same fill-to-stop distance. Manual orders that pass an absolute stop and target are unchanged.
+
+## D-039: Filters use the signal bar, and the daily cap uses fills (accepted, F3)
+Hours and weekdays are checked on the signal bar’s UTC open. `min_bars_between` is the number of bars after a filled entry before another signal may place. `max_trades_per_day` counts filled entries by the UTC day of the fill, so a fill that crosses midnight belongs to the new day. A signal that fails a filter increments `skip_counts` for that reason. The run stores the counts and appends `skipped: <reason> (n)` to the warnings.
+
 ## D-028: Deployment readiness documentation (accepted, rev 2)
 README_BACKTESTING (5D) includes a Deployment readiness section covering:
 

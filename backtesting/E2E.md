@@ -299,7 +299,7 @@ The run page polls every 2 seconds while status is `queued`, `running`, or `wait
 
 ### 7.3 How a strategy trades
 
-Signals use only bars up to the one being closed. The engine accepts the order at the end of that bar, so a market order fills at the **next** open. Stop and target distances are measured from the signal bar’s close.
+Signals use only bars up to the one being closed. The engine accepts the order at the end of that bar, so a market order fills at the **next** open. Stop and target distances are measured from that fill (D-038). ATR uses the signal bar’s ATR. A swing stop uses the lowest low or highest high over N bars ending at the signal bar. Hours and weekdays use the signal bar’s UTC open. The daily trade cap and the minimum bars between entries use filled entries (D-039).
 
 The same bar order as the manual simulator applies: fill queued markets, trigger pending orders, stop before target, then closes requested on this bar, then new actions.
 

@@ -99,6 +99,46 @@ def test_warmup_blocks_early_signals():
     assert engine.position is None and engine.trades == []
 
 
+def test_pips_and_percent_are_measured_from_the_fill():
+    start = datetime(2024, 6, 3, tzinfo=timezone.utc)
+    bars = []
+    for index, (open_, close) in enumerate(((100, 100), (100, 100), (150, 150), (200, 200), (210, 210))):
+        low = 199.95 if index == 3 else close - 1
+        bars.append(Bar(int((start.timestamp() + index * 3600) * 1000), open_, close + 1, low, close))
+    entry = {
+        "combine": "all",
+        "conditions": [{"left": {"kind": "price", "field": "close"}, "operator": "gt", "right": {"kind": "constant", "value": 120}}],
+    }
+    pips = run_strategy(_definition(long_entry=entry, stop_loss={"type": "pips", "value": 10}), bars, INSTRUMENT)
+    assert pips.trades[0].entry_price == 200
+    assert pips.trades[0].sl == 199.9
+    percent = run_strategy(_definition(long_entry=entry, stop_loss={"type": "percent", "value": 10}), bars, INSTRUMENT)
+    assert percent.trades[0].sl == 180
+
+
+def test_atr_swing_and_filters_ignore_later_bars():
+    start = datetime(2024, 6, 3, tzinfo=timezone.utc)
+    def series(last):
+        bars = []
+        for index, close in enumerate((100, 100, 110, 110, 114, last, last)):
+            bars.append(Bar(int((start.timestamp() + index * 3600) * 1000), close, close + 1, close - 1, close))
+        return bars
+    entry = {
+        "combine": "all",
+        "conditions": [{"left": {"kind": "price", "field": "close"}, "operator": "gt", "right": {"kind": "constant", "value": 100}}],
+    }
+    atr_def = _definition(long_entry=entry, stop_loss={"type": "atr", "value": 1, "period": 2})
+    swing_def = _definition(stop_loss={"type": "swing", "value": 1, "period": 3})
+    hours_def = _definition(filters={"hours": [2]})
+    before = series(114)
+    after = series(900)
+    for definition in (atr_def, swing_def, hours_def):
+        left = run_strategy(definition, before, INSTRUMENT)
+        right = run_strategy(definition, after, INSTRUMENT)
+        assert [(trade.entry_time, trade.sl) for trade in left.trades] == [(trade.entry_time, trade.sl) for trade in right.trades]
+        assert left.skip_counts == right.skip_counts
+
+
 def test_indicators_do_not_look_ahead():
     base = np.arange(1.0, 50.0)
     changed = base.copy()
@@ -107,6 +147,13 @@ def test_indicators_do_not_look_ahead():
         left = fn(base, 5)
         right = fn(changed, 5)
         assert np.allclose(left[:30], right[:30], equal_nan=True)
+    from app.services.backtest.indicators import atr
+
+    high = base + 1
+    low = base - 1
+    changed_high = changed + 1
+    changed_low = changed - 1
+    assert np.allclose(atr(high, low, base, 5)[:30], atr(changed_high, changed_low, changed, 5)[:30], equal_nan=True)
 
 
 def test_hundred_thousand_bars_finish_quickly():

@@ -71,6 +71,7 @@ const expected = z
         .strict()
     ),
     warnings: z.array(z.string()).default([]),
+    skip_counts: z.record(z.string(), z.number().int()).optional(),
     stats: z
       .object({ net_profit: z.number(), trade_count: z.number(), wins: z.number() })
       .strict()
@@ -111,6 +112,9 @@ export const scenarioFile = z
     actions: z.array(action).optional(),
     expected: expected.optional(),
     cases: z.array(scenarioCase).optional(),
+    mode: z.enum(["orders", "strategy"]).optional(),
+    engines: z.array(z.string()).optional(),
+    definition: z.unknown().optional(),
   })
   .strict();
 

@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from app.services.backtest.rules import Action, Bar, Costs, InstrumentSpec, OrderRequest, RuleEngine
 from app.services.backtest.scenario_schema import ScenarioCase, ScenarioFile, load_scenarios
 
-FILES = load_scenarios()
+FILES = [item for item in load_scenarios() if item.mode == "orders"]
 
 
 def _engine(case: ScenarioCase) -> RuleEngine:
