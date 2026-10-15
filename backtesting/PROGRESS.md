@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 5B (admin data-status UI).
+- **Current sub-phase:** 5C (scheduler, top-up, cross-check, drills).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -44,7 +44,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 4E | Strategy builder UI | auto-passed (HUMAN pending) |
 | 4F | Results UI and runs list (Gate 4) | auto-passed (HUMAN pending) |
 | 5A | Admin and operations API | auto-passed |
-| 5B | Admin data-status UI | todo |
+| 5B | Admin data-status UI | auto-passed (HUMAN pending) |
 | 5C | Scheduler lock, top-up, drills, observability | todo |
 | 5D | Documentation and final report | todo |
 
@@ -231,6 +231,10 @@ Fill in during work: the files changed, the commands run with their result summa
   - `GET /api/admin/data-status` lists each instrument’s covered range, row count, gap minutes and the latest failed jobs. Admins can enqueue a backfill, retry a failed job, and add or remove aliases.
   - Unresolved symbols and the time-offset report stay on the same admin router. A non-admin receives 403.
   - Gate: `tests/test_admin_data.py` — 2 passed.
+- **5B:**
+  - `/admin/data-status` shows coverage, failed jobs with retry, a backfill form, aliases, unresolved symbols and the time-offset report. A non-admin sees an access message and the queries stay idle.
+  - Admins reach it from the Backtesting header.
+  - Gate: `npx tsc --noEmit -p .` and `npm run build` pass. HUMAN 5B is pending.
 
 ## Pending human verification
 
@@ -250,6 +254,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 3F | HUMAN | Phase 3 manual steps 1 to 5 | HUMAN_QA Phase 3 steps 1–5 | pending |
 | 4E | HUMAN | Three templates validate, save and run; field errors sit next to their fields | HUMAN_QA 4E | pending |
 | 4F | HUMAN | Phase 4 manual steps 1 to 5, including the spreadsheet recomputation | HUMAN_QA Phase 4 steps 1–5 | pending |
+| 5B | HUMAN | Admin page shows coverage, gaps and failures, and retry works | HUMAN_QA 5B | pending |
 | 1H | NET | Cross-check EURUSD daily closes against a reference | Compare the `1d` closes from `/api/market-data/candles` with a public EURUSD daily close (for example ECB or broker statements) within 0.0005 | pending (same block) |
 
 ## Open questions (resolved by default when implementation started without answers)
@@ -296,3 +301,4 @@ _(none yet)_
 | 4D | 9167119 | backtesting(4d): run jobs and backtest API |
 | 4E | 23901ea | backtesting(4e): strategy builder, templates and live validation |
 | 4F | 655da67 | backtesting(4f): run results, runs list and replay by reference |
+| 5A | 881d1e4 | backtesting(5a): admin data status, backfill, aliases and retry |
