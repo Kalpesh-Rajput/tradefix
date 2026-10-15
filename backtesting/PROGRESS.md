@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 3B (TypeScript order engine).
+- **Current sub-phase:** 3C (session backend).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -32,7 +32,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 2F | Replay page shell | auto-passed (HUMAN pending) |
 | 2G | Replay overlays, notes, entry points (Gate 2) | auto-passed (HUMAN pending) |
 | 3A | Shared rules and scenario format (Python) | auto-passed |
-| 3B | Browser order engine (TS) | todo |
+| 3B | Browser order engine (TS) | auto-passed |
 | 3C | Session backend and descriptor endpoint | todo |
 | 3D | Backtesting hub and session setup | todo |
 | 3E | Session simulator | todo |
@@ -181,6 +181,9 @@ Fill in during work: the files changed, the commands run with their result summa
   - `fixtures/backtesting/scenario-format.md` defines candles, instrument, costs, actions, expected fills, trades and stats, the tolerance defaults, and the `seed` field.
   - `scenario_schema.py` rejects unknown fields. `rules.py` fills markets at the next open, limits and stops (gap fills at the open), charges half the spread each side, slips market and stop fills, and lets the stop win when a bar hits both.
   - Scenarios 01 to 10 are hand-computed, including JPY without a conversion rate and a metal quoted in USD. `tests/test_backtest_rules.py`: 12 passed. Raw fill prices stay inside the bar.
+- **3B:**
+  - `rules.ts`, `orderEngine.ts` and `stats.ts` follow the same bar order as the Python engine. `scenarioSchema.ts` is the zod mirror and rejects unknown fields.
+  - `npm run test:order-engine` passes scenarios 01 to 10 and 40 seeded sequences whose raw fills stay inside the candle. A malformed scenario is rejected.
 
 ## Pending human verification
 
@@ -230,3 +233,4 @@ _(none yet)_
 | 2E | f528dc8 | backtesting(2e): replay engine |
 | 2F | 379c867 | backtesting(2f): replay page shell |
 | 2G | 33d9947 | backtesting(2g): replay overlays, notes, shortcuts, entry points |
+| 3A | 951d456 | backtesting(3a): shared rules and scenario fixtures |
