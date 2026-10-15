@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 4F (results UI, runs list, replay by reference).
+- **Current sub-phase:** 5A (admin and operations API).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -42,7 +42,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 4C | Python engine and metrics | auto-passed |
 | 4D | Run jobs, backtest API, descriptor endpoint | auto-passed |
 | 4E | Strategy builder UI | auto-passed (HUMAN pending) |
-| 4F | Results UI and runs list (Gate 4) | todo |
+| 4F | Results UI and runs list (Gate 4) | auto-passed (HUMAN pending) |
 | 5A | Admin and operations API | todo |
 | 5B | Admin data-status UI | todo |
 | 5C | Scheduler lock, top-up, drills, observability | todo |
@@ -223,6 +223,10 @@ Fill in during work: the files changed, the commands run with their result summa
   - The strategy form has market, direction, entry cards with a plain-language sentence, exits, filters, risk and costs. Templates fill the form and are not stored until save or run.
   - Validation calls `POST /api/strategies/validate` after a short pause and shows each field error beside its field, plus the estimated bar count.
   - Gate: `npx tsc --noEmit -p .` passed, `npm run build` passed, and `scripts/test-strategy-preview.ts` passed. HUMAN 4E is pending.
+- **4F:**
+  - The run page polls while queued or running, shows the job stage, and can cancel. A finished run shows KPI cards, equity and drawdown, weekday, hour, monthly and R breakdowns, and a virtualized trades table.
+  - Replay for a run trade loads only `GET /api/backtests/{runId}/trades/{seq}/replay`. The runs tab lists, opens and deletes runs.
+  - Gate 4: `npm run typecheck`, `npm test`, and `npm run build` pass. `tests/test_backtest_runs.py` still passes. HUMAN Phase 4 steps 1–5 are pending.
 
 ## Pending human verification
 
@@ -241,6 +245,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 3D | HUMAN | Hub tabs, Setup Lab unchanged, setup validation | HUMAN_QA "3D hub" | pending |
 | 3F | HUMAN | Phase 3 manual steps 1 to 5 | HUMAN_QA Phase 3 steps 1–5 | pending |
 | 4E | HUMAN | Three templates validate, save and run; field errors sit next to their fields | HUMAN_QA 4E | pending |
+| 4F | HUMAN | Phase 4 manual steps 1 to 5, including the spreadsheet recomputation | HUMAN_QA Phase 4 steps 1–5 | pending |
 | 1H | NET | Cross-check EURUSD daily closes against a reference | Compare the `1d` closes from `/api/market-data/candles` with a public EURUSD daily close (for example ECB or broker statements) within 0.0005 | pending (same block) |
 
 ## Open questions (resolved by default when implementation started without answers)
@@ -285,3 +290,4 @@ _(none yet)_
 | 4B | 729a688 | backtesting(4b): strategy persistence and validate |
 | 4C | 5f965fd | backtesting(4c): strategy engine, metrics and downsample |
 | 4D | 9167119 | backtesting(4d): run jobs and backtest API |
+| 4E | 23901ea | backtesting(4e): strategy builder, templates and live validation |

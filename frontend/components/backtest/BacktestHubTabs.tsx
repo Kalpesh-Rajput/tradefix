@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { SessionsList } from "@/components/backtest/session/SessionsList";
+import { RunsList } from "@/components/backtest/results/RunsList";
 import { StrategiesList } from "@/components/backtest/strategy/StrategiesList";
 import { SetupLabTab } from "@/components/backtest/SetupLabTab";
 
@@ -42,18 +43,9 @@ export function BacktestHubTabs() {
       <div role="tabpanel" id={`backtest-panel-${tab}`} aria-labelledby={`backtest-tab-${tab}`}>
         {tab === "sessions" ? <SessionsList /> : null}
         {tab === "strategies" ? <StrategiesList /> : null}
-        {tab === "runs" ? <EmptyPanel title="No backtest runs yet" body="Finished and running backtests will be listed here." /> : null}
+        {tab === "runs" ? <RunsList /> : null}
         {tab === "setup" ? <SetupLabTab /> : null}
       </div>
-    </div>
-  );
-}
-
-function EmptyPanel({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="dash-card px-6 py-14 text-center">
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      <p className="mt-1 text-sm text-muted">{body}</p>
     </div>
   );
 }

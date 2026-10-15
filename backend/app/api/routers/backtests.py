@@ -4,6 +4,7 @@ from fastapi import APIRouter, Body, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.models.job import Job
 from app.models.user import User
 from app.schemas.replay import ReplayPayload
 from app.services.backtest import runs_service
@@ -12,9 +13,13 @@ from app.services.backtest.entitlements import require_feature
 router = APIRouter(prefix="/api/backtests", tags=["backtests"])
 
 
-def _out(row) -> dict:
+def _out(db: Session, row) -> dict:
+    job = db.get(Job, row.job_id) if row.job_id else None
+    definition = row.definition or {}
     return {
         "id": str(row.id),
+        "name": definition.get("name") or row.symbol,
+        "strategy_id": str(row.strategy_id) if row.strategy_id else None,
         "symbol": row.symbol,
         "timeframe": row.timeframe,
         "status": row.status,
@@ -26,22 +31,24 @@ def _out(row) -> dict:
         "error_message": row.error_message,
         "bars_processed": row.bars_processed,
         "job_id": str(row.job_id) if row.job_id else None,
+        "progress": job.progress if job else (100 if row.status == "succeeded" else 0),
+        "progress_message": job.progress_message if job else row.status,
     }
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def start(payload: dict = Body(...), db: Session = Depends(get_db), user: User = Depends(require_feature("backtesting.automated"))):
-    return _out(runs_service.start_run(db, user, payload))
+    return _out(db, runs_service.start_run(db, user, payload))
 
 
 @router.get("")
 def list_runs(db: Session = Depends(get_db), user: User = Depends(require_feature("backtesting.automated"))):
-    return [_out(row) for row in runs_service.list_runs(db, user)]
+    return [_out(db, row) for row in runs_service.list_runs(db, user)]
 
 
 @router.get("/{run_id}")
 def get_run(run_id: uuid.UUID, db: Session = Depends(get_db), user: User = Depends(require_feature("backtesting.automated"))):
-    return _out(runs_service.get_run(db, user, run_id))
+    return _out(db, runs_service.get_run(db, user, run_id))
 
 
 @router.get("/{run_id}/trades")
@@ -70,6 +77,7 @@ def trades(
                 "pips": float(row.pips),
                 "r_multiple": float(row.r_multiple) if row.r_multiple is not None else None,
                 "exit_reason": row.exit_reason,
+                "bars_held": row.bars_held,
             }
             for row in rows
         ],
@@ -78,7 +86,7 @@ def trades(
 
 @router.post("/{run_id}/cancel")
 def cancel(run_id: uuid.UUID, db: Session = Depends(get_db), user: User = Depends(require_feature("backtesting.automated"))):
-    return _out(runs_service.cancel_run(db, user, run_id))
+    return _out(db, runs_service.cancel_run(db, user, run_id))
 
 
 @router.delete("/{run_id}", status_code=status.HTTP_204_NO_CONTENT)

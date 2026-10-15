@@ -15,12 +15,21 @@ function retryDelay(attempt: number, error: unknown): number {
   return Math.min(1000 * 2 ** attempt, 15_000);
 }
 
-export function SimulatedReplayLoader({ sessionId, tradeId }: { sessionId: string; tradeId: string }) {
+export function SimulatedReplayLoader({
+  sessionId = "",
+  tradeId = "",
+  replayPath,
+}: {
+  sessionId?: string;
+  tradeId?: string;
+  replayPath?: string;
+}) {
+  const path = replayPath ?? `/api/backtest/sessions/${sessionId}/trades/${tradeId}/replay`;
   const { user } = useAuth();
   const replay = useQuery({
-    queryKey: ["session-replay", sessionId, tradeId],
-    queryFn: () => api.get<ReplayPayload>(`/api/backtest/sessions/${sessionId}/trades/${tradeId}/replay`),
-    enabled: sessionId.length > 0 && tradeId.length > 0,
+    queryKey: ["simulated-replay", path],
+    queryFn: () => api.get<ReplayPayload>(path),
+    enabled: path.includes("/trades/"),
     retry: (count, error) => {
       if (!(error instanceof ApiError) || count >= 3) return false;
       return error.code === "rate_limited" || error.code === "network" || error.status === 0 || error.status >= 500;
