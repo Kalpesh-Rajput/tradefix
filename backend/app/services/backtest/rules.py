@@ -175,6 +175,33 @@ class RuleEngine:
         self.fills: list[Fill] = []
         self.trades: list[ClosedTrade] = []
         self.warnings: list[str] = []
+        self._inbox: list[Action] = []
+
+    def accept(self, action: Action) -> None:
+        self._inbox.append(action)
+
+    def step(self, bar: Bar) -> None:
+        self._fill_markets(bar)
+        self._trigger_pending(bar)
+        self._protect(bar)
+        actions = self._inbox
+        self._inbox = []
+        for action in actions:
+            if action.type == "close":
+                self._close_at(bar, "manual", bar.close, slipped=True)
+        for action in actions:
+            if action.type == "cancel":
+                self._cancel(action.order_id or "")
+            elif action.type == "place" and action.order is not None:
+                self._place(action.order)
+
+    @property
+    def position(self) -> _Position | None:
+        return self._position
+
+    @property
+    def pending_count(self) -> int:
+        return len(self._pending) + len(self._inbox)
 
     def run(self, bars: list[Bar], actions: list[Action]) -> SimResult:
         grouped: dict[int, list[Action]] = {}

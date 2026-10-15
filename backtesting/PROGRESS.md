@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 4C (Python engine and metrics).
+- **Current sub-phase:** 4D (run jobs and backtest API).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -39,7 +39,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 3F | Session finish, summary, replay by reference (Gate 3) | auto-passed (HUMAN pending) |
 | 4A | Strategy schema and indicators | auto-passed |
 | 4B | Strategy and run persistence | auto-passed |
-| 4C | Python engine and metrics | todo |
+| 4C | Python engine and metrics | auto-passed |
 | 4D | Run jobs, backtest API, descriptor endpoint | todo |
 | 4E | Strategy builder UI | todo |
 | 4F | Results UI and runs list (Gate 4) | todo |
@@ -209,6 +209,11 @@ Fill in during work: the files changed, the commands run with their result summa
   - Migration 0037 adds `strategies`, `backtest_runs` and `backtest_run_trades`. Strategy CRUD enforces the per-user cap and stores the validated definition.
   - `POST /api/strategies/validate` returns field errors and the estimated bar count. A range outside stored candles or above the bar cap is not ok.
   - Gate: `tests/test_strategies_api.py` 2 passed. The 0037 round trip passed.
+- **4C:**
+  - `engine.py` steps `RuleEngine` one bar at a time. A second signal is ignored while a position or pending order is open. An opposite signal can close and reverse. UTC weekday filters and indicator warm-up block entries. Open positions close at the last close with reason "end of data".
+  - Metrics match a two-trade hand calculation, including profit factor with no losses and drawdown. Downsampling keeps the first point, the last point, and the extremes.
+  - Look-ahead: SMA, EMA and RSI values before bar 30 stay the same when later bars change. A 100,000-bar run finished in 0.48s.
+  - Gate: `tests/test_engine.py`, `tests/test_metrics.py`, and `tests/test_backtest_rules.py` passed.
 
 ## Pending human verification
 
@@ -267,3 +272,4 @@ _(none yet)_
 | 3E | 8f05eef | backtesting(3e): session simulator, ticket and autosave |
 | 3F | b4f253c | backtesting(3f): session summary and replay by reference |
 | 4A | 05749a5 | backtesting(4a): strategy schema and indicators |
+| 4B | 729a688 | backtesting(4b): strategy persistence and validate |
