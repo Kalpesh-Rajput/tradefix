@@ -1,0 +1,74 @@
+# TradeFix backtesting
+
+Trade Replay, manual sessions and automated strategy runs share one candle store. Live journal trades stay separate: simulated trades are stored with `is_simulated` and are excluded from journal, analytics, export and AI readers.
+
+## Setup
+
+From `backend/`, with the project virtualenv:
+
+1. Copy `.env.example` to `.env` and set `DATABASE_URL` and `JWT_SECRET`.
+2. Install Python dependencies and apply migrations: `alembic upgrade head` (head includes `0037` strategies and runs).
+3. Install the Dukascopy tool once: `npm ci --prefix tools/dukascopy`. Dukascopy data is for personal use. Leave `DUKASCOPY_ENABLED=false` until that licence is acceptable.
+4. Create an admin: `python -m app.cli.marketdata make-admin you@example.com`.
+5. Start the API: `uvicorn app.main:app --reload`.
+6. Start the market worker in a second terminal: `python -m app.workers.market_worker`. For local development, `MARKET_WORKER_IN_PROCESS=true` runs it inside the API instead. Only one worker holds the advisory lock.
+7. From `frontend/`: `npm install` and `npm run dev`.
+
+## Seeding candles
+
+```text
+python -m app.cli.marketdata verify-instrument BTCUSDT --write
+python -m app.cli.marketdata seed-demo
+python -m app.cli.marketdata coverage BTCUSDT
+python -m app.cli.marketdata top-up
+```
+
+`seed-demo` loads the previous full month for BTCUSDT, EURUSD and XAUUSD. EURUSD and XAUUSD stay disabled until `verify-instrument --write` succeeds. On this development network Dukascopy returns an AWS WAF challenge, so those two symbols are still pending.
+
+Other commands: `backfill`, `coverage --reset`, `verify`, `add-alias`, `unresolved`.
+
+## Using the features
+
+- **Trade Replay.** Open a journal trade and choose Replay, or go to `/replay/{tradeId}`.
+- **Manual sessions.** Backtesting → Manual Sessions → New session. Orders fill on the next candle open. Finish writes a summary. Each trade replays at `/replay/session/{sessionId}/{tradeId}` with only those ids in the URL.
+- **Strategies.** Backtesting → Strategies → New strategy. The three templates fill the form and are not saved until you save or run. Run opens `/backtest/runs/{id}`.
+- **Run replay.** A finished run links each trade to `/replay/run/{runId}/{seq}`.
+- **Market data admin.** After `make-admin`, open `/admin/data-status` (also linked from Backtesting for admins).
+
+## Tests
+
+Backend, from `backend/`:
+
+```text
+.\venv\Scripts\python.exe -m pytest tests/test_backtest_rules.py tests/test_engine.py tests/test_sessions_api.py tests/test_strategies_api.py tests/test_backtest_runs.py tests/test_admin_data.py tests/test_scheduler_lock.py tests/test_drills.py tests/test_env_example.py
+```
+
+Frontend, from `frontend/`:
+
+```text
+npm run typecheck
+npm test
+npm run build
+```
+
+Next.js 16 has no `next lint` here. Typecheck is the lint gate (D-032).
+
+The 20-user candle load test is `python scripts/load_test_candles.py` against a running API. It is a live check and is still pending.
+
+## LICENSING_NOTES
+
+- **TradingView Lightweight Charts** is used for candle charts. The chart footer and `/notices` attribute it. The library is TradingView Lightweight Charts™.
+- **Dukascopy** historical data, via `dukascopy-node`, is documented for personal use. Do not enable it in a paid deployment unless you have a licence. Set `DUKASCOPY_ENABLED=false` to turn the adapter off.
+- **Binance** public market data is fetched from the configured REST and archive hosts. Respect their request limits; the worker already throttles.
+
+## Deployment readiness
+
+- `MARKET_DATA_DIR` must sit on persistent storage. Losing it means re-running the backfill, and coverage rows no longer match the files until you reset coverage and fetch again.
+- Only one market worker and one scheduler run at a time. They take Postgres advisory locks (`MARKET_WORKER_LOCK_KEY`, `SCHEDULER_LOCK_KEY`). A second process logs and waits or skips.
+- Required environment: `DATABASE_URL`, `JWT_SECRET`, and a writable `MARKET_DATA_DIR`. Dukascopy also needs Node and `tools/dukascopy` installed. See `.env.example` for every setting.
+- Ephemeral free-tier disks are a risk: a restart that wipes the disk drops the Parquet files while Postgres still says those minutes are covered. The next read then has holes. Use a volume that survives deploys.
+- An S3-compatible store can replace `LocalParquetStore` behind the same `CandleStore` interface: write to a temp object, then commit by copy/rename so readers never see a partial file. Queries would use DuckDB `read_parquet` over `s3://` with the `httpfs` extension, one connection per query, the same way local reads open a short-lived DuckDB connection.
+
+## Known limits
+
+Stop types `atr` and `swing`, and a take-profit of type `atr`, currently use a pip-sized offset rather than a true ATR or swing calculation. `max_trades_per_day` is stored on the strategy and is not yet enforced by the engine. A 100,000-bar strategy run on this machine finished in 0.48 seconds.

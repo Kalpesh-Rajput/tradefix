@@ -163,12 +163,16 @@ export const CandleChart = forwardRef<CandleChartHandle, CandleChartProps>(funct
         <span>
           Charts by{" "}
           <a
-            href="https://www.tradingview.com/"
+            href="https://www.tradingview.com/lightweight-charts/"
             target="_blank"
             rel="noopener noreferrer"
             className="underline-offset-2 hover:underline"
           >
             TradingView Lightweight Charts™
+          </a>
+          {" · "}
+          <a href="/notices" className="underline-offset-2 hover:underline">
+            Notices
           </a>
         </span>
       </div>
