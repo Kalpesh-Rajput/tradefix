@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** F5 auto-passed. The live BTCUSDT cross-check did not complete. Forex and gold stay disabled. NET and HUMAN rows below are still open.
+- **Current sub-phase:** F6 auto-passed. The live BTCUSDT cross-check did not complete. Forex and gold stay disabled. NET and HUMAN rows below are still open.
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -52,6 +52,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | F3 | Engine stops, targets, filters and golden scenarios | auto-passed |
 | F4 | Dukascopy block cool-down and candle file import | auto-passed (HUMAN and NET pending) |
 | F5 | Binance and ECB daily cross-check | auto-passed (1 NET pending) |
+| F6 | Startup catch-up, dev launcher, worker notice | auto-passed |
 
 ## Current sub-phase log
 
@@ -282,6 +283,12 @@ Fill in during work: the files changed, the commands run with their result summa
   - Migration 0040 adds `crosscheck_results`. The admin data-status page lists the latest rows and highlights differences.
   - Gate AUTOMATED: `pytest -q --tb=line` — 591 passed, 24 deselected, 17 warnings, 44.26s, exit 0. Targeted cross-check, drills, env and migration tests were 24 passed in 7.11s. Frontend `npm test` then `npm run typecheck` then `npm run build` exit 0 (80.1s combined). Build compiled in 6.0s, TypeScript in 6.6s, 51 pages. Last test script: `strategy preview ok`.
   - NEEDS-NETWORK: one live BTCUSDT request on 2026-10-15 to `https://api.binance.com/api/v3/klines` failed with `SSL: UNEXPECTED_EOF_WHILE_READING`. The function still returned a row and did not abort. Not retried. Forex was not called. The probe row was removed so the admin page does not show that network error as a price difference.
+- **F6:**
+  - API startup enqueues today’s top-up when the last success is missing or older than 26 hours, using the existing `topup:<day>` dedup key. The reason is that the nightly job is at 00:35 UTC and the machine may be off (D-044). The suite skips this because `PYTEST_CURRENT_TEST` is set.
+  - `python scripts/dev.py` (and `scripts/dev.ps1`) starts the API, one market worker, and the frontend. A busy port or a held worker lock is logged and that process is not started again. This command was not left running; an API is already on port 8001.
+  - `GET /api/health` already reports `market_worker_age_s`. `GET /api/market-data/worker` adds a stale flag. Admins also get the age and `python scripts/dev.py`. After 180 seconds, preparing data and a waiting run say it is taking longer than expected. A stale heartbeat says the worker appears offline.
+  - Gate AUTOMATED: `pytest -q --tb=line` — 594 passed, 24 deselected, 17 warnings, 46.31s, exit 0. `tests/test_catchup.py` covers a missing success, a recent success, a 30-hour-old success with the day key, and the trader/admin worker payload. Frontend `npm test` then `npm run typecheck` then `npm run build` exit 0 (76.1s combined). Build compiled in 5.6s, TypeScript in 6.0s, 51 pages. Last test script: `strategy preview ok`.
+  - The dev command itself was not started. Seeing the slow and offline copy in the browser is still a human check.
 
 ## Pending human verification
 
@@ -297,6 +304,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | F4 | HUMAN | Import one full month of EURUSD and XAUUSD, then stored verify | HUMAN_QA “F4 NEEDS-HUMAN” | pending: not imported; both stay disabled |
 | F4 | NET | Retry Dukascopy once from a network that is not challenged | HUMAN_QA “F4 NEEDS-NETWORK” | pending: this network still gets HTTP 202; no retry loop was run |
 | F5 | NET | One live BTCUSDT daily cross-check | HUMAN_QA “F5 NEEDS-NETWORK” | pending: one request on 2026-10-15 to api.binance.com failed with SSL EOF; not retried |
+| F6 | HUMAN | Slow and offline data notices | HUMAN_QA “F6 notice” | pending: not viewed in a browser; `scripts/dev.py` was not started |
 | 2D | HUMAN | One chart canvas in StrictMode, no console warnings, resize and theme switching work | HUMAN_QA "2D chart lifecycle" | pending |
 | 2F | HUMAN | Seeded trade loads; preparing, unresolved and error states render | HUMAN_QA "2F page shell" | pending |
 | 2G | HUMAN | Phase 2 manual steps 1 to 7 | HUMAN_QA Phase 2 steps 1–7 | pending |
@@ -362,3 +370,4 @@ _(none yet)_
 | F2 | 3ee5b9e | backtesting(f2): cache hits copy trades and breakdowns |
 | F3 | 0408ba2 | backtesting(f3): fill-relative stops, filters and golden scenarios |
 | F4 | e34c21b | backtesting(f4): block cool-down and candle file import |
+| F5 | c14cbf1 | backtesting(f5): daily cross-check against Binance and ECB |

@@ -37,6 +37,34 @@ def enqueue_topup(db: Session, *, day: str | None = None) -> queue.Enqueued:
     return enqueued
 
 
+def catch_up_topup(db: Session, *, now: datetime | None = None) -> bool:
+    """Enqueue today's top-up when the last success is older than the catch-up window.
+
+    The nightly job runs at 00:35 UTC. A machine that is off then would otherwise wait until the
+    next night, so startup checks the last successful top-up and uses the same day dedup key.
+    """
+    from sqlalchemy import select
+
+    from app.models.job import Job
+
+    moment = now or datetime.now(timezone.utc)
+    last = db.scalar(
+        select(Job.finished_at)
+        .where(Job.type == TOPUP_JOB, Job.status == "succeeded")
+        .order_by(Job.finished_at.desc())
+        .limit(1)
+    )
+    stale = last is None or (moment - last).total_seconds() > settings.topup_catchup_hours * 3600
+    if not stale:
+        return False
+    enqueued = enqueue_topup(db, day=moment.date().isoformat())
+    logger.info(
+        "top-up catch-up",
+        extra={"last_success": None if last is None else last.isoformat(), "created": enqueued.created, "reason": "off at 00:35 UTC"},
+    )
+    return enqueued.created
+
+
 def enqueue_crosscheck(db: Session, *, day: str | None = None) -> queue.Enqueued:
     day = day or _day()
     enqueued = queue.enqueue(

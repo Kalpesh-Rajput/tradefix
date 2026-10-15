@@ -3,14 +3,21 @@ import uuid
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.core.db import get_db
 from app.models.user import User
+from app.services.health import worker_status
 from app.schemas.market_data import CandlesOut, DataJobOut, InstrumentOut
 from app.schemas.replay import SymbolInterestIn, SymbolInterestOut
 from app.services.backtest.entitlements import require_feature
 from app.services.marketdata import read_api
 
 router = APIRouter(prefix="/api/market-data", tags=["market-data"])
+
+
+@router.get("/worker")
+def market_worker_status(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return worker_status(db, admin=user.role == "admin")
 
 
 @router.get("/instruments", response_model=list[InstrumentOut])

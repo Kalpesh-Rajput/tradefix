@@ -1,5 +1,6 @@
 "use client";
 
+import { DataWaitNotice } from "@/components/replay/DataWaitNotice";
 import type { BacktestRun } from "@/lib/hooks/useBacktestRuns";
 
 const STAGE: Record<string, string> = {
@@ -37,6 +38,7 @@ export function RunStatusPanel({ run, onCancel, cancelling }: { run: BacktestRun
       <div className="h-2 overflow-hidden rounded-full bg-surface">
         <div className="h-full bg-primary" style={{ width: `${Math.max(0, Math.min(100, run.progress))}%` }} />
       </div>
+      {waiting ? <DataWaitNotice since={run.waiting_since} /> : null}
       {run.status === "failed" && run.error_message ? <p className="text-sm text-negative">{run.error_message}</p> : null}
       {run.status === "cancelled" ? <p className="text-sm text-muted">This run was cancelled.</p> : null}
     </section>

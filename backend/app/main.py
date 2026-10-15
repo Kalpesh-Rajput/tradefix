@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -65,6 +66,17 @@ async def lifespan(app: FastAPI):
     from app.services.marketdata.registry import mirror_on_startup
 
     mirror_on_startup()
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        try:
+            from app.core.db import SessionLocal
+            from app.services.marketdata.topup import catch_up_topup
+
+            with SessionLocal() as db:
+                catch_up_topup(db)
+        except Exception:
+            import logging
+
+            logging.getLogger("tradefix.marketdata").exception("top-up catch-up failed")
     if settings.enable_scheduler:
         start_scheduler()
     if settings.broker_worker_in_process:

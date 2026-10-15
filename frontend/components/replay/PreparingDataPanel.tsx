@@ -1,5 +1,6 @@
 "use client";
 
+import { DataWaitNotice } from "@/components/replay/DataWaitNotice";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useDataJob } from "@/lib/hooks/useReplay";
 
@@ -16,6 +17,7 @@ export function PreparingDataPanel({ jobId }: { jobId: string | null }) {
         <div className="h-full rounded-full bg-[var(--accent-hex)] transition-[width] duration-300" style={{ width: `${Math.min(100, Math.max(progress, 8))}%` }} />
       </div>
       <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">This page checks again automatically.</p>
+      <DataWaitNotice />
       <Skeleton className="mt-8 h-40 max-w-3xl" />
     </div>
   );

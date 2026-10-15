@@ -39,6 +39,7 @@ def _out(db: Session, row) -> dict:
         "warmup_bars": row.warmup_bars,
         "coverage_version": row.coverage_version,
         "served_from_cache": bool(row.served_from_cache),
+        "waiting_since": row.waiting_since.isoformat() if row.waiting_since else None,
         "data_job": _data_job(data_job),
     }
 

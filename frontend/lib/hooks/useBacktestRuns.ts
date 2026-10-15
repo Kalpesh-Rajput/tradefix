@@ -41,6 +41,7 @@ export type BacktestRun = {
   error_message: string | null;
   bars_processed: number;
   served_from_cache: boolean;
+  waiting_since?: string | null;
   job_id: string | null;
   progress: number;
   progress_message: string | null;

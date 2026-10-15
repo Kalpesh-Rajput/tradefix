@@ -73,5 +73,6 @@ The steps below are from 05 section 5, Phase 4.
   - Replay at 10x and 50x is smooth.
   - Memory does not grow over 10 minutes (DevTools Performance and Memory panels).
   - A timeframe switch feels under 1 second.
-- [ ] **5D fresh checkout:** on a clean clone, follow README_BACKTESTING exactly: migrate, `make-admin`, seed, then start the API, worker and frontend. Use each feature once.
+- [ ] **5D fresh checkout:** on a clean clone, follow README_BACKTESTING exactly: migrate, `make-admin`, seed, then start the API, worker and frontend. Use each feature once. `python scripts/dev.py` is the one command that starts all three; it was not left running in F6.
+- [ ] **F6 notice:** leave a replay or a strategy run on “Preparing market data” or “Waiting for market data” for more than three minutes. The copy changes to “taking longer than expected”. Stop the market worker and reload: the message says the background worker appears offline. An admin also sees the start command. A normal user does not.
 - [ ] **Final sign-off:** every criterion in 05 section 8 holds, and FINAL_REPORT lists no unexplained gaps.

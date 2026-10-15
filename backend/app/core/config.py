@@ -167,6 +167,8 @@ class Settings(BaseSettings):
     indicator_period_max: int = 500
     topup_utc_hour: int = 0
     topup_utc_minute: int = 35
+    topup_catchup_hours: float = 26
+    data_wait_notice_s: int = 180
     crosscheck_tolerance_pct: float = 0.1
     crosscheck_forex_tolerance_pct: float = 0.5
     crosscheck_retention_days: int = 90

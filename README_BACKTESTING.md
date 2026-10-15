@@ -16,6 +16,8 @@ From `backend/`, with the project virtualenv:
 6. Start the market worker in a second terminal: `python -m app.workers.market_worker`. For local development, `MARKET_WORKER_IN_PROCESS=true` runs it inside the API instead. Only one worker holds the advisory lock.
 7. From `frontend/`: `npm install` and `npm run dev`.
 
+Or start all three with one command from the repo root: `python scripts/dev.py` (Windows: `scripts\dev.ps1`). It skips the API or the frontend when that port is already open, and it does not start a second market worker when one already holds the lock. The API also enqueues a top-up on startup when the last successful top-up is older than 26 hours, because the nightly job is at 00:35 UTC and the machine may have been off.
+
 ## Seeding candles
 
 ```text

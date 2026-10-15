@@ -55,3 +55,19 @@ def health_report() -> dict:
     }
     status = "ok" if db_ok and storage and worker == "ok" else "degraded"
     return {"status": status, "app": settings.app_name, "checks": checks}
+
+
+def worker_status(db, *, admin: bool) -> dict:
+    """Heartbeat age for the preparing-data notice. Admins also get the start command."""
+    last_seen = db.scalar(select(WorkerHeartbeat.last_seen).where(WorkerHeartbeat.name == "market_worker"))
+    age = None if last_seen is None else (datetime.now(timezone.utc) - last_seen).total_seconds()
+    stale = last_seen is None or age > settings.worker_heartbeat_stale_seconds
+    body = {
+        "stale": stale,
+        "slow_after_s": settings.data_wait_notice_s,
+        "message": "The background worker appears offline." if stale else None,
+    }
+    if admin:
+        body["heartbeat_age_s"] = None if age is None else round(age, 1)
+        body["command"] = "python scripts/dev.py"
+    return body
