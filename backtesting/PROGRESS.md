@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** F7 auto-passed on a paced run. The live BTCUSDT cross-check did not complete. Forex and gold stay disabled. NET and HUMAN rows below are still open.
+- **Current sub-phase:** F8 specs are written and were not run. The live BTCUSDT cross-check did not complete. Forex and gold stay disabled. NET and HUMAN rows below are still open.
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -54,6 +54,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | F5 | Binance and ECB daily cross-check | auto-passed (1 NET pending) |
 | F6 | Startup catch-up, dev launcher, worker notice | auto-passed |
 | F7 | Candle load test against the local API | auto-passed (replay mix not run) |
+| F8 | Playwright specs and test-only provider gate | specs written, browser run not executed |
 
 ## Current sub-phase log
 
@@ -297,6 +298,11 @@ Fill in during work: the files changed, the commands run with their result summa
   - Gzip: `GET /api/accounts/{id}/export` with `Accept-Encoding: gzip` returned `content-encoding: gzip`, status 200, and the same decoded bytes as the identity request (108 bytes). Streaming export was not broken.
   - The market worker heartbeat was missing during the run (`/api/health` reported `market_worker: missing`). Reads were served from stored data. Restarting that API enqueued a real `topup:2026-10-15` job, which made the drill test’s hardcoded day collide with it. The drill now uses 2031-06-01. The queued top-up was left in place.
   - Gate AUTOMATED: `pytest -q --tb=line` — 594 passed, 24 deselected, 17 warnings, 27.90s, exit 0. Frontend tests were not re-run; this task did not change frontend source.
+- **F8:**
+  - `ENVIRONMENT=test` makes `get_provider` return `FakeProvider`, which refuses to fetch. `python -m scripts.e2e_seed` writes BTCUSDT candles, a trader, an admin, and one journal trade into whatever `DATABASE_URL` and `MARKET_DATA_DIR` point at.
+  - Playwright lists 7 tests in `frontend/e2e` (`npx playwright test --list`, exit 0). They were not run. `CREATE DATABASE tradefix_e2e` failed with `permission denied to create database`, so there is no isolated stack. Do not point the seed at the development database.
+  - Pending command, after a database you can create and `npx playwright install chromium`: set `DATABASE_URL` to that database, `MARKET_DATA_DIR` to an empty folder, `ENVIRONMENT=test`, run `alembic upgrade head`, `python -m scripts.e2e_seed`, start the API and `npm run dev` on ports that are free, then `npm run test:e2e` with `E2E_BASE_URL` set to the frontend.
+  - Gate AUTOMATED: `pytest -q --tb=line` — 595 passed, 24 deselected, 17 warnings, 37.96s, exit 0. `npm run typecheck` exit 0. The browser suite was not run, so it is not passed.
 
 ## Pending human verification
 
@@ -313,6 +319,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | F4 | NET | Retry Dukascopy once from a network that is not challenged | HUMAN_QA “F4 NEEDS-NETWORK” | pending: this network still gets HTTP 202; no retry loop was run |
 | F5 | NET | One live BTCUSDT daily cross-check | HUMAN_QA “F5 NEEDS-NETWORK” | pending: one request on 2026-10-15 to api.binance.com failed with SSL EOF; not retried |
 | F6 | HUMAN | Slow and offline data notices | HUMAN_QA “F6 notice” | pending: not viewed in a browser; `scripts/dev.py` was not started |
+| F8 | HUMAN | Playwright browser suite | HUMAN_QA coverage table | pending: 7 tests listed, not executed; cannot create `tradefix_e2e` |
 | 2D | HUMAN | One chart canvas in StrictMode, no console warnings, resize and theme switching work | HUMAN_QA "2D chart lifecycle" | pending |
 | 2F | HUMAN | Seeded trade loads; preparing, unresolved and error states render | HUMAN_QA "2F page shell" | pending |
 | 2G | HUMAN | Phase 2 manual steps 1 to 7 | HUMAN_QA Phase 2 steps 1–7 | pending |
@@ -380,3 +387,4 @@ _(none yet)_
 | F4 | e34c21b | backtesting(f4): block cool-down and candle file import |
 | F5 | c14cbf1 | backtesting(f5): daily cross-check against Binance and ECB |
 | F6 | 7d33e70 | backtesting(f6): startup catch-up, dev launcher, and wait notices |
+| F7 | 98cac4c | backtesting(f7): paced 20-user load test against the local API |

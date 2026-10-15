@@ -10,6 +10,20 @@ Every [HUMAN] check from `05_TESTING_AND_ACCEPTANCE.md` and `PLAN.md`, grouped b
 4. Seed the market data with `python -m app.cli.marketdata seed-demo`.
 5. Create journal trades that fall inside the seeded month: forex (EURUSD), metal (XAUUSD), and crypto (BTCUSDT).
 
+**How each item is covered**
+
+Playwright specs live in `frontend/e2e`. They were not executed: this database user cannot `CREATE DATABASE tradefix_e2e`, so there is no isolated stack. Until `npm run test:e2e` passes, every box below stays a human check.
+
+| Item | Spec, or human only |
+|---|---|
+| Replay canvas, play, step, timeframe | `e2e/replay.spec.ts` (not run) |
+| Replay note, theme, resize, unknown symbol, preparing state | human |
+| Manual session order, reload, simulated trades off the dashboard | `e2e/session.spec.ts` (not run). Finish, summary, and replay-from-summary stay human |
+| Strategy template save | `e2e/strategy.spec.ts` (not run). Run, cancel, and KPI recomputation stay human |
+| Admin coverage and normal-user refusal | `e2e/admin.spec.ts` (not run). Retry stays human |
+| Worker offline copy | `e2e/worker.spec.ts` stubs the worker endpoint (not run) |
+| Visual polish, animation, and a real Dukascopy or ECB network | human |
+
 ---
 
 ## Phase 1: Data foundation

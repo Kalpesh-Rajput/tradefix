@@ -17,7 +17,8 @@
     "test:market-sessions": "npx --yes tsx scripts/test-market-sessions.ts",
     "test:fx": "npx --yes tsx scripts/test-fx.ts",
     "test:tradefix-score": "npx --yes tsx scripts/test-tradefix-score.ts",
-    "test:forex-parity": "npx --yes tsx scripts/check-forex-parity.ts"
+    "test:forex-parity": "npx --yes tsx scripts/check-forex-parity.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",
@@ -39,6 +40,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",

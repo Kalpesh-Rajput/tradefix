@@ -8,6 +8,12 @@ __all__ = ["Chunk", "Provider", "ProviderError", "Throttle", "get_provider"]
 
 
 def get_provider(source: str, *, throttle: Throttle | None = None) -> Provider:
+    from app.core.config import settings
+
+    if settings.environment == "test":
+        from app.services.marketdata.providers.fake import FakeProvider
+
+        return FakeProvider(source)
     if source == "binance":
         from app.services.marketdata.providers.binance import BinanceProvider
 

@@ -59,6 +59,8 @@ Next.js 16 has no `next lint` here. Typecheck is the lint gate (D-032).
 
 The 20-user load test is `python -m scripts.load_test_candles` from `backend/` against a running API. It signs in test users and mixes candle reads with session autosave for 30 seconds. Replay is included when that user already has a journal trade.
 
+Browser tests are `npm run test:e2e` from `frontend/` after `npx playwright install chromium`. They need a separate database and data directory. Set `ENVIRONMENT=test` so the API does not call Binance or Dukascopy, run migrations, then `python -m scripts.e2e_seed`. The seed users are `e2e-trader@example.com` and `e2e-admin@example.com`. This machine’s database user cannot create that database, so the suite has not been run here.
+
 ## LICENSING_NOTES
 
 - **TradingView Lightweight Charts** is used for candle charts. The chart footer and `/notices` attribute it. The library is TradingView Lightweight Charts™.
