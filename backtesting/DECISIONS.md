@@ -262,6 +262,9 @@ Before each chunk the adapter makes one probe request to the public data-file UR
 ## D-042: An instrument stays disabled until stored data passes (accepted, F4)
 Importing a file does not enable the instrument. `verify-instrument --stored` prints pass or fail for validation, price range, at least one full month (20,000 one-minute bars for forex and metals, 40,000 for crypto, and no open gaps), and a reviewed gap report. `--write` runs only when every check passed. `--gaps-reviewed` is how an operator accepts a month that still has gaps, after reading the report. EURUSD and XAUUSD stay disabled until a person completes that on a real file.
 
+## D-043: Cross-check uses an independent reference and the ECB fixing minute (accepted, F5)
+Enabled crypto is compared with Binance daily klines (high, low, and close), not with a daily bar built from the same 1-minute download. The ECB publishes euro reference rates around 16:00 CET from a concertation that normally happens around 14:10 CET. Forex is compared with the stored 1-minute candle at 14:10 Europe/Berlin, not with the UTC daily close, and uses `CROSSCHECK_FOREX_TOLERANCE_PCT` (default 0.5) which is wider than the crypto tolerance (default 0.1). A cross such as USDJPY is the ECB yen-per-euro rate divided by the dollar-per-euro rate. Metals and any instrument without a reference are `no_reference`. One instrument’s failure is stored and the loop continues. Rows older than `CROSSCHECK_RETENTION_DAYS` (default 90) are deleted. The job checks the day before the enqueue date, because the nightly job runs at 00:35 UTC.
+
 ## D-028: Deployment readiness documentation (accepted, rev 2)
 README_BACKTESTING (5D) includes a Deployment readiness section covering:
 

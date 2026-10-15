@@ -46,12 +46,25 @@ export type TimeOffsetRow = {
   sample_size: number;
 };
 
+export type CrosscheckRow = {
+  instrument: string;
+  day: string;
+  stored_close: number | null;
+  reference_close: number | null;
+  difference: number | null;
+  tolerance: number;
+  status: string;
+};
+
 const KEY = ["admin-data-status"] as const;
 
 export function useDataStatus(enabled = true) {
   return useQuery({
     queryKey: KEY,
-    queryFn: () => api.get<{ instruments: InstrumentStatus[]; failures: FailedJob[] }>("/api/admin/data-status"),
+    queryFn: () =>
+      api.get<{ instruments: InstrumentStatus[]; failures: FailedJob[]; crosschecks: CrosscheckRow[]; crosscheck_differences: CrosscheckRow[] }>(
+        "/api/admin/data-status",
+      ),
     enabled,
   });
 }

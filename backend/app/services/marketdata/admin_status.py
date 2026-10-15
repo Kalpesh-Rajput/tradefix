@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.job import Job
-from app.models.market_data import CandleCoverage, CandleMonthStat, Instrument, SymbolAlias
+from app.models.market_data import CandleCoverage, CandleMonthStat, CrosscheckResult, Instrument, SymbolAlias
 from app.models.user import User
 from app.services.jobs import queue
 from app.services.marketdata.ingest_jobs import enqueue_ingest
@@ -50,8 +50,12 @@ def data_status(db: Session) -> dict:
             }
         )
     failures = list(db.scalars(select(Job).where(Job.status == "failed").order_by(Job.created_at.desc()).limit(50)).all())
+    latest = list(db.scalars(select(CrosscheckResult).order_by(CrosscheckResult.day.desc(), CrosscheckResult.instrument).limit(40)).all())
+    differences = [row for row in latest if row.status == "difference"]
     return {
         "instruments": rows,
+        "crosschecks": [_crosscheck(row) for row in latest],
+        "crosscheck_differences": [_crosscheck(row) for row in differences],
         "failures": [
             {
                 "id": str(job.id),
@@ -62,6 +66,18 @@ def data_status(db: Session) -> dict:
             }
             for job in failures
         ],
+    }
+
+
+def _crosscheck(row: CrosscheckResult) -> dict:
+    return {
+        "instrument": row.instrument,
+        "day": row.day,
+        "stored_close": row.stored_close,
+        "reference_close": row.reference_close,
+        "difference": row.difference,
+        "tolerance": row.tolerance,
+        "status": row.status,
     }
 
 

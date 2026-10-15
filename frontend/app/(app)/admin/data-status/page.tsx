@@ -3,6 +3,7 @@
 import { AliasesPanel } from "@/components/admin/data-status/AliasesPanel";
 import { BackfillForm } from "@/components/admin/data-status/BackfillForm";
 import { CoverageTable } from "@/components/admin/data-status/CoverageTable";
+import { CrosscheckPanel } from "@/components/admin/data-status/CrosscheckPanel";
 import { FailuresList } from "@/components/admin/data-status/FailuresList";
 import { ImportPanel } from "@/components/admin/data-status/ImportPanel";
 import { TimeOffsetsReport } from "@/components/admin/data-status/TimeOffsetsReport";
@@ -40,6 +41,7 @@ export default function DataStatusPage() {
       {!forbidden && status.data ? (
         <>
           <CoverageTable rows={status.data.instruments} />
+          <CrosscheckPanel rows={status.data.crosschecks ?? []} differences={status.data.crosscheck_differences ?? []} />
           <FailuresList rows={status.data.failures} />
           <BackfillForm instruments={status.data.instruments} />
           <ImportPanel instruments={status.data.instruments} />

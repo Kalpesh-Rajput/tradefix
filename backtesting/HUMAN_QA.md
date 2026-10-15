@@ -22,6 +22,7 @@ These items are [NET] and the agent attempts them first. They appear here so you
 - [ ] Cross-check: stored BTCUSDT daily closes match Binance daily klines, and EURUSD daily closes match a public reference, within the documented tolerance.
 - [ ] **F4 NEEDS-HUMAN:** import one full month of EURUSD and one full month of XAUUSD from a file you have the right to use. From `backend/`: `python -m app.cli.marketdata import-candles EURUSD <file-or-folder> --preset dukascopy --label "Dukascopy manual export" --price-side bid` (use `--preset histdata` for a HistData file). Then `python -m app.cli.marketdata verify-instrument EURUSD --stored` and read each PASS/FAIL line. Repeat for XAUUSD. Add `--gaps-reviewed --write` only after you have read the gap report and every other check passed. Until then both instruments stay disabled.
 - [ ] **F4 NEEDS-NETWORK:** from a network that is not challenged, run `python -m app.cli.marketdata verify-instrument EURUSD --write` once. If the log shows HTTP 202 or a challenge page, stop. Do not retry in a loop. The cool-down is 6 hours.
+- [ ] **F5 NEEDS-NETWORK:** one live BTCUSDT cross-check. From `backend/`, run the cross-check job for yesterday (or `python -c` calling `run_crosscheck` for BTCUSDT and yesterday). A single request to `api.binance.com` on 2026-10-15 failed with an SSL EOF before any kline was read, so this is still open. Do not treat a forex row as checked until F4 import has stored a month.
 
 ## Phase 2: Trade Replay
 

@@ -116,3 +116,23 @@ class CandleImport(Base):
     filenames: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     summary: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CrosscheckResult(Base):
+    """One daily comparison of stored candles with an independent reference."""
+
+    __tablename__ = "crosscheck_results"
+    __table_args__ = (UniqueConstraint("instrument", "day", name="uq_crosscheck_day"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    instrument: Mapped[str] = mapped_column(String(32), ForeignKey("instruments.symbol", ondelete="CASCADE"), nullable=False)
+    day: Mapped[date] = mapped_column(Date, nullable=False)
+    stored_close: Mapped[float | None] = mapped_column(Float)
+    stored_high: Mapped[float | None] = mapped_column(Float)
+    stored_low: Mapped[float | None] = mapped_column(Float)
+    reference_close: Mapped[float | None] = mapped_column(Float)
+    difference: Mapped[float | None] = mapped_column(Float)
+    tolerance: Mapped[float] = mapped_column(Float, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    detail: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

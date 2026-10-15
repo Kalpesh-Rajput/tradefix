@@ -50,6 +50,7 @@ MIGRATIONS = {
         ["provider_cooldowns", "candle_imports"],
         [("candle_month_stats", "price_side"), ("candle_month_stats", "sources")],
     ),
+    "0040": ("0039", ["crosscheck_results"], []),
 }
 
 

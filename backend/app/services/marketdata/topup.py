@@ -79,6 +79,12 @@ def _run_topup(ctx: queue.JobContext) -> dict:
 
 @queue.register_handler(CROSSCHECK_JOB)
 def _run_crosscheck(ctx: queue.JobContext) -> dict:
-    notes = cross_check(ctx.db)
-    logger.info("cross-check job finished", extra={"job_id": str(ctx.job.id), "day": ctx.payload.get("day")})
+    from datetime import date, timedelta
+
+    from app.services.marketdata.crosscheck import run_crosscheck
+
+    raw = ctx.payload.get("day")
+    anchor = date.fromisoformat(raw) if raw else datetime.now(timezone.utc).date()
+    notes = run_crosscheck(ctx.db, day=anchor - timedelta(days=1))
+    logger.info("cross-check job finished", extra={"job_id": str(ctx.job.id), "day": ctx.payload.get("day"), "summary": notes})
     return {"summary": notes}

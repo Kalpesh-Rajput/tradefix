@@ -120,6 +120,8 @@ Run on every batch before it is written:
 
 A **daily cross-check job** (optional but included in Phase 5) compares each instrument's most recent complete daily close from stored data with an independent reference (Binance daily klines for crypto, a free daily reference source for forex) and logs differences above a tolerance.
 
+**Amended by D-043 (F5):** crypto high, low, and close are compared with Binance daily klines. Forex uses the ECB reference at 14:10 Europe/Berlin, with a wider tolerance. Metals are `no_reference`. Results are stored in `crosscheck_results` and shown on the admin data-status page. One instrument failing does not fail the job.
+
 ## 9. The candle service
 
 This is the only module the rest of the app uses to get candles.

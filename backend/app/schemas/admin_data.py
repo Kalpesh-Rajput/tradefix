@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -24,9 +24,21 @@ class FailedJobOut(BaseModel):
     created_at: datetime | None
 
 
+class CrosscheckOut(BaseModel):
+    instrument: str
+    day: date
+    stored_close: float | None
+    reference_close: float | None
+    difference: float | None
+    tolerance: float
+    status: str
+
+
 class DataStatusOut(BaseModel):
     instruments: list[InstrumentStatusOut]
     failures: list[FailedJobOut]
+    crosschecks: list[CrosscheckOut] = []
+    crosscheck_differences: list[CrosscheckOut] = []
 
 
 class BackfillIn(BaseModel):

@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** F4 auto-passed. Forex and gold stay disabled until a human imports a month. F1 still has one NEEDS-NETWORK check open. NET and HUMAN rows below are still open.
+- **Current sub-phase:** F5 auto-passed. The live BTCUSDT cross-check did not complete. Forex and gold stay disabled. NET and HUMAN rows below are still open.
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -51,6 +51,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | F2 | Cached runs copy trades and breakdowns | auto-passed |
 | F3 | Engine stops, targets, filters and golden scenarios | auto-passed |
 | F4 | Dukascopy block cool-down and candle file import | auto-passed (HUMAN and NET pending) |
+| F5 | Binance and ECB daily cross-check | auto-passed (1 NET pending) |
 
 ## Current sub-phase log
 
@@ -276,6 +277,11 @@ Fill in during work: the files changed, the commands run with their result summa
   - Migration 0039 adds `provider_cooldowns`, `candle_imports`, and `candle_month_stats.price_side` / `sources`. The admin page has an import form.
   - Gate AUTOMATED: `pytest -q --tb=line` — 586 passed, 24 deselected, 17 warnings, 51.45s, exit 0. Targeted import, provider and migration tests were 41 passed, 2 deselected, 11.30s. Frontend `npm test` then `npm run typecheck` then `npm run build` exit 0 (95.6s combined). Build compiled in 6.8s, TypeScript in 6.3s, 51 pages. Last test script: `strategy preview ok`.
   - NEEDS-HUMAN: one full month of EURUSD and of XAUUSD, then `verify-instrument --stored`. NEEDS-NETWORK: one retry of Dukascopy from another network. Not run. See HUMAN_QA.
+- **F5:**
+  - `run_crosscheck` compares enabled crypto high, low, and close with Binance daily klines. Forex uses the ECB rate at 14:10 Europe/Berlin (published concertation time), with `CROSSCHECK_FOREX_TOLERANCE_PCT` default 0.5. Metals are `no_reference` (D-043). One instrument’s exception is stored as `difference` with the error in `detail`, and the loop continues. Rows older than 90 days are deleted. The nightly job checks the day before its enqueue date.
+  - Migration 0040 adds `crosscheck_results`. The admin data-status page lists the latest rows and highlights differences.
+  - Gate AUTOMATED: `pytest -q --tb=line` — 591 passed, 24 deselected, 17 warnings, 44.26s, exit 0. Targeted cross-check, drills, env and migration tests were 24 passed in 7.11s. Frontend `npm test` then `npm run typecheck` then `npm run build` exit 0 (80.1s combined). Build compiled in 6.0s, TypeScript in 6.6s, 51 pages. Last test script: `strategy preview ok`.
+  - NEEDS-NETWORK: one live BTCUSDT request on 2026-10-15 to `https://api.binance.com/api/v3/klines` failed with `SSL: UNEXPECTED_EOF_WHILE_READING`. The function still returned a row and did not abort. Not retried. Forex was not called. The probe row was removed so the admin page does not show that network error as a price difference.
 
 ## Pending human verification
 
@@ -290,6 +296,7 @@ Every [NET] check that could not run and every [HUMAN] check goes here. HUMAN it
 | 1H | NET | Seeded aggregation for EURUSD and XAUUSD | `.\venv\Scripts\python.exe -m pytest -m seeded` (no skips) | pending (same block) |
 | F4 | HUMAN | Import one full month of EURUSD and XAUUSD, then stored verify | HUMAN_QA “F4 NEEDS-HUMAN” | pending: not imported; both stay disabled |
 | F4 | NET | Retry Dukascopy once from a network that is not challenged | HUMAN_QA “F4 NEEDS-NETWORK” | pending: this network still gets HTTP 202; no retry loop was run |
+| F5 | NET | One live BTCUSDT daily cross-check | HUMAN_QA “F5 NEEDS-NETWORK” | pending: one request on 2026-10-15 to api.binance.com failed with SSL EOF; not retried |
 | 2D | HUMAN | One chart canvas in StrictMode, no console warnings, resize and theme switching work | HUMAN_QA "2D chart lifecycle" | pending |
 | 2F | HUMAN | Seeded trade loads; preparing, unresolved and error states render | HUMAN_QA "2F page shell" | pending |
 | 2G | HUMAN | Phase 2 manual steps 1 to 7 | HUMAN_QA Phase 2 steps 1–7 | pending |
@@ -354,3 +361,4 @@ _(none yet)_
 | F1 | 2b15ff6 | backtesting(f1): real candle loading for strategy runs |
 | F2 | 3ee5b9e | backtesting(f2): cache hits copy trades and breakdowns |
 | F3 | 0408ba2 | backtesting(f3): fill-relative stops, filters and golden scenarios |
+| F4 | e34c21b | backtesting(f4): block cool-down and candle file import |

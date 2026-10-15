@@ -168,6 +168,8 @@ class Settings(BaseSettings):
     topup_utc_hour: int = 0
     topup_utc_minute: int = 35
     crosscheck_tolerance_pct: float = 0.1
+    crosscheck_forex_tolerance_pct: float = 0.5
+    crosscheck_retention_days: int = 90
 
     @property
     def cors_origins(self) -> list[str]:
