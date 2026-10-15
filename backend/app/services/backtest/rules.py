@@ -312,6 +312,41 @@ def _target_raw(position: _Position, bar: Bar) -> float | None:
     return None
 
 
+def value_closed_trade(
+    instrument: InstrumentSpec,
+    costs: Costs,
+    *,
+    side: Side,
+    size: float,
+    entry_price: float,
+    exit_price: float,
+    sl: float | None,
+    account_currency: str = "USD",
+    conversion_rate: float | None = None,
+) -> tuple[float, float | None, float, float, str, list[str]]:
+    """Pips, R, pnl, commission, pnl currency and warnings from a closed trade's prices."""
+    warnings: list[str] = []
+    commission = costs.commission_per_lot * size * 2
+    quote_pnl = direction(side) * (exit_price - entry_price) * units_for(size, instrument)
+    if _quote_is_account(instrument.quote_currency, account_currency):
+        pnl, currency = quote_pnl - commission, account_currency
+    elif conversion_rate is not None:
+        pnl, currency = quote_pnl * conversion_rate - commission, account_currency
+    else:
+        pnl, currency = quote_pnl, instrument.quote_currency
+        warnings.append("conversion_unavailable")
+    if sl is None:
+        warnings.append("no_stop")
+    return (
+        _pips(side, entry_price, exit_price, instrument.pip_size),
+        _r_multiple(side, entry_price, exit_price, sl),
+        pnl,
+        commission,
+        currency,
+        warnings,
+    )
+
+
 def _quote_is_account(quote: str, account: str) -> bool:
     usd = {"USD", "USDT"}
     return quote == account or (quote in usd and account in usd)

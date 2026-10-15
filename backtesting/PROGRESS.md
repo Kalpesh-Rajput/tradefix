@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 3C (session backend).
+- **Current sub-phase:** 3D (backtesting hub and session setup).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -33,7 +33,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 2G | Replay overlays, notes, entry points (Gate 2) | auto-passed (HUMAN pending) |
 | 3A | Shared rules and scenario format (Python) | auto-passed |
 | 3B | Browser order engine (TS) | auto-passed |
-| 3C | Session backend and descriptor endpoint | todo |
+| 3C | Session backend and descriptor endpoint | auto-passed |
 | 3D | Backtesting hub and session setup | todo |
 | 3E | Session simulator | todo |
 | 3F | Session finish, summary, replay by reference (Gate 3) | todo |
@@ -184,6 +184,11 @@ Fill in during work: the files changed, the commands run with their result summa
 - **3B:**
   - `rules.ts`, `orderEngine.ts` and `stats.ts` follow the same bar order as the Python engine. `scenarioSchema.ts` is the zod mirror and rejects unknown fields.
   - `npm run test:order-engine` passes scenarios 01 to 10 and 40 seeded sequences whose raw fills stay inside the candle. A malformed scenario is rejected.
+- **3C:**
+  - Migration 0036 adds `backtest_sessions`, `session_orders`, `session_trades` and `usage_counters`. Client UUIDs make order and trade batches idempotent. The server recomputes pnl, pips and R with `value_closed_trade`, stores those values, and flags a client pnl that differs by more than 0.005.
+  - Times must sit inside the session window and prices inside the 1-minute candle (injected lookup in tests). `finish` is idempotent. Delete cascades. A session over the cap returns `quota_exceeded`.
+  - `GET /api/backtest/sessions/{id}/trades/{trade_id}/replay` builds the shared replay payload for the owner and returns 404 for another user or a missing trade. Save-to-journal writes `Trade(is_simulated=True, time_basis=utc_aware)`.
+  - Gate: `tests/test_sessions_api.py` 7 passed. The 0036 round trip passed. `tests/test_backtest_rules.py` 12 passed.
 
 ## Pending human verification
 
@@ -234,3 +239,4 @@ _(none yet)_
 | 2F | 379c867 | backtesting(2f): replay page shell |
 | 2G | 33d9947 | backtesting(2g): replay overlays, notes, shortcuts, entry points |
 | 3A | 951d456 | backtesting(3a): shared rules and scenario fixtures |
+| 3B | bd34902 | backtesting(3b): typescript order engine and scenario runner |
