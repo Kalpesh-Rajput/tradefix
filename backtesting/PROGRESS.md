@@ -5,7 +5,7 @@ Read this first in every new context window, then `DECISIONS.md`, `AUDIT.md`, an
 ## Current state
 
 - **Plan revision:** 2 (rev 1 had 15 sub-phases; rev 2 has 32; see D-014).
-- **Current sub-phase:** 5A (admin and operations API).
+- **Current sub-phase:** 5B (admin data-status UI).
 - **Blocked on:** nothing.
 - **Last commit:** see the commit log below.
 
@@ -43,7 +43,7 @@ Status values: `todo`, `in-progress`, `auto-passed` (all [AUTO] checks run and p
 | 4D | Run jobs, backtest API, descriptor endpoint | auto-passed |
 | 4E | Strategy builder UI | auto-passed (HUMAN pending) |
 | 4F | Results UI and runs list (Gate 4) | auto-passed (HUMAN pending) |
-| 5A | Admin and operations API | todo |
+| 5A | Admin and operations API | auto-passed |
 | 5B | Admin data-status UI | todo |
 | 5C | Scheduler lock, top-up, drills, observability | todo |
 | 5D | Documentation and final report | todo |
@@ -227,6 +227,10 @@ Fill in during work: the files changed, the commands run with their result summa
   - The run page polls while queued or running, shows the job stage, and can cancel. A finished run shows KPI cards, equity and drawdown, weekday, hour, monthly and R breakdowns, and a virtualized trades table.
   - Replay for a run trade loads only `GET /api/backtests/{runId}/trades/{seq}/replay`. The runs tab lists, opens and deletes runs.
   - Gate 4: `npm run typecheck`, `npm test`, and `npm run build` pass. `tests/test_backtest_runs.py` still passes. HUMAN Phase 4 steps 1–5 are pending.
+- **5A:**
+  - `GET /api/admin/data-status` lists each instrument’s covered range, row count, gap minutes and the latest failed jobs. Admins can enqueue a backfill, retry a failed job, and add or remove aliases.
+  - Unresolved symbols and the time-offset report stay on the same admin router. A non-admin receives 403.
+  - Gate: `tests/test_admin_data.py` — 2 passed.
 
 ## Pending human verification
 
@@ -291,3 +295,4 @@ _(none yet)_
 | 4C | 5f965fd | backtesting(4c): strategy engine, metrics and downsample |
 | 4D | 9167119 | backtesting(4d): run jobs and backtest API |
 | 4E | 23901ea | backtesting(4e): strategy builder, templates and live validation |
+| 4F | 655da67 | backtesting(4f): run results, runs list and replay by reference |
