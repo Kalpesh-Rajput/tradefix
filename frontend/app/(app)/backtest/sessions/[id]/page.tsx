@@ -212,7 +212,7 @@ export default function SessionPage() {
         {failure ? <p className="text-xs text-negative">{failure}</p> : null}
       </div>
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="dash-card h-[520px] p-2">
+        <div className="dash-card h-[min(72vh,760px)] min-h-[480px] p-2">
           <CandleChart ref={chartRef} timeZone={timezone} priceDecimals={instrument.priceDecimals} ariaLabel={`${session.data.symbol} session chart`} className="h-full" />
         </div>
         <OrderTicket

@@ -135,7 +135,9 @@ export function StrategyForm({ strategyId, initial }: { strategyId?: string; ini
     >
       <div>
         <h1 className="text-lg font-semibold text-foreground">{strategyId ? "Edit strategy" : "New strategy"}</h1>
-        <p className="mt-1 text-sm text-muted">Templates fill the form. They are not saved until you save or run.</p>
+        <p className="mt-1 text-sm text-muted">
+          Templates fill the form and are not saved until you save or run. The default window is EUR/USD, 2 March–1 April 2026, which is inside the loaded candles.
+        </p>
       </div>
       <TemplatePicker onPick={(next) => {
         setDefinition(next);

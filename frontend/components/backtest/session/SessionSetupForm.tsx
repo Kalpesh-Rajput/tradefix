@@ -12,6 +12,22 @@ import { useCreateSession, useMarketInstruments } from "@/lib/hooks/useBacktestS
 
 const FIELD = "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-primary";
 
+const WEEK = {
+  start: Date.UTC(2026, 2, 16, 8, 0),
+  end: Date.UTC(2026, 2, 20, 20, 0),
+};
+
+const PRESETS = [
+  { symbol: "EURUSD", label: "EUR/USD · 16–20 Mar 2026", spread: "0.8" },
+  { symbol: "EURCHF", label: "EUR/CHF · 16–20 Mar 2026", spread: "1.2" },
+] as const;
+
+function localInput(ms: number) {
+  const date = new Date(ms);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 export function SessionSetupForm() {
   const router = useRouter();
   const toast = useToast();
@@ -19,13 +35,13 @@ export function SessionSetupForm() {
   const create = useCreateSession();
   const { activeAccount } = useAccountPrefs();
   const [query, setQuery] = useState("");
-  const [symbol, setSymbol] = useState("");
-  const [timeframe, setTimeframe] = useState("1m");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
+  const [symbol, setSymbol] = useState<string>(PRESETS[0].symbol);
+  const [timeframe, setTimeframe] = useState("15m");
+  const [start, setStart] = useState(localInput(WEEK.start));
+  const [end, setEnd] = useState(localInput(WEEK.end));
   const [balance, setBalance] = useState("10000");
   const [currency, setCurrency] = useState("USD");
-  const [spread, setSpread] = useState("0");
+  const [spread, setSpread] = useState(PRESETS[0].spread);
   const [commission, setCommission] = useState("0");
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -96,8 +112,31 @@ export function SessionSetupForm() {
         <h1 className="text-lg font-semibold text-foreground">New manual session</h1>
         <p className="mt-1 text-sm text-muted">
           Market orders fill at the next candle’s open. When one candle can hit both the stop and the target, the stop is filled first.
-          The start time has to fall inside candles already stored for the symbol.
+          The start has to sit inside stored candles. EUR/USD and EUR/CHF cover January through early October 2026.
         </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {PRESETS.map((preset) => {
+          const selected = symbol === preset.symbol && start === localInput(WEEK.start);
+          return (
+            <button
+              key={preset.symbol}
+              type="button"
+              className={`rounded-full border px-3 py-1.5 text-xs ${selected ? "border-primary bg-card text-foreground" : "border-border text-muted hover:text-foreground"}`}
+              onClick={() => {
+                setSymbol(preset.symbol);
+                setQuery(preset.symbol);
+                setSpread(preset.spread);
+                setTimeframe("15m");
+                setStart(localInput(WEEK.start));
+                setEnd(localInput(WEEK.end));
+              }}
+            >
+              {preset.label}
+            </button>
+          );
+        })}
       </div>
 
       {instruments.isLoading ? <Skeleton className="h-24" /> : null}
@@ -127,6 +166,9 @@ export function SessionSetupForm() {
             required
           >
             <option value="">Select a symbol</option>
+            {symbol && !grouped.some(([, items]) => items.some((item) => item.symbol === symbol)) ? (
+              <option value={symbol}>{symbol}</option>
+            ) : null}
             {grouped.map(([asset, items]) => (
               <optgroup key={asset} label={asset}>
                 {items.map((item) => (

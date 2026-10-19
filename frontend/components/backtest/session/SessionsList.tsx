@@ -107,7 +107,11 @@ export function SessionsList() {
                   {money(row.net_profit, row.currency)}
                 </td>
                 <td className="px-4 py-3 text-muted">{row.trade_count}</td>
-                <td className="px-4 py-3 capitalize text-muted">{row.status}</td>
+                <td className="px-4 py-3">
+                  <span className={`rounded-full px-2 py-0.5 text-xs capitalize ${row.status === "active" ? "bg-primary/10 text-primary" : "bg-surface text-muted"}`}>
+                    {row.status}
+                  </span>
+                </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex flex-wrap justify-end gap-2">
                     <Link href={`/backtest/sessions/${row.id}`} className="text-primary hover:underline">

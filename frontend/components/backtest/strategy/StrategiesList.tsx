@@ -38,7 +38,7 @@ export function StrategiesList() {
       {rows.length === 0 ? (
         <div className="dash-card px-6 py-14 text-center">
           <p className="text-sm font-medium text-foreground">Build a strategy from a template or from scratch.</p>
-          <p className="mt-1 text-sm text-muted">Saved strategies stay here and can be run again.</p>
+          <p className="mt-1 text-sm text-muted">Templates open on EUR/USD, 2 March–1 April 2026. Saved strategies stay here and can be run again.</p>
         </div>
       ) : (
         <ul className="dash-card divide-y divide-border">

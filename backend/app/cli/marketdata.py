@@ -87,9 +87,11 @@ def import_candles_cmd(args: argparse.Namespace) -> int:
 
     from app.core.db import SessionLocal
     from app.services.marketdata.importer import CandleImportError, import_candles
+    from app.services.marketdata.registry import mirror_to_db
 
     spec = _symbols([args.symbol])[0]
     with SessionLocal() as db:
+        mirror_to_db(db)
         try:
             summary = import_candles(
                 db, spec, Path(args.path),

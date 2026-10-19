@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CandleChart, type CandleChartHandle } from "@/components/chart";
 import { readChartTheme } from "@/components/chart/chartTheme";
@@ -27,6 +27,21 @@ import {
 import { ReplayStates } from "./ReplayStates";
 import { ReplaySidePanel, noteError } from "./ReplaySidePanel";
 import { useReplayShortcuts, type ReplayShortcutActions } from "./useReplayShortcuts";
+
+function sameShade(
+  current: { left: number; width: number } | null,
+  next: { left: number; width: number } | null,
+): boolean {
+  if (current === next) return true;
+  if (!current || !next) return false;
+  return current.left === next.left && current.width === next.width;
+}
+
+function sameBadge(current: FloatingResult | null, next: FloatingResult | null): boolean {
+  if (current === next) return true;
+  if (!current || !next) return false;
+  return current.pips === next.pips && current.r === next.r && current.settled === next.settled;
+}
 
 const INITIAL: ReplayState = {
   status: "idle",
@@ -56,6 +71,10 @@ export function ReplayStage({ payload, timeZone }: { payload: ReplayPayload; tim
   const [dismissed, setDismissed] = useState(false);
   const [badge, setBadge] = useState<FloatingResult | null>(null);
   const [shade, setShade] = useState<{ left: number; width: number } | null>(null);
+  const badgeRef = useRef(badge);
+  const shadeRef = useRef(shade);
+  badgeRef.current = badge;
+  shadeRef.current = shade;
   const [noteErrorText, setNoteErrorText] = useState<string | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -85,16 +104,34 @@ export function ReplayStage({ payload, timeZone }: { payload: ReplayPayload; tim
     for (const line of lines) chart.setPriceLine(line);
     for (const id of PRICE_LINE_IDS) if (!ids.has(id)) chart.removePriceLine(id);
     const span = exitSpan(trade, cursor);
-    if (!span) setShade(null);
-    else {
+    let nextShade: { left: number; width: number } | null = null;
+    if (span) {
       const from = chart.timeToX(span.from);
       const to = chart.timeToX(span.to);
-      setShade(from == null || to == null ? null : { left: Math.min(from, to), width: Math.abs(to - from) });
+      if (from != null && to != null) nextShade = { left: Math.min(from, to), width: Math.abs(to - from) };
     }
-    setBadge(floatingResult(trade, cursor, candlesRef.current, payload.instrument.pip_size));
+    if (!sameShade(shadeRef.current, nextShade)) {
+      shadeRef.current = nextShade;
+      setShade(nextShade);
+    }
+    const nextBadge = floatingResult(trade, cursor, candlesRef.current, payload.instrument.pip_size);
+    if (!sameBadge(badgeRef.current, nextBadge)) {
+      badgeRef.current = nextBadge;
+      setBadge(nextBadge);
+    }
   };
 
   const show = (candles: readonly Candle[]) => candles.map((candle) => shiftCandle(candle, deltaRef.current));
+
+  const bindChart = useCallback((handle: CandleChartHandle | null) => {
+    rangeRef.current?.();
+    rangeRef.current = null;
+    chartRef.current = handle;
+    if (!handle) return;
+    if (candlesRef.current.length) handle.setHistory(candlesRef.current.map((candle) => shiftCandle(candle, deltaRef.current)));
+    rangeRef.current = handle.onRange(() => paintRef.current());
+    paintRef.current();
+  }, []);
 
   useEffect(() => {
     if (!source) return;
@@ -207,15 +244,7 @@ export function ReplayStage({ payload, timeZone }: { payload: ReplayPayload; tim
               </div>
             ) : null}
             <CandleChart
-              ref={(handle) => {
-                rangeRef.current?.();
-                rangeRef.current = null;
-                chartRef.current = handle;
-                if (!handle) return;
-                if (candlesRef.current.length) handle.setHistory(show(candlesRef.current));
-                rangeRef.current = handle.onRange(() => paintRef.current());
-                paintRef.current();
-              }}
+              ref={bindChart}
               timeZone={timeZone}
               priceDecimals={payload.instrument.price_decimals}
               showVolume={payload.instrument.asset_class === "crypto"}

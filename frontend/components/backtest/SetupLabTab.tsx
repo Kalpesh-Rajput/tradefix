@@ -22,7 +22,7 @@ export function SetupLabTab() {
       <div>
         <h2 className="text-lg font-semibold text-foreground">Setup Lab</h2>
         <p className="mt-1 text-sm text-muted">
-          Expectancy by setup tag from your live journal. Full candle replay is on the roadmap.
+          Expectancy by setup tag from your live journal. Candle practice is in Manual Sessions.
         </p>
       </div>
 

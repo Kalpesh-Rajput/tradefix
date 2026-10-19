@@ -189,15 +189,15 @@ function condition(left: Operand, operator: Condition["operator"], right: Operan
   return { left, operator, right };
 }
 
-const RANGE_START = Date.UTC(2024, 0, 1);
-const RANGE_END = Date.UTC(2024, 3, 1);
+const RANGE_START = Date.UTC(2026, 2, 2);
+const RANGE_END = Date.UTC(2026, 3, 1);
 
 function shell(name: string, description: string, entry: RuleGroup): StrategyDefinition {
   return {
     schema_version: 1,
     name,
     description,
-    market: { symbol: "BTCUSDT", timeframe: "1h", start_ms: RANGE_START, end_ms: RANGE_END },
+    market: { symbol: "EURUSD", timeframe: "15m", start_ms: RANGE_START, end_ms: RANGE_END },
     direction: "long",
     long_entry: entry,
     short_entry: null,
@@ -206,7 +206,7 @@ function shell(name: string, description: string, entry: RuleGroup): StrategyDef
     exit_on_opposite: false,
     filters: { hours: [], weekdays: [], min_bars_between: 0 },
     risk: { initial_balance: 10000, fixed_size: 0.01 },
-    costs: { spread_pips: 0, commission_per_lot: 0, slippage_pips: 0 },
+    costs: { spread_pips: 0.8, commission_per_lot: 0, slippage_pips: 0 },
   };
 }
 

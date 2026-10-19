@@ -15,7 +15,7 @@ from app.services.marketdata.providers.base import ProviderBlocked
 from app.services.marketdata.providers.cooldown import raise_if_blocked, record
 from app.services.marketdata.registry import get_instrument, mirror_to_db
 from app.services.marketdata.store import LocalParquetStore
-from app.services.marketdata.verify import month_is_full, verify_stored
+from app.services.marketdata.verify import month_counts_for_enable, month_is_full, verify_stored
 from tests.bt_support import db, make_user, requires_db
 
 pytestmark = requires_db
@@ -55,6 +55,9 @@ def test_dukascopy_sample_imports_once_and_refuses_a_different_side(db, tmp_path
     assert by_name["validation"].passed and by_name["price_range"].passed
     assert not by_name["full_month"].passed
     assert month_is_full(20_000, 0, "forex") and not month_is_full(20_000, 1, "forex")
+    assert month_counts_for_enable(28_000, 400, "forex", gaps_reviewed=True)
+    assert not month_counts_for_enable(28_000, 400, "forex", gaps_reviewed=False)
+    assert not month_counts_for_enable(9_000, 100, "forex", gaps_reviewed=True)
 
 
 def test_generic_bad_row_is_counted(db, tmp_path: Path):

@@ -275,6 +275,10 @@ def import_candles(
         logger.warning("price side override symbol=%s from=%s to=%s months=%s", spec.symbol, clashes, price_side, months)
     if dry_run:
         return summary
+    if store is None:
+        from app.services.marketdata.store import get_store
+
+        store = get_store()
     written = record_fetch(db, store, spec, start, end, clean)
     summary.rows_kept = written.rows_kept
     provenance = {

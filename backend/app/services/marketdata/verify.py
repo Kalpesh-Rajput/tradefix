@@ -116,6 +116,17 @@ def month_is_full(row_count: int, gap_minutes: int, asset_class: str) -> bool:
     return gap_minutes == 0 and row_count >= minimum
 
 
+def month_counts_for_enable(row_count: int, gap_minutes: int, asset_class: str, *, gaps_reviewed: bool) -> bool:
+    """A zero-gap month can enable an instrument. After the gap report is reviewed, a month
+    with enough bars still counts: HistData omits quiet minutes, so a real month is rarely empty of gaps."""
+    if month_is_full(row_count, gap_minutes, asset_class):
+        return True
+    if not gaps_reviewed:
+        return False
+    minimum = 40_000 if asset_class == "crypto" else 20_000
+    return row_count >= minimum
+
+
 def verify_stored(
     db,
     spec: InstrumentSpec,
@@ -157,7 +168,11 @@ def verify_stored(
             select(CandleMonthStat).where(CandleMonthStat.instrument == spec.symbol, CandleMonthStat.source == spec.source)
         )
     )
-    full = [row for row in stats if month_is_full(row.row_count, row.gap_minutes, spec.asset_class)]
+    full = [
+        row
+        for row in stats
+        if month_counts_for_enable(row.row_count, row.gap_minutes, spec.asset_class, gaps_reviewed=gaps_reviewed)
+    ]
     checks.append(
         StoredCheck("full_month", bool(full), f"{len(full)} full month(s) of {len(stats)} stored")
     )
