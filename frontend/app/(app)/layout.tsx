@@ -115,6 +115,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function isSessionDesk(pathname: string | null): boolean {
+  return /^\/backtest\/sessions\/(?!new$)[^/]+$/.test(pathname ?? "");
+}
+
 function AppShell({
   children,
   showJournalNav,
@@ -155,6 +159,8 @@ function AppShell({
   isTradeFizAgent: boolean;
 }) {
   const { collapsed, setCollapsed } = useSidebar();
+  const pathname = usePathname();
+  const sessionDesk = isSessionDesk(pathname);
 
   useEffect(() => {
     if (!showJournalNav) setCollapsed(true);
@@ -179,10 +185,10 @@ function AppShell({
               {!isTradesLog && !isTradeFizAgent && <AppHeader />}
               <main
                 className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
-                  isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions || isChat || isTradeFiz
+                  sessionDesk || isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions || isChat || isTradeFiz
                     ? ""
                     : "overflow-y-auto p-6 sm:p-8"
-                } ${isSettings || isHome ? "overflow-y-auto" : ""}`}
+                } ${isSettings || isHome ? "overflow-y-auto" : ""} ${sessionDesk ? "overflow-hidden bg-background p-3 sm:p-4" : ""}`}
               >
                 <PageTransition className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</PageTransition>
               </main>

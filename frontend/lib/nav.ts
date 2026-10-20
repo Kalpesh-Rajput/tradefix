@@ -66,6 +66,7 @@ export function parentPath(pathname: string | null | undefined): string | null {
   if (clean === "/chat" || clean.startsWith("/chat/")) return "/tradefiz-ai";
   if (clean.startsWith("/tradefiz-ai/chat")) return "/tradefiz-ai";
   if (clean === "/tradefiz-ai" || clean.startsWith("/tradefiz-ai/")) return "/today";
+  if (clean.startsWith("/backtest/")) return "/backtest";
   if (parts.length === 1) return APP_HOME;
   return `/${parts.slice(0, -1).join("/")}`;
 }

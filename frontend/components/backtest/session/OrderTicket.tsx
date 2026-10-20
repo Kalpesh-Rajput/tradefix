@@ -5,7 +5,8 @@ import { useState } from "react";
 import { levelPrice, sizeForRisk, type LevelMode } from "@/lib/backtest/sessionBook";
 import type { Instrument, OrderKind, Side } from "@/lib/backtest/rules";
 
-const FIELD = "h-9 w-full rounded-lg border border-border bg-surface px-2 text-sm text-foreground";
+const FIELD =
+  "mt-1 h-9 w-full rounded-lg border border-border bg-surface px-2.5 text-sm tabular-nums text-foreground outline-none transition-colors placeholder:text-muted/70 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30";
 
 export function OrderTicket({
   instrument,
@@ -36,6 +37,8 @@ export function OrderTicket({
 
   const reference = kind === "market" ? mark : Number(price);
   const stopLevel = stop.trim() ? levelPrice({ side, role: "sl", mode, value: Number(stop), reference: reference || 0, pipSize: instrument.pipSize, stopDistance: null }) : null;
+  const unit = instrument.assetClass === "crypto" ? "units" : "lots";
+  const priceText = mark != null ? mark.toFixed(instrument.priceDecimals) : "—";
 
   function applyRisk() {
     const distance = stopLevel != null && reference ? Math.abs(reference - stopLevel) : 0;
@@ -68,69 +71,128 @@ export function OrderTicket({
   }
 
   return (
-    <section className="dash-card space-y-3 p-3" aria-label="Order ticket">
-      <div className="flex gap-2">
-        <button type="button" className={`h-9 flex-1 rounded-lg text-sm ${side === "buy" ? "bg-[var(--color-chart-profit)] text-white" : "border border-border text-muted"}`} onClick={() => setSide("buy")}>
-          Buy {mark != null ? mark.toFixed(instrument.priceDecimals) : ""}
-        </button>
-        <button type="button" className={`h-9 flex-1 rounded-lg text-sm ${side === "sell" ? "bg-[var(--color-chart-loss)] text-white" : "border border-border text-muted"}`} onClick={() => setSide("sell")}>
-          Sell
-        </button>
+    <section className="dash-card flex h-full min-h-[28rem] flex-col lg:min-h-0" aria-label="Order ticket">
+      <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-3">
+        <h2 className="text-sm font-semibold text-foreground">Order</h2>
+        <span className="font-mono text-xs text-muted">{instrument.symbol}</span>
+      </header>
+
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+        <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-[hsl(var(--surface-2))] p-1" role="group" aria-label="Side">
+          <SideButton active={side === "buy"} tone="buy" label="Buy" price={priceText} onClick={() => setSide("buy")} />
+          <SideButton active={side === "sell"} tone="sell" label="Sell" price={priceText} onClick={() => setSide("sell")} />
+        </div>
+
+        <label className="block text-xs font-medium text-muted">
+          Order type
+          <select className={FIELD} value={kind} onChange={(event) => setKind(event.target.value as OrderKind)}>
+            <option value="market">Market</option>
+            <option value="limit">Limit</option>
+            <option value="stop">Stop</option>
+          </select>
+        </label>
+        {kind !== "market" ? (
+          <label className="block text-xs font-medium text-muted">
+            Price
+            <input className={FIELD} value={price} onChange={(event) => setPrice(event.target.value)} inputMode="decimal" autoComplete="off" placeholder={priceText} />
+          </label>
+        ) : null}
+
+        <div className="space-y-2.5 rounded-xl bg-[hsl(var(--surface-2))] p-2.5">
+          <label className="block text-xs font-medium text-muted">
+            Size ({unit})
+            <input className={FIELD} value={size} onChange={(event) => setSize(event.target.value)} inputMode="decimal" autoComplete="off" />
+          </label>
+          <label className="block text-xs font-medium text-muted">
+            Risk %
+            <input className={FIELD} value={risk} onChange={(event) => setRisk(event.target.value)} inputMode="decimal" autoComplete="off" />
+          </label>
+          <button type="button" className="dash-btn-secondary h-9 w-full text-xs" onClick={applyRisk}>
+            Size from risk
+          </button>
+          <p className="text-[11px] leading-4 text-muted">Set a stop, then size the position from this percent of balance.</p>
+        </div>
+
+        <div className="space-y-2.5 rounded-xl bg-[hsl(var(--surface-2))] p-2.5">
+          <label className="block text-xs font-medium text-muted">
+            Stop and target as
+            <select className={FIELD} value={mode} onChange={(event) => setMode(event.target.value as LevelMode)}>
+              <option value="price">Price</option>
+              <option value="pips">Pips</option>
+              <option value="r">R — stop in pips, target in R</option>
+            </select>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block text-xs font-medium text-muted">
+              Stop
+              <input className={FIELD} value={stop} onChange={(event) => setStop(event.target.value)} inputMode="decimal" autoComplete="off" placeholder="Optional" />
+            </label>
+            <label className="block text-xs font-medium text-muted">
+              Target
+              <input className={FIELD} value={target} onChange={(event) => setTarget(event.target.value)} inputMode="decimal" autoComplete="off" placeholder="Optional" />
+            </label>
+          </div>
+        </div>
+
+        {mark == null ? <p className="text-xs text-muted">Waiting for the first candle before a market order can price.</p> : null}
+        {error ? (
+          <p role="alert" className="rounded-lg bg-negative-soft px-2.5 py-2 text-xs leading-4 text-negative">
+            {error}
+          </p>
+        ) : null}
       </div>
-      <label className="block text-xs text-muted">
-        Order
-        <select className={`${FIELD} mt-1`} value={kind} onChange={(event) => setKind(event.target.value as OrderKind)}>
-          <option value="market">Market</option>
-          <option value="limit">Limit</option>
-          <option value="stop">Stop</option>
-        </select>
-      </label>
-      {kind !== "market" ? (
-        <label className="block text-xs text-muted">
-          Price
-          <input className={`${FIELD} mt-1`} value={price} onChange={(event) => setPrice(event.target.value)} inputMode="decimal" />
-        </label>
-      ) : null}
-      <label className="block text-xs text-muted">
-        Size ({instrument.assetClass === "crypto" ? "units" : "lots"})
-        <input className={`${FIELD} mt-1`} value={size} onChange={(event) => setSize(event.target.value)} inputMode="decimal" />
-      </label>
-      <div className="flex gap-2">
-        <label className="block flex-1 text-xs text-muted">
-          Risk %
-          <input className={`${FIELD} mt-1`} value={risk} onChange={(event) => setRisk(event.target.value)} inputMode="decimal" />
-        </label>
-        <button type="button" className="dash-btn-secondary mt-4 h-9 px-2 text-xs" onClick={applyRisk}>
-          Size from risk
+
+      <footer className="shrink-0 space-y-2 border-t border-border p-3">
+        <button
+          type="button"
+          className={`text-on-accent inline-flex h-10 w-full items-center justify-center rounded-lg text-sm font-semibold transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:brightness-100 ${
+            side === "buy"
+              ? "bg-[color-mix(in_srgb,var(--color-success-text)_70%,#052e1c)] focus-visible:ring-[var(--color-success-text)]"
+              : "bg-[color-mix(in_srgb,var(--color-danger-text)_82%,#3f0a0a)] focus-visible:ring-[var(--color-danger-text)]"
+          }`}
+          disabled={disabled}
+          onClick={submit}
+        >
+          Place {side}
         </button>
-      </div>
-      <label className="block text-xs text-muted">
-        Stop and target as
-        <select className={`${FIELD} mt-1`} value={mode} onChange={(event) => setMode(event.target.value as LevelMode)}>
-          <option value="price">Price</option>
-          <option value="pips">Pips</option>
-          <option value="r">R (stop in pips, target in R)</option>
-        </select>
-      </label>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block text-xs text-muted">
-          Stop
-          <input className={`${FIELD} mt-1`} value={stop} onChange={(event) => setStop(event.target.value)} inputMode="decimal" />
-        </label>
-        <label className="block text-xs text-muted">
-          Target
-          <input className={`${FIELD} mt-1`} value={target} onChange={(event) => setTarget(event.target.value)} inputMode="decimal" />
-        </label>
-      </div>
-      {error ? <p className="text-xs text-negative">{error}</p> : null}
-      <button type="button" className="dash-btn-primary text-on-accent h-9 w-full" disabled={disabled} onClick={submit}>
-        Place {side}
-      </button>
-      {hasPosition ? (
-        <button type="button" className="dash-btn-secondary h-9 w-full" disabled={disabled} onClick={onClose}>
-          Close position
-        </button>
-      ) : null}
+        {hasPosition ? (
+          <button type="button" className="dash-btn-secondary h-9 w-full text-xs" disabled={disabled} onClick={onClose}>
+            Close position
+          </button>
+        ) : null}
+      </footer>
     </section>
+  );
+}
+
+function SideButton({
+  active,
+  tone,
+  label,
+  price,
+  onClick,
+}: {
+  active: boolean;
+  tone: "buy" | "sell";
+  label: string;
+  price: string;
+  onClick: () => void;
+}) {
+  const activeClass =
+    tone === "buy"
+      ? "text-on-accent bg-[color-mix(in_srgb,var(--color-success-text)_70%,#052e1c)]"
+      : "text-on-accent bg-[color-mix(in_srgb,var(--color-danger-text)_82%,#3f0a0a)]";
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`flex h-12 flex-col items-center justify-center rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+        active ? activeClass : "text-muted hover:bg-surface hover:text-foreground"
+      }`}
+    >
+      <span>{label}</span>
+      <span className={`font-mono text-[11px] font-medium tabular-nums ${active ? "text-on-accent" : "text-muted"}`}>{price}</span>
+    </button>
   );
 }

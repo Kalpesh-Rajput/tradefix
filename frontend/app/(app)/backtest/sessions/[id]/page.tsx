@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { AutosaveIndicator } from "@/components/backtest/session/AutosaveIndicator";
 import { OrderTicket } from "@/components/backtest/session/OrderTicket";
 import { PositionsTabs } from "@/components/backtest/session/PositionsTabs";
 import { SessionSummary } from "@/components/backtest/session/SessionSummary";
@@ -138,13 +136,24 @@ export default function SessionPage() {
     }
   }, [tick, replay]);
 
-  if (session.isLoading || instruments.isLoading) return <Skeleton className="h-[640px]" />;
+  if (session.isLoading || instruments.isLoading) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-3" aria-busy="true" aria-label="Loading session">
+        <Skeleton className="h-16 shrink-0 rounded-xl" />
+        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_22.5rem]">
+          <Skeleton className="min-h-[420px] rounded-xl" />
+          <Skeleton className="min-h-[420px] rounded-xl" />
+        </div>
+      </div>
+    );
+  }
   if (session.isError || !session.data || !instrument) {
     return (
-      <div className="dash-card px-4 py-6 text-sm">
-        Couldn’t open this session.{" "}
-        <button type="button" className="text-primary" onClick={() => session.refetch()}>
-          Retry
+      <div className="dash-card mx-auto w-full max-w-md px-6 py-10 text-center">
+        <h1 className="text-base font-semibold text-foreground">Couldn’t open this session</h1>
+        <p className="mt-1 text-sm text-muted">It may have been removed, or the connection failed.</p>
+        <button type="button" className="dash-btn-primary mx-auto mt-4" onClick={() => session.refetch()}>
+          Try again
         </button>
       </div>
     );
@@ -180,10 +189,7 @@ export default function SessionPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[1400px] flex-col gap-3">
-      <Link href="/backtest" className="text-sm text-muted hover:text-foreground">
-        Back to backtesting
-      </Link>
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
       <SessionTopBar
         symbol={session.data.symbol}
         timeframe={session.data.timeframe}
@@ -206,35 +212,54 @@ export default function SessionPage() {
         onStepBack={() => void engineRef.current?.stepBack("minute")}
         onSpeed={(speed: ReplaySpeed) => engineRef.current?.setSpeed(speed)}
         onTimeframe={(timeframe: Timeframe) => void engineRef.current?.setTimeframe(timeframe)}
+        savePhase={persistence.phase}
+        saveDetail={persistence.detail}
       />
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <AutosaveIndicator phase={persistence.phase} detail={persistence.detail} />
-        {failure ? <p className="text-xs text-negative">{failure}</p> : null}
-      </div>
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="dash-card h-[min(72vh,760px)] min-h-[480px] p-2">
-          <CandleChart ref={chartRef} timeZone={timezone} priceDecimals={instrument.priceDecimals} ariaLabel={`${session.data.symbol} session chart`} className="h-full" />
+      {failure ? (
+        <p role="alert" className="rounded-lg border border-[var(--color-danger-light)] bg-negative-soft px-3 py-2 text-sm text-negative">
+          {failure}
+        </p>
+      ) : null}
+      <div className="grid min-h-[40rem] flex-1 grid-cols-1 items-stretch gap-3 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:grid-rows-[minmax(0,1fr)_auto]">
+        <div className="dash-card flex h-full min-h-[420px] flex-col overflow-hidden p-1 lg:min-h-0">
+          <CandleChart ref={chartRef} timeZone={timezone} priceDecimals={instrument.priceDecimals} ariaLabel={`${session.data.symbol} session chart`} className="min-h-0 flex-1" />
         </div>
-        <OrderTicket
-          instrument={instrument}
-          balance={balance}
-          mark={mark}
-          hasPosition={!!view?.position}
-          disabled={finished || !book}
-          onPlace={(input) => {
-            const current = bookRef.current;
-            if (!current) return "Session is still loading.";
-            const message = current.place({ ...input, nowMs: engineRef.current?.getState().cursorMs ?? session.data.cursor_ms, mark });
-            if (message) return message;
-            setTick((value) => value + 1);
-            void persistence.save();
-            return null;
-          }}
-          onClose={() => {
-            bookRef.current?.requestClose(engineRef.current?.getState().cursorMs ?? session.data.cursor_ms);
-            setTick((value) => value + 1);
-          }}
-        />
+        <div className="h-full min-h-0 lg:row-span-2">
+          <OrderTicket
+            instrument={instrument}
+            balance={balance}
+            mark={mark}
+            hasPosition={!!view?.position}
+            disabled={finished || !book}
+            onPlace={(input) => {
+              const current = bookRef.current;
+              if (!current) return "Session is still loading.";
+              const message = current.place({ ...input, nowMs: engineRef.current?.getState().cursorMs ?? session.data.cursor_ms, mark });
+              if (message) return message;
+              setTick((value) => value + 1);
+              void persistence.save();
+              return null;
+            }}
+            onClose={() => {
+              bookRef.current?.requestClose(engineRef.current?.getState().cursorMs ?? session.data.cursor_ms);
+              setTick((value) => value + 1);
+            }}
+          />
+        </div>
+        {view && book ? (
+          <PositionsTabs
+            view={view}
+            orders={book.orders}
+            currency={session.data.currency}
+            sessionId={id}
+            onCancel={(orderId) => {
+              book.requestCancel(orderId);
+              setTick((value) => value + 1);
+            }}
+          />
+        ) : (
+          <Skeleton className="h-40 rounded-xl" />
+        )}
       </div>
       {finished && view ? (
         <SessionSummary
@@ -245,20 +270,6 @@ export default function SessionPage() {
           warnings={session.data.warnings}
         />
       ) : null}
-      {view && book ? (
-        <PositionsTabs
-          view={view}
-          orders={book.orders}
-          currency={session.data.currency}
-          sessionId={id}
-          onCancel={(orderId) => {
-            book.requestCancel(orderId);
-            setTick((value) => value + 1);
-          }}
-        />
-      ) : (
-        <Skeleton className="h-24" />
-      )}
     </div>
   );
 }
