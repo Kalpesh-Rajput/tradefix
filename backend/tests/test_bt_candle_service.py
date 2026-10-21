@@ -165,7 +165,7 @@ def test_provider_failure_leaves_coverage_unchanged(env):
 
 def test_many_concurrent_callers_create_one_job(tmp_path):
     store = LocalParquetStore(tmp_path)
-    start = int(datetime(2003, 6, 2, 8, tzinfo=timezone.utc).timestamp() * 1000)
+    start = int(datetime(1995, 6, 2, 8, tzinfo=timezone.utc).timestamp() * 1000)
     key = dedup_key("EURUSD", start, start + 6 * H)
     results: list[str] = []
     errors: list[BaseException] = []

@@ -19,7 +19,7 @@ export default function NoticesPage() {
       <section className="dash-card space-y-2 p-5 text-sm text-foreground">
         <h2 className="font-medium">Market data</h2>
         <p>
-          Crypto candles come from Binance public endpoints. Forex and metal history, when enabled, comes from Dukascopy and is limited to personal use unless you hold a separate licence. Disable it with <span className="font-mono">DUKASCOPY_ENABLED=false</span>.
+          Crypto candles come from Binance public endpoints. Forex, metal, index and oil history comes from HistData.com 1-minute bid files that the operator imports, and is limited to personal use unless you hold a separate licence. Times are converted from HistData’s fixed UTC-5 clock to UTC. Newer minutes can come from Dukascopy when it is enabled; disable it with <span className="font-mono">DUKASCOPY_ENABLED=false</span>.
         </p>
       </section>
     </div>

@@ -23,7 +23,7 @@ class Tolerance(BaseModel):
 class InstrumentIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     symbol: str
-    asset_class: Literal["forex", "metal", "index", "crypto"]
+    asset_class: Literal["forex", "metal", "index", "commodity", "crypto"]
     pip_size: float = Field(gt=0)
     contract_size: float = Field(gt=0)
     quote_currency: str = Field(min_length=3, max_length=8)

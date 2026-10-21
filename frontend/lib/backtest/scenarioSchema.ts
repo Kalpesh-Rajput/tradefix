@@ -13,7 +13,7 @@ const tolerance = z
 const instrument = z
   .object({
     symbol: z.string(),
-    asset_class: z.enum(["forex", "metal", "index", "crypto"]),
+    asset_class: z.enum(["forex", "metal", "index", "commodity", "crypto"]),
     pip_size: z.number().positive(),
     contract_size: z.number().positive(),
     quote_currency: z.string(),

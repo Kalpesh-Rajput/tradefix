@@ -28,6 +28,8 @@ import {
   type ChartPriceLine,
 } from "./chartModel";
 import { withAlpha } from "./chartTheme";
+import { createLightweightSurface } from "./drawings/lwSurface";
+import type { DrawingSurface } from "./drawings/surface";
 import { formatCrosshairTime, formatTickMark } from "./chartTime";
 
 const toTime = (ms: number) => Math.floor(ms / 1000) as UTCTimestamp;
@@ -94,6 +96,7 @@ export const createLightweightBackend: ChartBackendFactory = (container, initial
   const candles: ISeriesApi<"Candlestick"> = chart.addSeries(CandlestickSeries, {});
   const markers = createSeriesMarkers(candles, []);
   let volume: ISeriesApi<"Histogram"> | null = null;
+  let surface: DrawingSurface | null = null;
 
   const applySeriesStyle = () => {
     const minMove = 10 ** -display.priceDecimals;
@@ -195,6 +198,10 @@ export const createLightweightBackend: ChartBackendFactory = (container, initial
       };
       chart.subscribeCrosshairMove(listener);
       return () => chart.unsubscribeCrosshairMove(listener);
+    },
+    surface() {
+      surface ??= createLightweightSurface(container, chart, candles, () => bars, () => display.theme);
+      return surface;
     },
     remove() {
       markers.detach();

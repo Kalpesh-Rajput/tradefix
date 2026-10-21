@@ -10,6 +10,7 @@ import {
   type CandleBar,
   type ChartMarker,
   type ChartPriceLine,
+  type SurfaceClient,
 } from "./chartModel";
 import { readChartTheme, subscribeThemeChanges, type ChartTheme } from "./chartTheme";
 import { UTC_ZONE, formatCrosshairTime, safeTimeZone, timeZoneLabel } from "./chartTime";
@@ -28,6 +29,8 @@ export type CandleChartHandle = {
   theme: () => ChartTheme;
   timeToX: (timeMs: number) => number | null;
   onRange: (listener: () => void) => () => void;
+  /** Attach the drawing layer. Survives chart remounts until cleared with null. */
+  setSurfaceClient: (client: SurfaceClient | null) => void;
 };
 
 export type CandleChartProps = {
@@ -81,6 +84,7 @@ export const CandleChart = forwardRef<CandleChartHandle, CandleChartProps>(funct
       theme: () => model.display.theme,
       timeToX: (timeMs) => model.timeToX(timeMs),
       onRange: (listener) => model.onRange(listener),
+      setSurfaceClient: (client) => model.setSurfaceClient(client),
     };
   }, []);
 

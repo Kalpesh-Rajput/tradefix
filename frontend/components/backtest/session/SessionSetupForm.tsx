@@ -1,32 +1,21 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { ApiError } from "@/lib/api";
+import { defaultWindow, formatDataRange, hasStoredData, toLocalInput, windowFits } from "@/lib/backtest/sessionRange";
 import { TIMEFRAMES } from "@/lib/backtest/timeframes";
 import { useCreateSession, useMarketInstruments } from "@/lib/hooks/useBacktestSessions";
 
 const FIELD = "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-primary";
 
-const WEEK = {
-  start: Date.UTC(2026, 2, 16, 8, 0),
-  end: Date.UTC(2026, 2, 20, 20, 0),
-};
-
-const PRESETS = [
-  { symbol: "EURUSD", label: "EUR/USD · 16–20 Mar 2026", spread: "0.8" },
-  { symbol: "EURCHF", label: "EUR/CHF · 16–20 Mar 2026", spread: "1.2" },
-] as const;
-
-function localInput(ms: number) {
-  const date = new Date(ms);
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
+const QUICK_PICKS = ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "US500"] as const;
+const DEFAULT_SPREAD: Record<string, string> = { forex: "0.8", metal: "2.5", index: "1.5", commodity: "3", crypto: "0" };
+const GROUP_LABEL: Record<string, string> = { forex: "Forex", metal: "Metals", index: "Indices", commodity: "Commodities", crypto: "Crypto" };
 
 export function SessionSetupForm() {
   const router = useRouter();
@@ -35,15 +24,47 @@ export function SessionSetupForm() {
   const create = useCreateSession();
   const { activeAccount } = useAccountPrefs();
   const [query, setQuery] = useState("");
-  const [symbol, setSymbol] = useState<string>(PRESETS[0].symbol);
+  const [symbol, setSymbol] = useState("");
   const [timeframe, setTimeframe] = useState("15m");
-  const [start, setStart] = useState(localInput(WEEK.start));
-  const [end, setEnd] = useState(localInput(WEEK.end));
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
   const [balance, setBalance] = useState("10000");
   const [currency, setCurrency] = useState("USD");
-  const [spread, setSpread] = useState(PRESETS[0].spread);
+  const [spread, setSpread] = useState("0.8");
   const [commission, setCommission] = useState("0");
   const [formError, setFormError] = useState<string | null>(null);
+
+  const selected = useMemo(() => instruments.data?.find((item) => item.symbol === symbol), [instruments.data, symbol]);
+  const rangeMin = hasStoredData(selected) ? toLocalInput(selected.data_from_ms) : undefined;
+  const rangeMax = hasStoredData(selected) ? toLocalInput(selected.data_to_ms) : undefined;
+  const quickPicks = useMemo(() => QUICK_PICKS.filter((pick) => instruments.data?.some((item) => item.symbol === pick)), [instruments.data]);
+
+  function chooseSymbol(next: string) {
+    const instrument = instruments.data?.find((item) => item.symbol === next);
+    setSymbol(next);
+    if (!instrument) return;
+    setSpread(DEFAULT_SPREAD[instrument.asset_class] ?? "0");
+    const startMs = start ? new Date(start).getTime() : Number.NaN;
+    const endMs = end ? new Date(end).getTime() : null;
+    if (Number.isFinite(startMs) && windowFits(instrument, startMs, endMs)) return;
+    const window = defaultWindow(instrument);
+    if (window) {
+      setStart(toLocalInput(window.start));
+      setEnd(toLocalInput(window.end));
+    }
+  }
+
+  useEffect(() => {
+    if (symbol || !instruments.data?.length) return;
+    const first = instruments.data.find((item) => item.symbol === "EURUSD") ?? instruments.data[0];
+    const window = defaultWindow(first);
+    setSymbol(first.symbol);
+    setSpread(DEFAULT_SPREAD[first.asset_class] ?? "0");
+    if (window) {
+      setStart(toLocalInput(window.start));
+      setEnd(toLocalInput(window.end));
+    }
+  }, [instruments.data, symbol]);
 
   const grouped = useMemo(() => {
     const needle = query.trim().toUpperCase();
@@ -72,6 +93,10 @@ export function SessionSetupForm() {
     const endMs = end ? new Date(end).getTime() : null;
     if (endMs != null && (!Number.isFinite(endMs) || endMs <= startMs)) {
       setFormError("The end has to be after the start.");
+      return;
+    }
+    if (!windowFits(selected, startMs, endMs)) {
+      setFormError(`${symbol} has stored candles from ${formatDataRange(selected)}. Pick dates inside that range.`);
       return;
     }
     const initial = Number(balance);
@@ -112,32 +137,31 @@ export function SessionSetupForm() {
         <h1 className="text-lg font-semibold text-foreground">New manual session</h1>
         <p className="mt-1 text-sm text-muted">
           Market orders fill at the next candle’s open. When one candle can hit both the stop and the target, the stop is filled first.
-          The start has to sit inside stored candles. EUR/USD and EUR/CHF cover January through early October 2026.
+          The start and end have to sit inside the instrument’s stored candles.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {PRESETS.map((preset) => {
-          const selected = symbol === preset.symbol && start === localInput(WEEK.start);
-          return (
-            <button
-              key={preset.symbol}
-              type="button"
-              className={`rounded-full border px-3 py-1.5 text-xs ${selected ? "border-primary bg-card text-foreground" : "border-border text-muted hover:text-foreground"}`}
-              onClick={() => {
-                setSymbol(preset.symbol);
-                setQuery(preset.symbol);
-                setSpread(preset.spread);
-                setTimeframe("15m");
-                setStart(localInput(WEEK.start));
-                setEnd(localInput(WEEK.end));
-              }}
-            >
-              {preset.label}
-            </button>
-          );
-        })}
-      </div>
+      {quickPicks.length ? (
+        <div className="flex flex-wrap gap-2">
+          {quickPicks.map((pick) => {
+            const active = symbol === pick;
+            return (
+              <button
+                key={pick}
+                type="button"
+                aria-pressed={active}
+                className={`rounded-full border px-3 py-1.5 text-xs ${active ? "border-primary bg-card text-foreground" : "border-border text-muted hover:text-foreground"}`}
+                onClick={() => {
+                  setQuery("");
+                  chooseSymbol(pick);
+                }}
+              >
+                {pick}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
       {instruments.isLoading ? <Skeleton className="h-24" /> : null}
       {instruments.isError ? (
@@ -161,7 +185,7 @@ export function SessionSetupForm() {
           />
           <select
             value={symbol}
-            onChange={(event) => setSymbol(event.target.value)}
+            onChange={(event) => chooseSymbol(event.target.value)}
             className={`${FIELD} mt-2`}
             required
           >
@@ -170,23 +194,24 @@ export function SessionSetupForm() {
               <option value={symbol}>{symbol}</option>
             ) : null}
             {grouped.map(([asset, items]) => (
-              <optgroup key={asset} label={asset}>
+              <optgroup key={asset} label={GROUP_LABEL[asset] ?? asset}>
                 {items.map((item) => (
                   <option key={item.symbol} value={item.symbol}>
-                    {item.symbol} · {item.source}
+                    {item.symbol}
                   </option>
                 ))}
               </optgroup>
             ))}
           </select>
+          {formatDataRange(selected) ? <span className="mt-1 block text-xs text-muted">Stored candles: {formatDataRange(selected)}</span> : null}
         </label>
         <label className="block text-sm">
           <span className="mb-1 block text-muted">Start</span>
-          <input type="datetime-local" value={start} onChange={(event) => setStart(event.target.value)} className={FIELD} required />
+          <input type="datetime-local" value={start} onChange={(event) => setStart(event.target.value)} min={rangeMin} max={rangeMax} className={FIELD} required />
         </label>
         <label className="block text-sm">
           <span className="mb-1 block text-muted">End (optional)</span>
-          <input type="datetime-local" value={end} onChange={(event) => setEnd(event.target.value)} className={FIELD} />
+          <input type="datetime-local" value={end} onChange={(event) => setEnd(event.target.value)} min={rangeMin} max={rangeMax} className={FIELD} />
         </label>
         <label className="block text-sm">
           <span className="mb-1 block text-muted">Initial balance</span>

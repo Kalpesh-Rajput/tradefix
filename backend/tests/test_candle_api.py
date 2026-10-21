@@ -203,7 +203,7 @@ def test_backtest_jobs_hidden_from_other_users(env):
 def test_instruments_lists_enabled_only(env, monkeypatch):
     db, store, provider, user, client = env
     assert all(i["enabled"] for i in client.get("/api/market-data/instruments").json())
-    enabled = [_enabled("BTCUSDT"), _enabled("EURUSD"), get_instrument("XAUUSD")]
+    enabled = [_enabled("BTCUSDT"), _enabled("EURUSD"), get_instrument("XAUUSD").model_copy(update={"enabled": False})]
     monkeypatch.setattr(read_api, "all_instruments", lambda: enabled)
     listed = client.get("/api/market-data/instruments").json()
     assert [i["symbol"] for i in listed] == ["BTCUSDT", "EURUSD"]

@@ -111,6 +111,61 @@ def import_candles_cmd(args: argparse.Namespace) -> int:
     return 0 if summary.rows_kept or summary.duplicate else 1
 
 
+def _histdata_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("root", help="folder holding one sub-folder of HistData zips per symbol")
+    parser.add_argument("--symbols", nargs="*", default=[], help="only these folders or registry symbols")
+    parser.add_argument("--jobs", type=int, default=1, help="symbols loaded in parallel")
+    parser.add_argument("--reset", action="store_true", help="drop each symbol's stored candles and coverage first")
+    parser.add_argument("--enable", action="store_true", help="enable each symbol whose stored data passes every check")
+    parser.add_argument("--list", action="store_true", help="show what would be loaded and stop")
+
+
+@command("load-histdata", "load HistData.com symbol folders into the candle store", _histdata_args)
+def load_histdata_cmd(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from app.services.marketdata import histdata_loader as loader
+    from app.services.marketdata.registry import get_instrument
+
+    root = Path(args.root)
+    if not root.is_dir():
+        print(f"folder not found: {root}")
+        return 1
+    if args.list:
+        found, skipped = loader.find_archives(root, args.symbols)
+        for folder, archives in found.items():
+            print(f"{folder:<8} {len(archives):>3} archive(s) {archives[0].year}..{archives[-1].year}")
+        for note in skipped:
+            print(f"SKIP {note}")
+        return 0
+    failures = 0
+
+    def report(result) -> None:
+        nonlocal failures
+        failures += bool(result.failures)
+        print(f"{'FAIL' if result.failures else 'OK  '} {result.symbol:<8} archives={result.archives} "
+              f"imported={result.imported} unchanged={result.duplicates} rows={result.rows}", flush=True)
+        for problem in result.failures:
+            print(f"    - {problem}")
+
+    results, skipped = loader.load_all(root, args.symbols, jobs=max(1, args.jobs), reset=args.reset, on_done=report)
+    for note in skipped:
+        print(f"SKIP {note}")
+    if args.enable:
+        for result in results:
+            spec = get_instrument(result.symbol)
+            if spec is None or result.failures:
+                continue
+            done = loader.verify_and_enable(spec, write=True)
+            ratio = (done.gap_minutes / done.expected_minutes * 100) if done.expected_minutes else 0.0
+            print(f"{'ENABLED' if done.enabled else 'BLOCKED'} {done.symbol:<8} months={done.months} "
+                  f"gap_minutes={done.gap_minutes} ({ratio:.2f}% of open minutes)")
+            for item in done.failed_checks:
+                print(f"    - {item}")
+            failures += not done.enabled
+    return 1 if failures else 0
+
+
 def _admin_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("email")
     parser.add_argument("--revoke", action="store_true", help="set the role back to trader")

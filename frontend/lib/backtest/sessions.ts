@@ -90,6 +90,8 @@ export type MarketInstrument = {
   quote_currency: string;
   price_decimals: number;
   enabled: boolean;
+  data_from_ms: number | null;
+  data_to_ms: number | null;
 };
 
 export function formatSessionTime(ms: number): string {

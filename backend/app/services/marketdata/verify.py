@@ -6,9 +6,12 @@ import time
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 
+import numpy as np
+
 from app.services.marketdata.candles import Candles
 from app.services.marketdata.providers import Provider, ProviderError, get_provider
 from app.services.marketdata.registry import InstrumentSpec, mark_verified
+from app.services.marketdata.store import month_bounds, months_between
 from app.services.marketdata.validation import closed_windows, validate_batch
 
 DAY_MS = 86_400_000
@@ -21,14 +24,17 @@ PRICE_BOUNDS: dict[str, tuple[float, float]] = {
     "EURUSD": (0.5, 2.0),
     "XAUUSD": (500.0, 20_000.0),
     "XAGUSD": (3.0, 500.0),
+    "DXY": (40.0, 200.0),
 }
 CLASS_BOUNDS: dict[str, tuple[float, float]] = {
     "forex": (0.001, 500.0),
     "metal": (1.0, 50_000.0),
     "index": (100.0, 200_000.0),
+    "commodity": (0.5, 1_000.0),
     "crypto": (1e-6, 10_000_000.0),
 }
 MIN_OPEN_COVERAGE = 0.85
+MAX_MONTHLY_MEDIAN_RATIO = 2.0
 
 
 @dataclass
@@ -110,10 +116,18 @@ class StoredCheck:
     detail: str
 
 
+MIN_MONTH_ROWS = {"crypto": 40_000, "index": 8_000, "commodity": 8_000}
+DEFAULT_MIN_MONTH_ROWS = 20_000
+
+
+def minimum_month_rows(asset_class: str) -> int:
+    """Indices and oil publish shorter sessions than forex, so a healthy month holds fewer bars."""
+    return MIN_MONTH_ROWS.get(asset_class, DEFAULT_MIN_MONTH_ROWS)
+
+
 def month_is_full(row_count: int, gap_minutes: int, asset_class: str) -> bool:
     """A full month is a complete open-market month, not a handful of imported bars."""
-    minimum = 40_000 if asset_class == "crypto" else 20_000
-    return gap_minutes == 0 and row_count >= minimum
+    return gap_minutes == 0 and row_count >= minimum_month_rows(asset_class)
 
 
 def month_counts_for_enable(row_count: int, gap_minutes: int, asset_class: str, *, gaps_reviewed: bool) -> bool:
@@ -123,8 +137,7 @@ def month_counts_for_enable(row_count: int, gap_minutes: int, asset_class: str, 
         return True
     if not gaps_reviewed:
         return False
-    minimum = 40_000 if asset_class == "crypto" else 20_000
-    return row_count >= minimum
+    return row_count >= minimum_month_rows(asset_class)
 
 
 def verify_stored(
@@ -151,13 +164,30 @@ def verify_stored(
         return checks
     start = min(a for a, _ in ranges)
     end = max(b for _, b in ranges)
-    stored = store.read(spec.source, spec.symbol, start, end)
-    clean, report = validate_batch(stored, symbol=spec.symbol)
+    rejected: dict[str, int] = {}
+    price_min = price_max = None
+    medians: list[tuple[str, float]] = []
+    for year, month in months_between(start, end):
+        lo, hi = month_bounds(year, month)
+        stored = store.read(spec.source, spec.symbol, max(lo, start), min(hi, end))
+        clean, report = validate_batch(stored, symbol=spec.symbol)
+        for reason, count in report.rejected.items():
+            rejected[reason] = rejected.get(reason, 0) + count
+        if len(clean):
+            low_seen, high_seen = float(clean.low.min()), float(clean.high.max())
+            price_min = low_seen if price_min is None else min(price_min, low_seen)
+            price_max = high_seen if price_max is None else max(price_max, high_seen)
+            medians.append((f"{year}-{month:02d}", float(np.median(clean.close))))
+    checks.append(StoredCheck("validation", not rejected, "ok" if not rejected else str(rejected)))
+    shifts = [
+        f"{a[0]}->{b[0]} ({a[1]:.4g} to {b[1]:.4g})"
+        for a, b in zip(medians, medians[1:])
+        if max(a[1] / b[1], b[1] / a[1]) > MAX_MONTHLY_MEDIAN_RATIO
+    ]
     checks.append(
-        StoredCheck("validation", not report.rejected, "ok" if not report.rejected else str(report.rejected))
+        StoredCheck("scale_consistency", not shifts, "ok" if not shifts else "month-to-month price level jumps: " + ", ".join(shifts[:6]))
     )
-    if len(clean):
-        price_min, price_max = float(clean.low.min()), float(clean.high.max())
+    if price_min is not None and price_max is not None:
         low, high = PRICE_BOUNDS.get(spec.symbol, CLASS_BOUNDS[spec.asset_class])
         in_range = low <= price_min and price_max <= high
         checks.append(StoredCheck("price_range", in_range, f"{price_min}..{price_max} against {low}..{high}"))

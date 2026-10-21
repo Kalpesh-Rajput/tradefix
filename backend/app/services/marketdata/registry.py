@@ -30,7 +30,7 @@ class InstrumentSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     symbol: str = Field(pattern=r"^[A-Z0-9_]{3,32}$")
-    asset_class: Literal["forex", "metal", "index", "crypto"]
+    asset_class: Literal["forex", "metal", "index", "commodity", "crypto"]
     source: Literal["binance", "dukascopy"]
     provider_id: str = Field(min_length=1, max_length=64)
     market_type: Literal["spot", "usdm_futures"] = "spot"
@@ -93,6 +93,17 @@ def reload_registry() -> None:
     _load.cache_clear()
 
 
+def _write_specs(specs: list[InstrumentSpec], path: Path) -> None:
+    rows = [s.model_dump(mode="json") for s in specs]
+    body = "instruments:\n" + "".join(
+        "- " + yaml.safe_dump(row, default_flow_style=True, sort_keys=False, width=1000) for row in rows
+    )
+    tmp = path.with_suffix(".yaml.tmp")
+    tmp.write_text(_HEADER + body, encoding="utf-8")
+    tmp.replace(path)
+    reload_registry()
+
+
 def mark_verified(symbol: str, on: date, path: Path = REGISTRY_PATH) -> InstrumentSpec:
     """Stamp verified_on and enable the instrument in the YAML file (verify-instrument --write)."""
     with _write_lock:
@@ -101,15 +112,31 @@ def mark_verified(symbol: str, on: date, path: Path = REGISTRY_PATH) -> Instrume
         if index is None:
             raise KeyError(symbol)
         specs[index] = specs[index].model_copy(update={"verified_on": on, "enabled": True})
-        rows = [s.model_dump(mode="json") for s in specs]
-        body = "instruments:\n" + "".join(
-            "- " + yaml.safe_dump(row, default_flow_style=True, sort_keys=False, width=1000) for row in rows
-        )
-        tmp = path.with_suffix(".yaml.tmp")
-        tmp.write_text(_HEADER + body, encoding="utf-8")
-        tmp.replace(path)
-        reload_registry()
+        _write_specs(specs, path)
         return specs[index]
+
+
+def mark_disabled(symbol: str, path: Path = REGISTRY_PATH) -> InstrumentSpec:
+    """Switch an instrument off and clear its verification stamp (stored data failed a check)."""
+    with _write_lock:
+        specs = list(parse_registry(path.read_text(encoding="utf-8")))
+        index = next((n for n, s in enumerate(specs) if s.symbol == symbol), None)
+        if index is None:
+            raise KeyError(symbol)
+        specs[index] = specs[index].model_copy(update={"verified_on": None, "enabled": False})
+        _write_specs(specs, path)
+        return specs[index]
+
+
+def add_instruments(new_specs: list[InstrumentSpec], path: Path = REGISTRY_PATH) -> list[str]:
+    """Append instruments that are not in the YAML yet (always as written, existing entries are untouched)."""
+    with _write_lock:
+        specs = list(parse_registry(path.read_text(encoding="utf-8")))
+        known = {s.symbol for s in specs}
+        added = [s for s in new_specs if s.symbol not in known]
+        if added:
+            _write_specs([*specs, *added], path)
+        return [s.symbol for s in added]
 
 
 def mirror_to_db(db: Session, path: Path = REGISTRY_PATH) -> int:

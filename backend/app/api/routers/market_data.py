@@ -23,10 +23,11 @@ def market_worker_status(user: User = Depends(get_current_user), db: Session = D
 @router.get("/instruments", response_model=list[InstrumentOut])
 def list_instruments(
     q: str | None = Query(None, max_length=32),
-    asset_class: str | None = Query(None, pattern="^(forex|metal|index|crypto)$"),
+    asset_class: str | None = Query(None, pattern="^(forex|metal|index|commodity|crypto)$"),
+    db: Session = Depends(get_db),
     _user: User = Depends(require_feature("market_data.read")),
 ):
-    return read_api.list_instruments(q, asset_class)
+    return read_api.list_instruments(db, q, asset_class)
 
 
 @router.get("/candles", response_model=CandlesOut)

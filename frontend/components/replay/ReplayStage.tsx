@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CandleChart, type CandleChartHandle } from "@/components/chart";
+import { DrawingChartFrame } from "@/components/chart/drawings/DrawingChartFrame";
 import { readChartTheme } from "@/components/chart/chartTheme";
 import { ApiError } from "@/lib/api";
 import type { ReplayPayload } from "@/lib/backtest/marketClient";
@@ -64,6 +65,7 @@ export function ReplayStage({ payload, timeZone }: { payload: ReplayPayload; tim
   const notesRef = useRef<OverlayNote[]>([]);
   const rangeRef = useRef<(() => void) | null>(null);
   const [state, setState] = useState<ReplayState>(INITIAL);
+  const [chartHandle, setChartHandle] = useState<CandleChartHandle | null>(null);
   const [scrubMs, setScrubMs] = useState<number | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [failure, setFailure] = useState<ApiError | null>(null);
@@ -127,6 +129,7 @@ export function ReplayStage({ payload, timeZone }: { payload: ReplayPayload; tim
     rangeRef.current?.();
     rangeRef.current = null;
     chartRef.current = handle;
+    setChartHandle(handle);
     if (!handle) return;
     if (candlesRef.current.length) handle.setHistory(candlesRef.current.map((candle) => shiftCandle(candle, deltaRef.current)));
     rangeRef.current = handle.onRange(() => paintRef.current());
@@ -225,7 +228,20 @@ export function ReplayStage({ payload, timeZone }: { payload: ReplayPayload; tim
       ) : null}
       <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-          <div className="relative min-h-[420px] flex-1 overflow-hidden rounded-xl border border-[var(--color-border)]">
+          <div className="flex min-h-[420px] flex-1 overflow-hidden rounded-xl border border-[var(--color-border)]">
+            <DrawingChartFrame
+              chart={chartHandle}
+              workspace={`replay:${payload.trade_ref}`}
+              symbol={payload.instrument.symbol}
+              timeframe={state.timeframe}
+              context={{
+                priceDecimals: payload.instrument.price_decimals,
+                pipSize: payload.instrument.pip_size,
+                assetClass: payload.instrument.asset_class,
+                quoteCurrency: payload.instrument.quote_currency,
+              }}
+              sizeUnit={payload.instrument.asset_class === "crypto" ? "units" : "lots"}
+            >
             {shade ? (
               <div
                 aria-hidden
@@ -249,8 +265,10 @@ export function ReplayStage({ payload, timeZone }: { payload: ReplayPayload; tim
               priceDecimals={payload.instrument.price_decimals}
               showVolume={payload.instrument.asset_class === "crypto"}
               ariaLabel={`${payload.instrument.symbol} replay chart`}
+              className="min-h-0 flex-1"
             />
             {state.status === "loading" ? <div className="pointer-events-none absolute inset-0 animate-pulse bg-[var(--color-border-subtle)]/40" aria-hidden /> : null}
+            </DrawingChartFrame>
           </div>
           {failure ? (
             <ReplayStates

@@ -58,6 +58,7 @@ class ImportSummary:
     duplicate: bool = False
     price_side: str = ""
     label: str = ""
+    wicks_repaired: int = 0
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -131,6 +132,7 @@ def _layout(preset: str, *, time_format: str, separator: str, columns: str, time
             "columns": ["time", "open", "high", "low", "close", "volume"],
             "timezone": "UTC-5",
             "header": False,
+            "compact_time": True,
         }
     if preset != "generic":
         raise CandleImportError(f"unknown preset {preset}")
@@ -150,8 +152,30 @@ def _layout(preset: str, *, time_format: str, separator: str, columns: str, time
     }
 
 
+class _CompactClock:
+    """`YYYYMMDD HHMMSS` in a fixed-offset zone to epoch ms, parsing each calendar day only once."""
+
+    def __init__(self, tz) -> None:
+        self._tz = tz
+        self._days: dict[str, int] = {}
+
+    def __call__(self, text: str) -> int:
+        text = text.strip()
+        if len(text) != 15 or text[8] != " ":
+            raise ValueError(f"bad time {text!r}")
+        base = self._days.get(text[:8])
+        if base is None:
+            base = int(datetime.strptime(text[:8], "%Y%m%d").replace(tzinfo=self._tz).timestamp() * 1000)
+            self._days[text[:8]] = base
+        hours, minutes, seconds = int(text[9:11]), int(text[11:13]), int(text[13:15])
+        if hours > 23 or minutes > 59 or seconds > 59:
+            raise ValueError(f"bad time {text!r}")
+        return base + ((hours * 60 + minutes) * 60 + seconds) * 1000
+
+
 def parse_files(files: list[tuple[str, bytes]], layout: dict) -> tuple[list[tuple], dict[str, int]]:
     tz = _timezone(layout["timezone"])
+    clock = _CompactClock(tz) if layout.get("compact_time") else None
     indexes = {name: index for index, name in enumerate(layout["columns"])}
     rows: list[tuple] = []
     rejected: dict[str, int] = {}
@@ -174,7 +198,7 @@ def parse_files(files: list[tuple[str, bytes]], layout: dict) -> tuple[list[tupl
                 reject("short_row")
                 continue
             try:
-                ts = _parse_time(cells[indexes["time"]], layout["formats"], tz)
+                ts = clock(cells[indexes["time"]]) if clock else _parse_time(cells[indexes["time"]], layout["formats"], tz)
                 o = float(cells[indexes["open"]])
                 h = float(cells[indexes["high"]])
                 low = float(cells[indexes["low"]])
@@ -235,7 +259,9 @@ def import_candles(
     columns: str = "",
     dry_run: bool = False,
     force: bool = False,
+    coverage: tuple[int | None, int | None] | None = None,
 ) -> ImportSummary:
+    """`coverage` widens the covered range past the first and last bar (a file that states a whole period)."""
     if price_side not in PRICE_SIDES:
         raise CandleImportError("price side must be bid, mid, or other")
     if not label.strip():
@@ -256,13 +282,18 @@ def import_candles(
         summary.rejected = rejected or {"empty": 1}
         return summary
     candles = Candles.from_rows(parsed)
-    clean, report = validate_batch(candles, symbol=spec.symbol)
+    clean, report = validate_batch(candles, symbol=spec.symbol, repair=True, level_filter=spec.asset_class != "commodity")
     summary.rejected = {**rejected, **report.rejected}
+    summary.wicks_repaired = report.clamped
     summary.rows_kept = len(clean)
     if not len(clean):
         return summary
     start = int(clean.ts[0])
     end = int(clean.ts[-1]) + 60_000
+    if coverage is not None:
+        wide_start, wide_end = coverage
+        start = start if wide_start is None else min(start, wide_start)
+        end = end if wide_end is None else max(end, wide_end)
     summary.range_start, summary.range_end = start, end
     summary.gap_minutes = gap_summary(clean.ts, spec.asset_class, start, end).missing_minutes
     months = months_between(start, end)

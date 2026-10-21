@@ -6,10 +6,12 @@ import time
 import uuid
 from datetime import datetime, timezone
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.job import Job
+from app.models.market_data import CandleCoverage
 from app.models.user import User
 from app.schemas.market_data import CandlesOut, DataJobOut, InstrumentOut
 from app.services.backtest.errors import BacktestError, not_found
@@ -55,7 +57,16 @@ def to_instrument_out(spec: InstrumentSpec) -> InstrumentOut:
     return InstrumentOut(**spec.model_dump(exclude={"provider_id", "preload_years"}))
 
 
-def list_instruments(q: str | None = None, asset_class: str | None = None) -> list[InstrumentOut]:
+def stored_ranges(db: Session) -> dict[tuple[str, str], tuple[int, int]]:
+    """(instrument, source) -> earliest and latest covered millisecond."""
+    rows = db.execute(
+        select(CandleCoverage.instrument, CandleCoverage.source, func.min(CandleCoverage.covered_from), func.max(CandleCoverage.covered_to))
+        .group_by(CandleCoverage.instrument, CandleCoverage.source)
+    ).all()
+    return {(symbol, source): (int(start), int(end)) for symbol, source, start, end in rows}
+
+
+def list_instruments(db: Session, q: str | None = None, asset_class: str | None = None) -> list[InstrumentOut]:
     needle = (q or "").strip().upper()
     items = [
         spec
@@ -64,7 +75,12 @@ def list_instruments(q: str | None = None, asset_class: str | None = None) -> li
         and (not asset_class or spec.asset_class == asset_class)
         and (not needle or needle in spec.symbol)
     ]
-    return [to_instrument_out(spec) for spec in items]
+    ranges = stored_ranges(db)
+    out = []
+    for spec in items:
+        start, end = ranges.get((spec.symbol, spec.source), (None, None))
+        out.append(to_instrument_out(spec).model_copy(update={"data_from_ms": start, "data_to_ms": end}))
+    return out
 
 
 def enabled_instrument(symbol: str) -> InstrumentSpec:

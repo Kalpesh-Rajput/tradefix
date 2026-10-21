@@ -1,4 +1,5 @@
 import type { ChartTheme } from "./chartTheme";
+import type { DrawingSurface } from "./drawings/surface";
 
 export type CandleBar = {
   time: number;
@@ -52,8 +53,12 @@ export interface ChartBackend {
   onCrosshair(handler: (bar: CandleBar | null) => void): () => void;
   timeToX(timeMs: number): number | null;
   onRange(listener: () => void): () => void;
+  surface?(): DrawingSurface;
   remove(): void;
 }
+
+/** Called when a chart is bound; returns the cleanup that runs when it is unbound. */
+export type SurfaceClient = (surface: DrawingSurface) => () => void;
 
 export type ChartBackendFactory = (container: HTMLElement, display: ChartDisplay) => ChartBackend;
 
@@ -91,6 +96,8 @@ export class ChartModel {
   private handles = new Map<string, PriceLineHandle>();
   private backend: ChartBackend | null = null;
   private listeners = new Set<() => void>();
+  private surfaceClient: SurfaceClient | null = null;
+  private releaseSurface: (() => void) | null = null;
   private readonly trimSlack: number;
 
   constructor(
@@ -111,11 +118,27 @@ export class ChartModel {
     backend.setBars(this.bars);
     backend.setMarkers(this.markers);
     for (const line of this.lines.values()) this.handles.set(line.id, backend.addPriceLine(line));
+    this.connectSurface();
   }
 
   unbind() {
+    this.releaseSurface?.();
+    this.releaseSurface = null;
     this.handles.clear();
     this.backend = null;
+  }
+
+  /** Register (or clear) the drawing layer. It is re-attached after every remount of the chart. */
+  setSurfaceClient(client: SurfaceClient | null) {
+    this.releaseSurface?.();
+    this.releaseSurface = null;
+    this.surfaceClient = client;
+    this.connectSurface();
+  }
+
+  private connectSurface() {
+    const surface = this.backend?.surface?.();
+    if (surface && this.surfaceClient && !this.releaseSurface) this.releaseSurface = this.surfaceClient(surface);
   }
 
   subscribe(listener: () => void): () => void {

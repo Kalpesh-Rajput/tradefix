@@ -29,6 +29,23 @@ python -m app.cli.marketdata top-up
 
 `seed-demo` loads the previous full month for BTCUSDT, EURUSD and XAUUSD. EURUSD and XAUUSD stay disabled until `verify-instrument --write` succeeds. On this development network Dukascopy returns an AWS WAF challenge, so those two symbols are still pending.
 
+### Loading HistData folders (forex, metals, indices, oil)
+
+Put one folder per symbol under the gitignored `downloads/` folder (`downloads/EURUSD/HISTDATA_COM_ASCII_EURUSD_M12019.zip`, monthly files such as `..._M1202609.zip` too), then from `backend/`:
+
+```
+python -m app.cli.marketdata load-histdata ../downloads --list
+python -m app.cli.marketdata load-histdata ../downloads --enable --jobs 6
+python -m app.cli.marketdata load-histdata ../downloads --symbols EURUSD XAUUSD --reset --enable
+```
+
+- Each folder maps to a registry instrument and is added to `instruments.yaml` if it is missing. Index folders get the usual names (`SPXUSD` is `US500`, `NSXUSD` is `US100`, `GRXEUR` is `DE40`, `UKXGBP` is `UK100`, `FRXEUR` is `FR40`, `ETXEUR` is `EU50`, `JPXJPY` is `JP225`, `HKXHKD` is `HK50`, `AUXAUD` is `AU200`, `UDXUSD` is `DXY`, `WTIUSD` is `USOIL`, `BCOUSD` is `UKOIL`).
+- Bars are HistData bid candles on a fixed UTC-5 clock; they are converted to UTC once. Rerunning is safe: an unchanged zip is skipped by content hash. `--reset` drops that symbol's stored candles, coverage and import history first.
+- Every zip states its whole period, so coverage runs edge to edge between zips. The first zip starts at its first bar and the last zip ends at its last bar, so nothing past the real data is claimed.
+- A single corrupt print (a bar wholly far above or below both neighbours) is dropped as `spike`. Real gaps are not filled.
+- `--enable` runs the stored-data checks with the gap report counted as read, prints each symbol's gap share, and enables only the ones that pass.
+- The files carry no live feed. Candles after the newest HistData minute are only available if Dukascopy is reachable. Reload newer HistData zips to extend a symbol.
+
 Other commands: `backfill`, `coverage --reset`, `verify`, `verify-instrument --stored`, `import-candles`, `add-alias`, `unresolved`. `import-candles` reads a file you already have. It does not download from Dukascopy, and it does not enable the instrument.
 
 ## Using the features

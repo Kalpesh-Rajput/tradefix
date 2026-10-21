@@ -18,6 +18,7 @@ from app.models.broker import (
 )
 from app.models.agent_run import AgentRun
 from app.models.backtest import BacktestRun, BacktestRunTrade, BacktestSession, SessionOrder, SessionTrade, Strategy, TradeReplayNote, UsageCounter
+from app.models.chart_drawing import ChartDrawing
 from app.models.user_agent import UserAgent
 from app.models.user_notification import UserNotification
 from app.models.ai_document import AiDocument
@@ -97,6 +98,7 @@ __all__ = [
     "AccountTimeOffset",
     "TradeReplayNote",
     "BacktestSession",
+    "ChartDrawing",
     "SessionOrder",
     "SessionTrade",
     "UsageCounter",

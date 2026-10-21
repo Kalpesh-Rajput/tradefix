@@ -82,9 +82,9 @@ def test_forex_uses_the_fixing_candle_not_the_daily_close(db, tmp_path):
     store = LocalParquetStore(tmp_path)
     start = int(datetime(2024, 6, 4, tzinfo=timezone.utc).timestamp() * 1000)
     later = start + 20 * 60 * 60_000
-    store.write("dukascopy", "EURUSD", _bars(start, 2, close=9.0, high=9.1, low=8.9))
+    store.write("dukascopy", "EURUSD", _bars(start, 2, close=1.10, high=1.101, low=1.099))
     store.write("dukascopy", "EURUSD", _bars(fixing_ms(DAY), 1, close=1.08, high=1.081, low=1.079))
-    store.write("dukascopy", "EURUSD", _bars(later, 1, close=5.0, high=5.1, low=4.9))
+    store.write("dukascopy", "EURUSD", _bars(later, 1, close=1.06, high=1.061, low=1.059))
     notes = run_crosscheck(
         db,
         day=DAY,

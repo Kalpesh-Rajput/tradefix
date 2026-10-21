@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { OrderTicket } from "@/components/backtest/session/OrderTicket";
 import { PositionsTabs } from "@/components/backtest/session/PositionsTabs";
@@ -9,6 +9,9 @@ import { SessionSummary } from "@/components/backtest/session/SessionSummary";
 import { SessionTopBar } from "@/components/backtest/session/SessionTopBar";
 import { useSessionPersistence } from "@/components/backtest/session/useSessionPersistence";
 import { CandleChart, type CandleChartHandle } from "@/components/chart";
+import { DrawingChartFrame } from "@/components/chart/drawings/DrawingChartFrame";
+import type { SimulateHandler } from "@/components/chart/drawings/ui/PositionEditor";
+import { planToOrder, type PlannedOrder } from "@/lib/backtest/positionPlan";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { ApiError, api } from "@/lib/api";
@@ -38,6 +41,11 @@ export default function SessionPage() {
   const [finished, setFinished] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const finishedRef = useRef(false);
+  const [chartHandle, setChartHandle] = useState<CandleChartHandle | null>(null);
+  const bindChart = useCallback((handle: CandleChartHandle | null) => {
+    chartRef.current = handle;
+    setChartHandle(handle);
+  }, []);
 
   const instrument = useMemo<Instrument | null>(() => {
     const row = instruments.data?.find((item) => item.symbol === session.data?.symbol);
@@ -165,6 +173,22 @@ export default function SessionPage() {
   const floating = view ? floatingPnl(view.position, mark, instrument) : 0;
   const balance = view?.balance ?? session.data.stats.balance;
 
+  const placeOrder = (input: PlannedOrder): string | null => {
+    const current = bookRef.current;
+    if (!current) return "Session is still loading.";
+    if (finishedRef.current) return "This session is finished.";
+    const message = current.place({ ...input, nowMs: engineRef.current?.getState().cursorMs ?? session.data!.cursor_ms, mark });
+    if (message) return message;
+    setTick((value) => value + 1);
+    void persistence.save();
+    return null;
+  };
+
+  const simulatePlan: SimulateHandler = (plan) => {
+    const result = planToOrder(plan, mark, 10 ** -instrument.priceDecimals);
+    return result.ok ? placeOrder(result.order) : result.reason;
+  };
+
   async function confirmFinish() {
     const current = bookRef.current;
     const cursor = engineRef.current?.getState().cursorMs ?? session.data!.cursor_ms;
@@ -222,7 +246,25 @@ export default function SessionPage() {
       ) : null}
       <div className="grid min-h-[40rem] flex-1 grid-cols-1 items-stretch gap-3 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:grid-rows-[minmax(0,1fr)_auto]">
         <div className="dash-card flex h-full min-h-[420px] flex-col overflow-hidden p-1 lg:min-h-0">
-          <CandleChart ref={chartRef} timeZone={timezone} priceDecimals={instrument.priceDecimals} ariaLabel={`${session.data.symbol} session chart`} className="min-h-0 flex-1" />
+          <DrawingChartFrame
+            chart={chartHandle}
+            workspace={`session:${id}`}
+            sessionId={id}
+            symbol={session.data.symbol}
+            timeframe={replay?.timeframe ?? session.data.timeframe}
+            context={{
+              priceDecimals: instrument.priceDecimals,
+              pipSize: instrument.pipSize,
+              contractSize: instrument.contractSize,
+              assetClass: instrument.assetClass,
+              quoteCurrency: instrument.quoteCurrency,
+              accountCurrency: session.data.currency,
+            }}
+            sizeUnit={instrument.assetClass === "crypto" ? "units" : "lots"}
+            onSimulate={finished ? undefined : simulatePlan}
+          >
+            <CandleChart ref={bindChart} timeZone={timezone} priceDecimals={instrument.priceDecimals} ariaLabel={`${session.data.symbol} session chart`} className="min-h-0 flex-1" />
+          </DrawingChartFrame>
         </div>
         <div className="h-full min-h-0 lg:row-span-2">
           <OrderTicket
@@ -231,15 +273,7 @@ export default function SessionPage() {
             mark={mark}
             hasPosition={!!view?.position}
             disabled={finished || !book}
-            onPlace={(input) => {
-              const current = bookRef.current;
-              if (!current) return "Session is still loading.";
-              const message = current.place({ ...input, nowMs: engineRef.current?.getState().cursorMs ?? session.data.cursor_ms, mark });
-              if (message) return message;
-              setTick((value) => value + 1);
-              void persistence.save();
-              return null;
-            }}
+            onPlace={placeOrder}
             onClose={() => {
               bookRef.current?.requestClose(engineRef.current?.getState().cursorMs ?? session.data.cursor_ms);
               setTick((value) => value + 1);

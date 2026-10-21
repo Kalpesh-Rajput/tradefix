@@ -39,6 +39,7 @@ from app.api.routers import (
     recaps,
     replay,
     backtest_sessions,
+    chart_drawings,
     strategies,
     backtests,
     notebook_folders,
@@ -138,6 +139,7 @@ app.include_router(market_data.router)
 app.include_router(admin_data.router)
 app.include_router(replay.router)
 app.include_router(backtest_sessions.router)
+app.include_router(chart_drawings.router)
 app.include_router(strategies.router)
 app.include_router(backtests.router)
 

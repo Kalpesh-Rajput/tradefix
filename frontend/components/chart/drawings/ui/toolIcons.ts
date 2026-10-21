@@ -1,0 +1,63 @@
+import {
+  ArrowDownToLine,
+  ArrowLeftRight,
+  ArrowUpFromLine,
+  ArrowUpRight,
+  Circle,
+  Equal,
+  Info,
+  Layers,
+  Minus,
+  MoveHorizontal,
+  MoveRight,
+  MoveUpRight,
+  MoveVertical,
+  Plus,
+  Ruler,
+  SeparatorVertical,
+  Square,
+  Tag,
+  Triangle,
+  TrendingUp,
+  Type,
+  Waypoints,
+  type LucideIcon,
+} from "lucide-react";
+
+import type { ToolCategory } from "../tools";
+import type { ToolId } from "../types";
+
+export const TOOL_ICONS: Record<ToolId, LucideIcon> = {
+  trendline: TrendingUp,
+  ray: MoveUpRight,
+  extended_line: ArrowLeftRight,
+  info_line: Info,
+  horizontal_line: Minus,
+  horizontal_ray: MoveRight,
+  vertical_line: SeparatorVertical,
+  crossline: Plus,
+  parallel_channel: Equal,
+  fib_retracement: Layers,
+  fib_extension: Waypoints,
+  rectangle: Square,
+  ellipse: Circle,
+  triangle: Triangle,
+  arrow: ArrowUpRight,
+  text: Type,
+  price_label: Tag,
+  price_range: MoveVertical,
+  date_range: MoveHorizontal,
+  date_price_range: Ruler,
+  long_position: ArrowUpFromLine,
+  short_position: ArrowDownToLine,
+};
+
+export const CATEGORY_ICONS: Record<ToolCategory, LucideIcon> = {
+  lines: TrendingUp,
+  channels: Equal,
+  fibonacci: Layers,
+  shapes: Square,
+  text: Type,
+  measure: Ruler,
+  position: ArrowUpFromLine,
+};

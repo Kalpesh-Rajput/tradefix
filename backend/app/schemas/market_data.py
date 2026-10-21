@@ -19,6 +19,8 @@ class InstrumentOut(BaseModel):
     price_decimals: int
     enabled: bool
     verified_on: date | None = None
+    data_from_ms: int | None = None
+    data_to_ms: int | None = None
 
 
 class CandlesOut(BaseModel):
