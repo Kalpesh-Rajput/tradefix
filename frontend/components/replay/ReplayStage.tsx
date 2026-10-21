@@ -282,6 +282,9 @@ export function ReplayStage({ payload, timeZone }: { payload: ReplayPayload; tim
             <ReplayControls
               state={state}
               scrubMs={shown}
+              timeZone={timeZone}
+              entryMs={payload.trade.entry_ms}
+              exitMs={payload.trade.exit_ms}
               fullscreen={fullscreen}
               onScrub={(ms) => {
                 engineRef.current?.pause();
@@ -316,6 +319,10 @@ export function ReplayStage({ payload, timeZone }: { payload: ReplayPayload; tim
           timeZone={timeZone}
           cursorMs={state.cursorMs}
           saving={notesQuery.saving}
+          loading={notesQuery.loading}
+          loadFailed={notesQuery.loadFailed}
+          persistent={payload.source === "journal"}
+          onReload={notesQuery.reload}
           error={noteErrorText}
           onJump={(timeMs) => void engineRef.current?.seek(timeMs)}
           onAdd={async (text) => {

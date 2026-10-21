@@ -33,11 +33,19 @@ export function tradeExcursion(payload: ReplayPayload): { pips: number | null; r
   return { pips, r };
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+export function priceMovePercent(payload: ReplayPayload): number | null {
+  const { trade } = payload;
+  if (trade.exit_price == null || trade.entry_price <= 0) return null;
+  const direction = trade.side === "long" ? 1 : -1;
+  return (((trade.exit_price - trade.entry_price) * direction) / trade.entry_price) * 100;
+}
+
+function Stat({ label, value, sub, hint }: { label: string; value: string; sub?: string; hint?: string }) {
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 sm:border-l sm:border-[var(--color-border)] sm:pl-5" title={hint}>
       <div className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">{label}</div>
-      <div className="truncate text-sm font-medium tabular-nums text-[var(--color-text-primary)]">{value}</div>
+      <div className="truncate text-sm font-semibold tabular-nums text-[var(--color-text-primary)]">{value}</div>
+      {sub ? <div className="truncate text-[11px] tabular-nums text-[var(--color-text-muted)]">{sub}</div> : null}
     </div>
   );
 }
@@ -46,39 +54,42 @@ export function ReplayHeader({ payload, timeZone }: { payload: ReplayPayload; ti
   const { trade, instrument } = payload;
   const digits = instrument.price_decimals;
   const result = tradeExcursion(payload);
+  const move = priceMovePercent(payload);
   const duration = trade.exit_ms != null ? formatDuration(trade.exit_ms - trade.entry_ms) : "Open";
-  const tone = result.pips == null ? "var(--color-text-secondary)" : result.pips >= 0 ? "var(--color-pnl-positive, var(--color-success-text))" : "var(--color-pnl-negative, var(--color-danger-text))";
+  const positive = "var(--color-pnl-positive, var(--color-success-text))";
+  const negative = "var(--color-pnl-negative, var(--color-danger-text))";
+  const tone = result.pips == null ? "var(--color-text-secondary)" : result.pips >= 0 ? positive : negative;
+  const long = trade.side === "long";
 
   return (
-    <header className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
-      <div className="min-w-[8rem]">
+    <header className="grid gap-x-5 gap-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 sm:grid-cols-2 lg:grid-cols-[minmax(9rem,1.1fr)_repeat(4,minmax(0,1fr))]">
+      <div className="min-w-0">
         <div className="flex items-center gap-2">
           <h1 className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">{instrument.symbol}</h1>
           <span
-            className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase"
-            style={{ color: trade.side === "long" ? "var(--color-pnl-positive, var(--color-success-text))" : "var(--color-pnl-negative, var(--color-danger-text))" }}
+            className="rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+            style={{ color: long ? positive : negative, borderColor: "currentColor" }}
           >
             {trade.side}
           </span>
         </div>
-        <p className="text-xs text-[var(--color-text-muted)]">
-          {trade.size} · {duration}
-        </p>
+        <p className="text-xs text-[var(--color-text-muted)]">Size {trade.size}</p>
       </div>
-      <Stat label="Entry" value={`${trade.entry_price.toFixed(digits)} · ${formatCrosshairTime(trade.entry_ms, timeZone)}`} />
+      <Stat label="Entry" value={trade.entry_price.toFixed(digits)} sub={formatCrosshairTime(trade.entry_ms, timeZone)} />
       <Stat
         label="Exit"
-        value={
-          trade.exit_price != null && trade.exit_ms != null
-            ? `${trade.exit_price.toFixed(digits)} · ${formatCrosshairTime(trade.exit_ms, timeZone)}`
-            : "Still open"
-        }
+        value={trade.exit_price != null ? trade.exit_price.toFixed(digits) : "Still open"}
+        sub={trade.exit_ms != null ? formatCrosshairTime(trade.exit_ms, timeZone) : "No exit recorded"}
       />
-      <div>
+      <Stat label="Duration" value={duration} hint="Time between entry and exit" />
+      <div className="min-w-0 sm:border-l sm:border-[var(--color-border)] sm:pl-5" title="Pips = price move in the trade direction ÷ pip size. R = move ÷ initial stop distance. Move % = price move ÷ entry price.">
         <div className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">Result</div>
-        <div className="text-sm font-semibold tabular-nums" style={{ color: tone }}>
-          {result.pips == null ? "—" : `${signed(result.pips, 1)} pips`}
+        <div className="truncate text-sm font-semibold tabular-nums" style={{ color: tone }}>
+          {result.pips == null ? "" : `${signed(result.pips, 1)} pips`}
           {result.r != null ? ` · ${signed(result.r, 2)} R` : ""}
+        </div>
+        <div className="truncate text-[11px] tabular-nums text-[var(--color-text-muted)]">
+          {move == null ? "Awaiting exit" : `${signed(move, 2)}% price move`}
         </div>
       </div>
     </header>

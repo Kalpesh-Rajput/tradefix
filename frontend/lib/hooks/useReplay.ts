@@ -45,7 +45,15 @@ export function useReplayNotes(tradeId: string, enabled: boolean) {
       api.post<ReplayNote>(`/api/trades/${tradeId}/replay-notes`, body),
     onSuccess: () => client.invalidateQueries({ queryKey: ["replay-notes", tradeId] }),
   });
-  return { notes: query.data ?? [], addNote: add.mutateAsync, saving: add.isPending, error: add.error };
+  return {
+    notes: query.data ?? [],
+    addNote: add.mutateAsync,
+    saving: add.isPending,
+    error: add.error,
+    loading: query.isLoading,
+    loadFailed: query.isError,
+    reload: () => void query.refetch(),
+  };
 }
 
 export function useDataJob(jobId: string | null | undefined) {

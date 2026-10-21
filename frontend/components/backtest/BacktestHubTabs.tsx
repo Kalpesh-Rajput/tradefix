@@ -16,14 +16,14 @@ const TABS = [
     id: "sessions",
     label: "Manual sessions",
     title: "Trade it yourself",
-    detail: "Play EUR/USD or EUR/CHF forward and place orders on the next candle.",
+    detail: "Replay stored candles forward and place orders on the next bar.",
     icon: Play,
   },
   {
     id: "strategies",
     label: "Strategies",
     title: "Save a ruleset",
-    detail: "Templates default to EUR/USD, 16 March–1 April 2026, on 15-minute bars.",
+    detail: "Build and validate rule-based entries, exits and risk.",
     icon: Layers,
   },
   {
@@ -90,7 +90,7 @@ export function BacktestHubTabs() {
               aria-controls={`backtest-panel-${item.id}`}
               tabIndex={selected ? 0 : -1}
               onClick={() => setTab(item.id)}
-              className={`group relative overflow-hidden rounded-xl border p-4 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none ${
+              className={`group relative overflow-hidden rounded-xl border p-3.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none ${
                 selected
                   ? "border-primary/50 bg-card shadow-[0_14px_32px_-18px_hsl(var(--primary)/0.55)]"
                   : "border-border bg-surface hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lift motion-reduce:hover:translate-y-0"
