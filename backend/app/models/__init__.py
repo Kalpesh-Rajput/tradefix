@@ -50,6 +50,7 @@ from app.models.trade import Trade, TradeExecution
 from app.models.trade_master import TradeMaster
 from app.models.user import User
 from app.models.watchlist import WatchlistItem
+from app.models.news_bookmark import NewsBookmark
 
 __all__ = [
     "BrokerConnection",
@@ -117,4 +118,5 @@ __all__ = [
     "ProgressTrackerManualCompletion",
     "ProgressTrackerDayStart",
     "ProgressTrackerDailyResult",
+    "NewsBookmark",
 ]

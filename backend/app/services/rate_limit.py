@@ -102,6 +102,18 @@ analytics_drilldown_limiter = SlidingWindowRateLimiter(
     detail="Too many drill-down requests. Please wait a moment and try again.",
 )
 
+news_refresh_limiter = SlidingWindowRateLimiter(
+    max_calls=15,
+    window_seconds=600,
+    detail="Too many news feed refreshes. Please wait a moment and try again.",
+)
+
+news_bookmark_limiter = SlidingWindowRateLimiter(
+    max_calls=60,
+    window_seconds=60,
+    detail="Too many bookmark actions. Please wait a moment and try again.",
+)
+
 
 _ai_hourly: SlidingWindowRateLimiter | None = None
 _ai_daily: SlidingWindowRateLimiter | None = None

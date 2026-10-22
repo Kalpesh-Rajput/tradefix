@@ -93,6 +93,19 @@ class Settings(BaseSettings):
     fx_provider_url: str = "https://open.er-api.com/v6/latest/USD"
     fx_cache_ttl_seconds: int = 900
 
+    # Financial News Terminal settings (all optional; works out-of-the-box without API keys).
+    news_cache_ttl_seconds: int = 300
+    news_provider_timeout_seconds: float = 8.0
+    news_google_rss_enabled: bool = True
+    news_gdelt_enabled: bool = True
+    news_gdelt_min_interval_seconds: float = 5.5
+    news_marketaux_enabled: bool = True
+    marketaux_api_token: str = ""
+    marketaux_base_url: str = "https://api.marketaux.com/v1"
+    marketaux_daily_quota: int = 95
+    gdelt_base_url: str = "https://api.gdeltproject.org/api/v2/doc/doc"
+    news_enable_thumbnails: bool = False
+
     # AES-256-GCM keyring. Format: "keyId:base64,keyId:base64". Never commit real keys.
     broker_credentials_keys: str = ""
     broker_credentials_active_key: str = ""

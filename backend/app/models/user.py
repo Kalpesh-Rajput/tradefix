@@ -111,3 +111,6 @@ class User(Base):
     progress_tracker_daily_results: Mapped[list["ProgressTrackerDailyResult"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    news_bookmarks: Mapped[list["NewsBookmark"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )

@@ -32,6 +32,7 @@ from app.api.routers import (
     mentor,
     mood,
     masters,
+    news,
     playbooks,
     precheck_lists,
     progress_tracker,
@@ -135,6 +136,7 @@ app.include_router(coach.router)
 app.include_router(mentor.router)
 app.include_router(media.router)
 app.include_router(fx.router)
+app.include_router(news.router)
 app.include_router(market_data.router)
 app.include_router(admin_data.router)
 app.include_router(replay.router)
