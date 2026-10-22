@@ -2,8 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Camera, Check, Loader2, Link2, MapPin, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, Loader2, Link2, MapPin } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -17,6 +17,7 @@ import {
   SettingsTextarea,
   SettingsToggle,
 } from "@/components/settings/SettingsShell";
+import { AvatarUploader } from "@/components/settings/AvatarUploader";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { firstName } from "@/lib/format";
@@ -67,19 +68,12 @@ const passwordSchema = z
 
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
-const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-
 export function ProfileSettingsPage() {
-  const { user, loading, updateProfile, uploadAvatar, removeAvatar, changePassword } = useAuth();
+  const { user, loading, updateProfile, changePassword } = useAuth();
   const toast = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [removingAvatar, setRemovingAvatar] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const defaults = useMemo<ProfileFormValues>(
     () => ({
@@ -126,16 +120,6 @@ export function ProfileSettingsPage() {
   useEffect(() => {
     reset(defaults);
   }, [defaults, reset]);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
-  const initial = firstName(user?.name, user?.email).slice(0, 1).toUpperCase();
-  const avatarSrc = previewUrl || mediaUrl(user?.avatar_url);
-  const uploading = uploadProgress !== null;
 
   const onSubmit = handleSubmit(async (values) => {
     setSaveState("saving");
@@ -186,51 +170,6 @@ export function ProfileSettingsPage() {
     }
   });
 
-  async function handleAvatarSelected(file: File | undefined) {
-    if (!file) return;
-
-    if (!ACCEPTED_TYPES.includes(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name)) {
-      toast.error("Invalid image type", "Use PNG, JPG, or WEBP");
-      return;
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      toast.error("Image too large", "Maximum size is 2MB");
-      return;
-    }
-
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    const localPreview = URL.createObjectURL(file);
-    setPreviewUrl(localPreview);
-    setUploadProgress(0);
-
-    try {
-      await uploadAvatar(file, (pct) => setUploadProgress(pct));
-      toast.success("Avatar updated");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Upload failed";
-      toast.error("Avatar upload failed", message);
-    } finally {
-      setUploadProgress(null);
-      URL.revokeObjectURL(localPreview);
-      setPreviewUrl(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  }
-
-  async function handleRemoveAvatar() {
-    if (!user?.avatar_url || removingAvatar) return;
-    setRemovingAvatar(true);
-    try {
-      await removeAvatar();
-      toast.success("Avatar removed");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Could not remove avatar";
-      toast.error("Remove failed", message);
-    } finally {
-      setRemovingAvatar(false);
-    }
-  }
-
   if (loading && !user) {
     return (
       <SettingsShell>
@@ -253,91 +192,7 @@ export function ProfileSettingsPage() {
 
       <form onSubmit={onSubmit} className="space-y-5">
         <SettingsCard title="Personal" description="How you appear across TradeFix.">
-          <div className="mb-6 flex flex-wrap items-center gap-4">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading || removingAvatar}
-                className="group relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-zinc-900 text-xl font-semibold text-white ring-2 ring-primary/20 transition hover:ring-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
-                aria-label="Change profile photo"
-              >
-                {avatarSrc ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  initial
-                )}
-                <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                  <Camera className="h-4 w-4 text-white" />
-                </span>
-                {uploading && (
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/70 text-[10px] font-medium text-primary">
-                    {uploadProgress}%
-                  </span>
-                )}
-              </button>
-              <span className="pointer-events-none absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-zinc-900 text-zinc-400">
-                <Camera className="h-3.5 w-3.5" />
-              </span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp"
-                className="sr-only"
-                onChange={(e) => handleAvatarSelected(e.target.files?.[0])}
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white">{user?.name || "Trader"}</p>
-              <p className="text-xs text-zinc-500">{user?.email}</p>
-              <p className="mt-1 text-[11px] text-zinc-600">
-                Click the photo to upload. PNG, JPG, or WEBP · max 2MB.
-              </p>
-              {uploading && (
-                <div className="mt-2 h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-150"
-                    style={{ width: `${uploadProgress ?? 0}%` }}
-                  />
-                </div>
-              )}
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={uploading || removingAvatar}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Uploading…
-                    </>
-                  ) : (
-                    "Upload photo"
-                  )}
-                </Button>
-                {user?.avatar_url && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={uploading || removingAvatar}
-                    onClick={handleRemoveAvatar}
-                  >
-                    {removingAvatar ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" />
-                    )}
-                    Remove
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+          <AvatarUploader />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <SettingsField label="Full Name" error={errors.name?.message}>
