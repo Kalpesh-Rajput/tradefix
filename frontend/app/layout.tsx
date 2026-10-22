@@ -4,7 +4,9 @@ import { Inter, Playfair_Display } from "next/font/google";
 import { AppearanceProvider } from "@/components/providers/AppearanceProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { LocaleProvider } from "@/components/providers/LocaleProvider";
+import { MotionProvider } from "@/components/providers/MotionProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 import { ToastProvider } from "@/components/ui/Toast";
 import { APPEARANCE_BOOT_SCRIPT } from "@/lib/appearance";
 
@@ -40,11 +42,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-background font-sans text-foreground antialiased">
         <QueryProvider>
           <ToastProvider>
-            <AuthProvider>
-              <AppearanceProvider>
-                <LocaleProvider>{children}</LocaleProvider>
-              </AppearanceProvider>
-            </AuthProvider>
+            <ConfirmProvider>
+              <AuthProvider>
+                <AppearanceProvider>
+                  <LocaleProvider>
+                    <MotionProvider>{children}</MotionProvider>
+                  </LocaleProvider>
+                </AppearanceProvider>
+              </AuthProvider>
+            </ConfirmProvider>
           </ToastProvider>
         </QueryProvider>
       </body>

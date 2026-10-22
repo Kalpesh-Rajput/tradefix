@@ -123,6 +123,32 @@
 
   /* Focus */
   --focus-ring: 0 0 0 2px rgba(91, 70, 150, 0.15);
+
+  /* Signature UI: motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+  --duration-panel: 260ms;
+
+  /* Signature UI: layers. Existing bespoke modals sit at z-[90]–z-[230]; confirmations must clear them. */
+  --z-header: 10;
+  --z-sticky: 20;
+  --z-dropdown: 60;
+  --z-overlay: 70;
+  --z-popover: 80;
+  --z-modal: 200;
+  --z-confirm: 300;
+  --z-toast: 400;
+  --z-tooltip: 500;
+
+  /* Signature UI: controls */
+  --control-sm: 28px;
+  --control-md: 32px;
+  --control-lg: 36px;
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --icon-lg: 18px;
 }
 
 html,
@@ -130,6 +156,7 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-family);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   color-scheme: light;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -208,18 +235,38 @@ progress {
   background-color: var(--color-primary-very-light);
 }
 
+/* Signature scrollbars: 10px hit area, 6px visible thumb, stronger on hover. */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--color-scrollbar);
-  border-radius: 10px;
+  background-color: color-mix(in srgb, var(--color-scrollbar) 78%, transparent);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  min-height: 32px;
 }
 
-::-webkit-scrollbar-track {
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-scrollbar) 100%, var(--color-text-muted) 35%);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--color-text-muted);
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
   background-color: transparent;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-scrollbar) transparent;
+  }
 }
 
 /* Sidebar nav scrollbar — faded, only a bit more visible on hover */
@@ -270,9 +317,33 @@ progress {
   border-radius: 9999px;
 }
 
+/* Outline follows border-radius and is not clipped by overflow:hidden parents the way box-shadow rings are. */
 *:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
+  outline: 2px solid hsl(var(--ring) / 0.85);
+  outline-offset: 2px;
+}
+
+:is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select, [contenteditable="true"]):focus-visible {
+  outline-width: 1.5px;
+  outline-offset: 0;
+}
+
+.sidebar-chrome :focus-visible {
+  outline-color: var(--color-sidebar-indicator, hsl(var(--ring)));
+}
+
+/* Financial figures: digits align in columns and do not jitter while updating. */
+td,
+th,
+time,
+.tf-num,
+[data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scroll containers that should hint at hidden content on the inline axis. */
+.tf-scroll-fade-x {
+  mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
 }
 
 /* Light-mode overrides for common dark utility patterns used across the app */
@@ -971,15 +1042,27 @@ html.dark ::-webkit-scrollbar-thumb {
     padding: 0 12px;
     border-radius: var(--radius-md);
     background: var(--color-primary);
-    color: #fff !important;
+    color: hsl(var(--primary-foreground)) !important;
     font-size: 12px;
     font-weight: 500;
     border: none;
-    transition: background-color 160ms ease;
+    transition: background-color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) ease;
   }
 
   .dash-btn-primary:hover {
     background: var(--color-primary-hover);
+  }
+
+  .dash-btn-primary:active:not(:disabled),
+  .dash-btn-secondary:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .dash-btn-primary:disabled,
+  .dash-btn-secondary:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 
   .dash-btn-secondary {
@@ -995,11 +1078,13 @@ html.dark ::-webkit-scrollbar-thumb {
     font-size: 12px;
     font-weight: 500;
     border: 1px solid var(--color-border);
-    transition: background-color 160ms ease;
+    transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease,
+      transform var(--duration-fast) var(--ease-out);
   }
 
   .dash-btn-secondary:hover {
     background: var(--color-primary-very-light);
+    border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
   }
 
   .dash-control {
@@ -1016,7 +1101,46 @@ html.dark ::-webkit-scrollbar-thumb {
   }
 
   .dash-control:hover {
-    border-color: var(--color-border-light);
+    border-color: var(--color-border-strong, var(--color-border));
+  }
+
+  /* Selected hero surfaces only. Signature presets define the hairline; others fall back to a plain border. */
+  .tf-hero-card {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .tf-hero-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--signature-hairline, transparent);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .tf-champagne {
+    color: var(--color-champagne, hsl(var(--primary)));
+  }
+
+  .tf-champagne-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--color-champagne, hsl(var(--primary))) 35%, transparent);
+    background: var(--color-champagne-soft, hsl(var(--primary) / 0.1));
+    color: var(--color-champagne, hsl(var(--primary)));
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   .tf-note-editor {
@@ -1330,6 +1454,105 @@ html.dark ::-webkit-scrollbar-thumb {
 
 .menu-enter-up {
   transform-origin: bottom left;
+}
+
+/* Icon micro-interactions. Each plays once on a deliberate interaction (<600ms). */
+@keyframes tf-bell-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20% {
+    transform: rotate(14deg);
+  }
+  45% {
+    transform: rotate(-10deg);
+  }
+  70% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes tf-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.tf-icon-ring {
+  transform-origin: 50% 10%;
+}
+
+.group:hover .tf-icon-ring,
+.tf-icon-ring.is-ringing {
+  animation: tf-bell-ring 520ms var(--ease-out);
+}
+
+.tf-icon-spin {
+  transition: transform 420ms var(--ease-out);
+}
+
+.group:hover .tf-icon-spin {
+  transform: rotate(60deg);
+}
+
+.tf-icon-nudge {
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.group:hover .tf-icon-nudge {
+  transform: translateX(1px) scale(1.06);
+}
+
+.tf-icon-plus {
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.group:hover .tf-icon-plus {
+  transform: rotate(90deg);
+}
+
+.tf-pop {
+  animation: tf-pop 320ms var(--ease-out) both;
+}
+
+.tf-spinner {
+  animation: tf-spin 0.8s linear infinite;
+}
+
+@keyframes tf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group:hover .tf-icon-ring,
+  .tf-icon-ring.is-ringing,
+  .tf-pop {
+    animation: none;
+  }
+  .tf-icon-spin,
+  .tf-icon-nudge,
+  .tf-icon-plus {
+    transition: none;
+  }
+  .group:hover .tf-icon-spin,
+  .group:hover .tf-icon-nudge,
+  .group:hover .tf-icon-plus {
+    transform: none;
+  }
+  .tf-spinner {
+    animation-duration: 1.6s;
+  }
 }
 
 @keyframes auth-blob-a {

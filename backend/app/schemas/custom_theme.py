@@ -23,6 +23,8 @@ _RGB = re.compile(
     r"^rgba?\(\s*(?:25[0-5]|2[0-4]\d|1?\d?\d)\s*,\s*(?:25[0-5]|2[0-4]\d|1?\d?\d)\s*,\s*(?:25[0-5]|2[0-4]\d|1?\d?\d)\s*(?:,\s*(?:0|1|0?\.\d+)\s*)?\)$"
 )
 _BASE_THEMES = {
+    "signature-dark",
+    "signature-light",
     "tradefix-purple",
     "classic",
     "midnight-pro",

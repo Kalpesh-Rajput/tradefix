@@ -25,7 +25,16 @@ import {
   type ThemeTokens,
 } from "../lib/theme-registry";
 
-assert.equal(THEME_PRESET_IDS.length, 12);
+assert.equal(THEME_PRESET_IDS.length, 14);
+assert.equal(THEME_PRESETS["signature-dark"].mode, "dark");
+assert.equal(THEME_PRESETS["signature-dark"].tokens.background, "#0B0D14");
+assert.equal(THEME_PRESETS["signature-dark"].tokens.surface, "#11141E");
+assert.equal(THEME_PRESETS["signature-dark"].tokens.surfaceElevated, "#171B29");
+assert.equal(THEME_PRESETS["signature-dark"].tokens.primary, "#8B6CF6");
+assert.equal(THEME_PRESETS["signature-light"].mode, "light");
+assert.ok(cssVariablesFor("signature-dark")["--color-champagne"]);
+assert.ok(cssVariablesFor("signature-light")["--signature-hairline"]);
+assert.equal(cssVariablesFor("classic")["--color-champagne"], undefined);
 assert.equal(DEFAULT_THEME_ID, "tradefix-purple");
 assert.deepEqual(THEME_ORDER, [...THEME_PRESET_IDS]);
 assert.deepEqual(
@@ -201,8 +210,8 @@ assert.equal(contrastRatio("#FFFFFF", "#9333EA") >= 4.5, true);
 assert.equal(migrateStoredTheme("nope"), "tradefix-purple");
 assert.equal(migrateStoredTheme(null), "tradefix-purple");
 
-assert.equal(resolveTheme("system", true), "midnight-pro");
-assert.equal(resolveTheme("system", false), "classic");
+assert.equal(resolveTheme("system", true), "signature-dark");
+assert.equal(resolveTheme("system", false), "signature-light");
 assert.equal(resolveTheme("amethyst", true), "amethyst");
 assert.notEqual(resolveTheme("system", true), resolveTheme("system", false));
 

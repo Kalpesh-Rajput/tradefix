@@ -4,7 +4,15 @@
  */
 import assert from "node:assert/strict";
 
-import { pageTransitionKey } from "../lib/motion";
+import { DURATION, MOTION, pageTransitionKey, reducedPreset } from "../lib/motion";
+
+for (const [name, preset] of Object.entries(MOTION)) {
+  const duration = preset.transition.duration ?? 0;
+  assert.ok(duration > 0 && duration <= 0.3, `${name} duration ${duration}s must stay under 300ms`);
+}
+assert.ok(DURATION.fast < DURATION.base && DURATION.base < DURATION.panel);
+assert.deepEqual(reducedPreset(MOTION.modal, true).animate, { opacity: 1 });
+assert.equal(reducedPreset(MOTION.modal, false), MOTION.modal);
 
 assert.equal(pageTransitionKey("/analytics"), "/analytics");
 assert.equal(pageTransitionKey("/analytics?view=insights&from=2026-01-01"), "/analytics");

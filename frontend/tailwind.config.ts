@@ -48,6 +48,10 @@ const config: Config = {
         },
         destructive: "hsl(var(--destructive) / <alpha-value>)",
         muted: "hsl(var(--muted) / <alpha-value>)",
+        champagne: {
+          DEFAULT: "var(--color-champagne, hsl(var(--primary)))",
+          soft: "var(--color-champagne-soft, hsl(var(--primary) / 0.1))",
+        },
         gold: {
           DEFAULT: "hsl(var(--primary) / <alpha-value>)",
           light: "hsl(var(--primary) / 0.85)",
@@ -68,6 +72,7 @@ const config: Config = {
         "card-md": "var(--shadow-md)",
         dropdown: "var(--shadow-dropdown)",
         glow: "0 0 24px hsl(var(--primary) / 0.2)",
+        "glow-soft": "0 0 0 1px hsl(var(--primary) / 0.18), 0 8px 24px -12px hsl(var(--primary) / 0.45)",
         lift: "0 4px 12px rgba(20, 20, 30, 0.06)",
       },
       fontFamily: {
@@ -99,6 +104,29 @@ const config: Config = {
       },
       transitionDuration: {
         DEFAULT: "160ms",
+        fast: "var(--duration-fast)",
+        base: "var(--duration-base)",
+        panel: "var(--duration-panel)",
+      },
+      transitionTimingFunction: {
+        "out-expo": "var(--ease-out)",
+        "in-out-sig": "var(--ease-in-out)",
+      },
+      zIndex: {
+        header: "var(--z-header)",
+        sticky: "var(--z-sticky)",
+        dropdown: "var(--z-dropdown)",
+        overlay: "var(--z-overlay)",
+        modal: "var(--z-modal)",
+        confirm: "var(--z-confirm)",
+        popover: "var(--z-popover)",
+        toast: "var(--z-toast)",
+        tooltip: "var(--z-tooltip)",
+      },
+      height: {
+        "control-sm": "var(--control-sm)",
+        "control-md": "var(--control-md)",
+        "control-lg": "var(--control-lg)",
       },
     },
   },

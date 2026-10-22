@@ -15,6 +15,8 @@ _THEMES = {
     "dark",
     "light",
     "system",
+    "signature-dark",
+    "signature-light",
     "classic",
     "midnight-pro",
     "ocean-blue",

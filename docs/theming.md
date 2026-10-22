@@ -6,6 +6,8 @@ TradeFix has one appearance system. Presets live in `frontend/lib/theme-registry
 
 | Id | Name | Mode |
 | --- | --- | --- |
+| `signature-dark` | Signature Dark | Dark. TradeFix Signature UI: layered graphite surfaces, `#8B6CF6` accent with dark labels, champagne highlights. |
+| `signature-light` | Signature Light | Light. Porcelain workspace with graphite sidebar. |
 | `tradefix-purple` | Original TradeFix Purple | Light. Default when nothing is saved. |
 | `classic` | TradeFix Classic | Light. |
 | `midnight-pro` | Midnight Pro | Dark. Unchanged palette. |
@@ -19,7 +21,7 @@ TradeFix has one appearance system. Presets live in `frontend/lib/theme-registry
 | `violet-aurora` | Violet Aurora | Light. Vibrant purple with luminous lavender accents. |
 | `electric-spectrum` | Electric Spectrum | Light. Vibrant blue-to-violet gradients with luminous magenta accents. |
 
-`system` is not another palette. It is Follow device: Classic when the operating system prefers light, Midnight Pro when it prefers dark. It updates when the OS appearance changes. It does not select Obsidian Gold.
+`system` is not another palette. It is Follow device: Signature Light when the operating system prefers light, Signature Dark when it prefers dark (`FOLLOW_DEVICE_LIGHT` / `FOLLOW_DEVICE_DARK`). It updates when the OS appearance changes. It does not select Obsidian Gold.
 
 ## Tokens
 

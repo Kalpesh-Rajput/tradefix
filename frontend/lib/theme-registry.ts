@@ -1,6 +1,8 @@
 /** Canonical theme presets. Hex is the source of truth; HSL channels are derived. */
 
 export const THEME_PRESET_IDS = [
+  "signature-dark",
+  "signature-light",
   "tradefix-purple",
   "classic",
   "midnight-pro",
@@ -19,6 +21,10 @@ export type ThemePresetId = (typeof THEME_PRESET_IDS)[number];
 
 /** Product default when nothing valid is saved. Follow device does not use this. */
 export const DEFAULT_THEME_ID: ThemePresetId = "tradefix-purple";
+
+/** Presets used by Follow device. */
+export const FOLLOW_DEVICE_DARK: ThemePresetId = "signature-dark";
+export const FOLLOW_DEVICE_LIGHT: ThemePresetId = "signature-light";
 
 export const THEME_PREFERENCES = [...THEME_PRESET_IDS, "system"] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
@@ -366,6 +372,154 @@ const ORIGINAL_DEFAULT_CSS: Record<string, string> = {
 };
 
 export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
+  "signature-dark": preset(
+    "signature-dark",
+    "Signature Dark",
+    "Layered graphite surfaces, violet interaction accent, champagne highlights.",
+    "dark",
+    {
+      background: "#0B0D14",
+      backgroundSubtle: "#0E1018",
+      surface: "#11141E",
+      surfaceElevated: "#171B29",
+      surfaceMuted: "#1D2232",
+      surfaceSelected: "#221D3A",
+      textPrimary: "#F3F4FA",
+      textSecondary: "#A0A6B8",
+      textMuted: "#7F879B",
+      textInverse: "#0B0D14",
+      textDisabled: "#7F879B",
+      border: "#232838",
+      borderStrong: "#30364A",
+      borderSubtle: "#1B1F2C",
+      divider: "#1F2330",
+      primary: "#8B6CF6",
+      primaryHover: "#9D84F8",
+      primaryActive: "#8162F4",
+      primaryForeground: "#0B0D14",
+      primarySubtle: "#1F1A36",
+      success: "#34D399",
+      successText: "#34D399",
+      successSubtle: "#0F2A22",
+      danger: "#FB7185",
+      dangerText: "#FB7185",
+      dangerSubtle: "#2E1520",
+      warning: "#F5B544",
+      warningText: "#F5C26B",
+      warningSubtle: "#2B2212",
+      info: "#60A5FA",
+      infoText: "#93C5FD",
+      infoSubtle: "#13213A",
+      inputBg: "#0E111A",
+      inputBorder: "#262B3C",
+      placeholder: "#7F879B",
+      sidebar: "#0D0F17",
+      sidebarForeground: "#F3F4FA",
+      sidebarMuted: "#A0A6B8",
+      sidebarHover: "#171A26",
+      sidebarActive: "#221D3D",
+      sidebarBorder: "#1A1D2A",
+      header: "#11141E",
+      tableHeader: "#141824",
+      tableHover: "#171B29",
+      tableSelected: "#221D3A",
+      tooltipBg: "#1D2232",
+      tooltipText: "#F3F4FA",
+      tooltipBorder: "#30364A",
+      chartGrid: "#1D2232",
+      chartAxis: "#8A91A5",
+      chartProfit: "#34D399",
+      chartProfitSoft: "#0F2A22",
+      chartLoss: "#FB7185",
+      chartLossSoft: "#2E1520",
+      chartLine: "#A78BFA",
+      chartSeries: "#60A5FA",
+      chartDrawdown: "#FB7185",
+      skeleton: "#1D2232",
+      scrollbar: "#3A4052",
+    },
+    {
+      overlay: "rgba(5, 6, 12, 0.72)",
+      focusRing: "0 0 0 2px #8B6CF6",
+      shadowSm: "0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.02)",
+      shadowMd: "0 10px 28px -14px rgba(0, 0, 0, 0.7), 0 1px 2px rgba(0, 0, 0, 0.3)",
+      shadowDropdown: "0 18px 44px -14px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(139, 108, 246, 0.08)",
+    }
+  ),
+  "signature-light": preset(
+    "signature-light",
+    "Signature Light",
+    "Soft porcelain workspace, graphite sidebar, violet accent.",
+    "light",
+    {
+      background: "#F5F5F9",
+      backgroundSubtle: "#FAFAFC",
+      surface: "#FFFFFF",
+      surfaceElevated: "#FFFFFF",
+      surfaceMuted: "#F1F1F6",
+      surfaceSelected: "#EEEAFD",
+      textPrimary: "#12131C",
+      textSecondary: "#4A4F60",
+      textMuted: "#646A7C",
+      textInverse: "#FFFFFF",
+      textDisabled: "#646A7C",
+      border: "#E4E4EC",
+      borderStrong: "#CFCFDB",
+      borderSubtle: "#ECECF2",
+      divider: "#E8E8EF",
+      primary: "#6A4FE0",
+      primaryHover: "#5C42CF",
+      primaryActive: "#4F37B8",
+      primaryForeground: "#FFFFFF",
+      primarySubtle: "#EEEAFD",
+      success: "#059669",
+      successText: "#047857",
+      successSubtle: "#E7F7F0",
+      danger: "#E11D48",
+      dangerText: "#BE123C",
+      dangerSubtle: "#FDECEF",
+      warning: "#D97706",
+      warningText: "#92400E",
+      warningSubtle: "#FEF3C7",
+      info: "#2563EB",
+      infoText: "#1D4ED8",
+      infoSubtle: "#EFF6FF",
+      inputBg: "#FFFFFF",
+      inputBorder: "#DCDCE6",
+      placeholder: "#646A7C",
+      sidebar: "#0F1119",
+      sidebarForeground: "#F3F4FA",
+      sidebarMuted: "#A0A6B8",
+      sidebarHover: "#1A1D29",
+      sidebarActive: "#2A2350",
+      sidebarBorder: "#1E2130",
+      header: "#FFFFFF",
+      tableHeader: "#F7F7FA",
+      tableHover: "#F6F4FE",
+      tableSelected: "#EEEAFD",
+      tooltipBg: "#12131C",
+      tooltipText: "#F3F4FA",
+      tooltipBorder: "#2A2D3A",
+      chartGrid: "#ECECF2",
+      chartAxis: "#646A7C",
+      chartProfit: "#10B981",
+      chartProfitSoft: "#D1FAE5",
+      chartLoss: "#F43F5E",
+      chartLossSoft: "#FFE4E8",
+      chartLine: "#6A4FE0",
+      chartSeries: "#2563EB",
+      chartDrawdown: "#BE123C",
+      skeleton: "#ECECF2",
+      scrollbar: "#C9C9D6",
+    },
+    {
+      overlay: "rgba(15, 17, 25, 0.42)",
+      focusRing: "0 0 0 2px #6A4FE0",
+      shadowSm: "0 1px 2px rgba(18, 19, 28, 0.04), 0 1px 3px rgba(18, 19, 28, 0.03)",
+      shadowMd: "0 8px 24px -12px rgba(18, 19, 28, 0.14), 0 1px 2px rgba(18, 19, 28, 0.04)",
+      shadowDropdown: "0 18px 44px -16px rgba(18, 19, 28, 0.24), 0 0 0 1px rgba(18, 19, 28, 0.04)",
+    }
+  ),
   "tradefix-purple": originalDefaultPreset(),
   classic: preset(
     "classic",
@@ -1121,6 +1275,7 @@ export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
 };
 
 export const THEME_GROUPS: { label: string; ids: ThemePresetId[] }[] = [
+  { label: "Signature", ids: ["signature-dark", "signature-light"] },
   { label: "TradeFix", ids: ["tradefix-purple", "classic"] },
   { label: "Professional", ids: ["midnight-pro", "ocean-blue", "forest-green", "amethyst", "warm-sand"] },
   { label: "Luxury", ids: ["obsidian-gold", "emerald-luxe", "burgundy-champagne", "violet-aurora", "electric-spectrum"] },
@@ -1178,7 +1333,7 @@ export function migrateStoredTheme(value: unknown): string {
 }
 
 export function resolveTheme(preference: string, systemDark: boolean): ThemePresetId {
-  if (preference === "system") return systemDark ? "midnight-pro" : "classic";
+  if (preference === "system") return systemDark ? FOLLOW_DEVICE_DARK : FOLLOW_DEVICE_LIGHT;
   if (isThemePresetId(preference)) return preference;
   return DEFAULT_THEME_ID;
 }
@@ -1370,6 +1525,23 @@ export function cssVariablesFor(presetId: ThemePresetId): Record<string, string>
   vars["--color-danger-dark"] = "#BE3A3A";
   vars["--color-negative-hex"] = tokens.chartLoss;
   vars["--color-sidebar-indicator"] = tokens.primary;
+  if (presetId === "signature-dark" || presetId === "signature-light") {
+    const dark = presetId === "signature-dark";
+    vars["--color-sidebar-icon"] = tokens.sidebarMuted;
+    vars["--color-sidebar-secondary"] = tokens.sidebarMuted;
+    vars["--color-sidebar-divider"] = tokens.sidebarBorder;
+    vars["--color-sidebar-indicator"] = "#A78BFA";
+    vars["--color-sidebar-active-text"] = tokens.sidebarForeground;
+    vars["--color-success-dark"] = tokens.successText;
+    vars["--color-danger-dark"] = tokens.dangerText;
+    vars["--color-negative-hex"] = tokens.chartLoss;
+    vars["--color-breakeven"] = tokens.textMuted;
+    vars["--color-champagne"] = dark ? "#D9BC85" : "#9A7637";
+    vars["--color-champagne-soft"] = dark ? "rgba(217, 188, 133, 0.12)" : "rgba(154, 118, 55, 0.10)";
+    vars["--signature-hairline"] = dark
+      ? "linear-gradient(140deg, rgba(167, 139, 250, 0.45), rgba(167, 139, 250, 0.04) 38%, rgba(217, 188, 133, 0.22))"
+      : "linear-gradient(140deg, rgba(106, 79, 224, 0.35), rgba(106, 79, 224, 0.04) 38%, rgba(154, 118, 55, 0.22))";
+  }
   if (presetId === "violet-aurora") {
     vars["--aurora-gradient"] = "linear-gradient(135deg, #5B21B6 0%, #7C3AED 55%, #9333EA 100%)";
     vars["--aurora-gradient-hover"] = "linear-gradient(135deg, #5B21B6 0%, #6D28D9 48%, #7C3AED 100%)";
@@ -1427,5 +1599,5 @@ export function buildAppearanceBootScript(storageKey: string): string {
     modes: Object.fromEntries(THEME_PRESET_IDS.map((id) => [id, THEME_PRESETS[id].mode])),
   });
   const fallback = JSON.stringify(DEFAULT_THEME_ID);
-  return `(function(){try{var D=${payload};var theme=${fallback};var raw=localStorage.getItem(D.key);var stored=null;if(raw){stored=JSON.parse(raw);var t=stored&&typeof stored.theme==="string"?stored.theme:"";if(t==="dark")theme="midnight-pro";else if(t==="light")theme=${fallback};else if(t==="system"||D.css[t]||/^ct_[a-f0-9]{12}$/.test(t))theme=t;if(t==="dark"||t==="light"){try{stored.theme=theme;localStorage.setItem(D.key,JSON.stringify(stored));}catch(e){}}}var custom=stored&&stored.customCss&&stored.customCss[theme];if(custom&&custom.vars){var root=document.documentElement;var customDark=custom.mode==="dark";root.classList.toggle("dark",customDark);root.classList.toggle("light",!customDark);root.style.colorScheme=customDark?"dark":"light";root.dataset.theme=custom.base&&D.css[custom.base]?custom.base:${fallback};root.dataset.preference=theme;root.dataset.customTheme="1";var customVars=custom.vars;for(var key in customVars){if(Object.prototype.hasOwnProperty.call(customVars,key))root.style.setProperty(key,customVars[key]);}return;}var resolved=theme;if(theme==="system"){resolved=window.matchMedia("(prefers-color-scheme: dark)").matches?"midnight-pro":"classic";}if(!D.css[resolved])resolved=${fallback};var vars=D.css[resolved];var node=document.documentElement;var dark=D.modes[resolved]==="dark";node.classList.toggle("dark",dark);node.classList.toggle("light",!dark);node.style.colorScheme=dark?"dark":"light";node.dataset.theme=resolved;node.dataset.preference=theme;delete node.dataset.customTheme;for(var name in vars){if(Object.prototype.hasOwnProperty.call(vars,name))node.style.setProperty(name,vars[name]);}}catch(e){}})();`;
+  return `(function(){try{var D=${payload};var theme=${fallback};var raw=localStorage.getItem(D.key);var stored=null;if(raw){stored=JSON.parse(raw);var t=stored&&typeof stored.theme==="string"?stored.theme:"";if(t==="dark")theme="midnight-pro";else if(t==="light")theme=${fallback};else if(t==="system"||D.css[t]||/^ct_[a-f0-9]{12}$/.test(t))theme=t;if(t==="dark"||t==="light"){try{stored.theme=theme;localStorage.setItem(D.key,JSON.stringify(stored));}catch(e){}}}var custom=stored&&stored.customCss&&stored.customCss[theme];if(custom&&custom.vars){var root=document.documentElement;var customDark=custom.mode==="dark";root.classList.toggle("dark",customDark);root.classList.toggle("light",!customDark);root.style.colorScheme=customDark?"dark":"light";root.dataset.theme=custom.base&&D.css[custom.base]?custom.base:${fallback};root.dataset.preference=theme;root.dataset.customTheme="1";var customVars=custom.vars;for(var key in customVars){if(Object.prototype.hasOwnProperty.call(customVars,key))root.style.setProperty(key,customVars[key]);}return;}var resolved=theme;if(theme==="system"){resolved=window.matchMedia("(prefers-color-scheme: dark)").matches?${JSON.stringify(FOLLOW_DEVICE_DARK)}:${JSON.stringify(FOLLOW_DEVICE_LIGHT)};}if(!D.css[resolved])resolved=${fallback};var vars=D.css[resolved];var node=document.documentElement;var dark=D.modes[resolved]==="dark";node.classList.toggle("dark",dark);node.classList.toggle("light",!dark);node.style.colorScheme=dark?"dark":"light";node.dataset.theme=resolved;node.dataset.preference=theme;delete node.dataset.customTheme;for(var name in vars){if(Object.prototype.hasOwnProperty.call(vars,name))node.style.setProperty(name,vars[name]);}}catch(e){}})();`;
 }

@@ -122,7 +122,7 @@ export function ThemeChoices({
               {followSelected && <Check className="h-3.5 w-3.5 text-primary" aria-hidden />}
             </span>
             <span className="mt-0.5 block text-xs text-muted">
-              TradeFix Classic in light mode, Midnight Pro in dark mode.
+              Signature Light in light mode, Signature Dark in dark mode.
               {followSelected && activePreset && <span className="sr-only"> Currently using {activePreset.name}.</span>}
             </span>
           </span>

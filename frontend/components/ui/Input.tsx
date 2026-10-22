@@ -4,13 +4,14 @@ import clsx from "clsx";
 import { Eye, EyeOff } from "lucide-react";
 import {
   InputHTMLAttributes,
+  LabelHTMLAttributes,
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
   useState,
 } from "react";
 
 const fieldClass =
-  "w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-muted transition-[border-color,box-shadow,background-color] duration-fast hover:border-[var(--color-border-strong,var(--color-border))] focus:border-primary focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-55 aria-[invalid=true]:border-destructive aria-[invalid=true]:focus:ring-destructive/20 motion-reduce:transition-none";
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={clsx(fieldClass, className)} {...props} />;
@@ -56,6 +57,29 @@ export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
   return <textarea className={clsx(fieldClass, className)} {...props} />;
 }
 
-export function Label({ children }: { children: React.ReactNode }) {
-  return <label className="mb-1.5 block text-xs font-medium text-muted">{children}</label>;
+export function Label({
+  children,
+  className,
+  required,
+  ...props
+}: LabelHTMLAttributes<HTMLLabelElement> & { required?: boolean }) {
+  return (
+    <label className={clsx("mb-1.5 block text-xs font-medium text-muted", className)} {...props}>
+      {children}
+      {required ? (
+        <span className="ml-0.5 text-destructive" aria-hidden>
+          *
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
+export function FieldError({ id, children }: { id?: string; children?: React.ReactNode }) {
+  if (!children) return null;
+  return (
+    <p id={id} role="alert" className="mt-1.5 text-xs text-destructive">
+      {children}
+    </p>
+  );
 }
