@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { Brain, ChevronDown } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -43,8 +43,8 @@ export function MindsetCheckin() {
         className="mb-0 flex w-full cursor-pointer items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 transition-colors hover:border-white/[0.12]"
       >
         <div className="flex items-center gap-3">
-          <span className="text-lg" aria-hidden>
-            🧠
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary" aria-hidden>
+            <Brain className="h-4 w-4" strokeWidth={1.75} />
           </span>
           <div>
             <div className="text-xs text-zinc-500">Mindset Check-in</div>

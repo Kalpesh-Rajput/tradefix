@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, FolderPlus, MoreHorizontal } from "lucide-re
 import { useEffect, useRef, useState } from "react";
 
 import { SYSTEM_FOLDERS, type NotebookFolderId } from "@/components/notebook/types";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import {
   useCreateNotebookFolder,
@@ -29,6 +30,7 @@ export function NotebookFolders({
   accountId?: string;
 }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const [mobile, setMobile] = useState(false);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState("");
@@ -84,7 +86,13 @@ export function NotebookFolders({
 
   async function submitDelete(id: string) {
     if (!accountId) return;
-    if (!window.confirm("Delete this folder? Notes stay in Daily Journal.")) return;
+    const ok = await confirm({
+      title: "Delete this folder?",
+      description: "Notes in it stay in Daily Journal.",
+      confirmLabel: "Delete folder",
+      tone: "danger",
+    });
+    if (!ok) return;
     try {
       await remove.mutateAsync({ id, accountId });
       setMenuId(null);

@@ -111,9 +111,10 @@ export function HourlyWinRateChart({
                 fill="url(#hourlyWinFill)"
                 connectNulls={false}
                 dot={(props) => {
-                  const { cx, cy, payload } = props;
-                  if (payload?.rate == null || cx == null || cy == null) return <g />;
-                  return <circle cx={cx} cy={cy} r={2.5} fill={PNL_PROFIT_HEX} />;
+                  const { cx, cy, payload, index } = props;
+                  const key = `hourly-dot-${index}`;
+                  if (payload?.rate == null || cx == null || cy == null) return <g key={key} />;
+                  return <circle key={key} cx={cx} cy={cy} r={2.5} fill={PNL_PROFIT_HEX} />;
                 }}
                 activeDot={{ r: 4, fill: PNL_PROFIT_HEX }}
                 isAnimationActive={false}

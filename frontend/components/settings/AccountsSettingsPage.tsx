@@ -11,6 +11,7 @@ import {
   SettingsShell,
 } from "@/components/settings/SettingsShell";
 import { Button } from "@/components/ui/Button";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import {
   blankAccountValues,
@@ -29,6 +30,7 @@ import {
 } from "@/lib/hooks/useAccounts";
 export function AccountsSettingsPage() {
   const toast = useToast();
+  const confirm = useConfirm();
   const { data: accounts = [], isLoading, isError, refetch } = useAccounts();
   const updateAccount = useUpdateAccount();
   const createAccount = useCreateAccount();
@@ -132,9 +134,12 @@ export function AccountsSettingsPage() {
       toast.error("Cannot delete your only portfolio");
       return;
     }
-    const confirmed = window.confirm(
-      `Delete “${selected.name}”? All trades in this portfolio will be removed. This cannot be undone.`
-    );
+    const confirmed = await confirm({
+      title: `Delete “${selected.name}”?`,
+      description: "All trades in this portfolio will be removed. This cannot be undone.",
+      confirmLabel: "Delete portfolio",
+      tone: "danger",
+    });
     if (!confirmed) return;
 
     setDeleting(true);

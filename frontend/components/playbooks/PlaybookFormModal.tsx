@@ -24,6 +24,7 @@ export function PlaybookFormModal({
   onSubmit: (data: PlaybookCreateInput) => void;
 }) {
   const titleId = useId();
+  const fid = useId();
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [style, setStyle] = useState(initial?.rules?.style ?? "");
@@ -115,12 +116,12 @@ export function PlaybookFormModal({
         </div>
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
           <div>
-            <Label>Playbook name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required maxLength={160} />
+            <Label htmlFor={`${fid}-name`} required>Playbook name</Label>
+            <Input id={`${fid}-name`} value={name} onChange={(e) => setName(e.target.value)} required maxLength={160} />
           </div>
           <div>
-            <Label>Description</Label>
-            <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Label htmlFor={`${fid}-description`}>Description</Label>
+            <Textarea id={`${fid}-description`} rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
           <div>
             <p className="mb-1.5 text-[12px] font-medium text-[var(--color-text-secondary)]">Categories</p>
@@ -147,36 +148,36 @@ export function PlaybookFormModal({
             </div>
           </div>
           <div>
-            <Label>Setup type</Label>
-            <Input value={style} onChange={(e) => setStyle(e.target.value)} placeholder="Intraday, swing…" />
+            <Label htmlFor={`${fid}-style`}>Setup type</Label>
+            <Input id={`${fid}-style`} value={style} onChange={(e) => setStyle(e.target.value)} placeholder="Intraday, swing…" />
           </div>
           <div>
-            <Label>Entry criteria</Label>
-            <Textarea rows={3} value={entry} onChange={(e) => setEntry(e.target.value)} placeholder="One rule per line" />
+            <Label htmlFor={`${fid}-entry`}>Entry criteria</Label>
+            <Textarea id={`${fid}-entry`} rows={3} value={entry} onChange={(e) => setEntry(e.target.value)} placeholder="One rule per line" />
           </div>
           <div>
-            <Label>Confirmation criteria</Label>
-            <Textarea rows={3} value={confirmation} onChange={(e) => setConfirmation(e.target.value)} placeholder="One rule per line" />
+            <Label htmlFor={`${fid}-confirmation`}>Confirmation criteria</Label>
+            <Textarea id={`${fid}-confirmation`} rows={3} value={confirmation} onChange={(e) => setConfirmation(e.target.value)} placeholder="One rule per line" />
           </div>
           <div>
-            <Label>Tags</Label>
-            <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="liquidity, session…" />
+            <Label htmlFor={`${fid}-tags`}>Tags</Label>
+            <Input id={`${fid}-tags`} value={tags} onChange={(e) => setTags(e.target.value)} placeholder="liquidity, session…" />
           </div>
           <div>
-            <Label>Risk rules</Label>
-            <Textarea rows={3} value={risk} onChange={(e) => setRisk(e.target.value)} />
+            <Label htmlFor={`${fid}-risk`}>Risk rules</Label>
+            <Textarea id={`${fid}-risk`} rows={3} value={risk} onChange={(e) => setRisk(e.target.value)} />
           </div>
           <div>
-            <Label>Exit criteria</Label>
-            <Textarea rows={3} value={exitRules} onChange={(e) => setExitRules(e.target.value)} />
+            <Label htmlFor={`${fid}-exit`}>Exit criteria</Label>
+            <Textarea id={`${fid}-exit`} rows={3} value={exitRules} onChange={(e) => setExitRules(e.target.value)} />
           </div>
           <div>
-            <Label>Confirmation checklist</Label>
-            <Textarea rows={3} value={checklist} onChange={(e) => setChecklist(e.target.value)} placeholder="One item per line" />
+            <Label htmlFor={`${fid}-checklist`}>Confirmation checklist</Label>
+            <Textarea id={`${fid}-checklist`} rows={3} value={checklist} onChange={(e) => setChecklist(e.target.value)} placeholder="One item per line" />
           </div>
           <div>
-            <Label>Notes</Label>
-            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Label htmlFor={`${fid}-notes`}>Notes</Label>
+            <Textarea id={`${fid}-notes`} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
         </div>
         <div className="flex shrink-0 justify-end gap-2 border-t border-[var(--color-border)] px-4 py-3">

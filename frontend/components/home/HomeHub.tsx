@@ -124,7 +124,7 @@ export function HomeHub() {
   ];
 
   const shortcutClass =
-    "flex h-full items-start gap-3.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left transition hover:border-primary/30 hover:shadow-sm";
+    "flex h-full w-full items-start gap-3.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left transition hover:border-primary/30 hover:shadow-sm";
 
   const products: {
     href: string;

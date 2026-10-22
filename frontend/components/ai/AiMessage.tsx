@@ -143,7 +143,7 @@ export function AssistantMessage({
             </div>
             {settled && appearance !== "panel" && shaped?.kind !== "briefing" && extraActions.length > 0 ? (
               <div className="mt-3">
-                <SectionLabel emoji="🎯" label="Next" />
+                <SectionLabel icon={Target} label="Next" />
                 <ul className="mt-2 space-y-1.5">
                   {extraActions.map((action) => (
                     <li key={action} className="flex gap-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
@@ -228,7 +228,7 @@ function Briefing({ answer }: { answer: { stats: { label: string; value: string 
     <div className="space-y-3">
       {answer.stats.length > 0 ? (
         <section>
-          <SectionLabel emoji="📊" label="Snapshot" />
+          <SectionLabel icon={BarChart3} label="Snapshot" />
           <ul className="mt-2 space-y-1.5">
             {answer.stats.map((item) => (
               <StatRow key={item.label} label={item.label} value={item.value} />
@@ -238,7 +238,7 @@ function Briefing({ answer }: { answer: { stats: { label: string; value: string 
       ) : null}
       {answer.paragraphs.length > 0 ? (
         <section className={answer.stats.length > 0 ? "border-t border-[var(--color-border)] pt-3" : undefined}>
-          <SectionLabel emoji="💡" label="What this means" />
+          <SectionLabel icon={Lightbulb} label="What this means" />
           <div className="mt-1.5 space-y-2 text-[14px] leading-6 text-[var(--color-text-secondary)]">
             {answer.paragraphs.map((paragraph) => (
               <p key={paragraph}>{paragraph}</p>
@@ -248,7 +248,7 @@ function Briefing({ answer }: { answer: { stats: { label: string; value: string 
       ) : null}
       {answer.reflection.length > 0 ? (
         <section className="border-t border-[var(--color-border)] pt-3">
-          <SectionLabel emoji="🎯" label="Next" />
+          <SectionLabel icon={Target} label="Next" />
           <ul className="mt-2 space-y-1.5">
             {answer.reflection.map((item) => (
               <li key={item} className="flex gap-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
@@ -263,10 +263,10 @@ function Briefing({ answer }: { answer: { stats: { label: string; value: string 
   );
 }
 
-function SectionLabel({ emoji, label }: { emoji: string; label: string }) {
+function SectionLabel({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[var(--color-text-primary)]">
-      <span aria-hidden>{emoji}</span>
+      <Icon className="h-3.5 w-3.5 text-primary" strokeWidth={1.9} aria-hidden />
       {label}
     </p>
   );
@@ -335,7 +335,7 @@ function SourceList({ sources }: { sources: AiSource[] }) {
 function WebResources({ sources }: { sources: AiSource[] }) {
   return (
     <section>
-      <SectionLabel emoji="📰" label="From the web" />
+      <SectionLabel icon={Newspaper} label="From the web" />
       <ul className="mt-2 space-y-2">
         {sources.map((source) => {
           const href = sourceHref(source);

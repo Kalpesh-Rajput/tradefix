@@ -19,6 +19,7 @@ import { useConnectors } from "@/components/providers/ConnectorsProvider";
 import { BrokerIcon } from "@/components/ui/BrokerIcon";
 import { Button } from "@/components/ui/Button";
 import { Input, PasswordInput, Select } from "@/components/ui/Input";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { MT5_SERVERS } from "@/lib/brokers/mt5-servers";
 import { CONNECTORS_URL, ConnectorsApiError, tradingViewWebhookUrl } from "@/lib/connectors/api";
@@ -149,6 +150,7 @@ export function BrokerConnectWizard({
   onConnected,
 }: BrokerConnectWizardProps) {
   const toast = useToast();
+  const confirm = useConfirm();
   const { logout } = useAuth();
   const { activeAccount } = useAccountPrefs();
   const {
@@ -319,7 +321,12 @@ export function BrokerConnectWizard({
 
   async function onDisconnect() {
     if (!connection) return;
-    const ok = window.confirm(`Disconnect ${connection.broker_name}?`);
+    const ok = await confirm({
+      title: `Disconnect ${connection.broker_name}?`,
+      description: "Synchronization stops. Trades already in your journal stay.",
+      confirmLabel: "Disconnect",
+      tone: "danger",
+    });
     if (!ok) return;
     try {
       await disconnectMutation.mutateAsync(boundAccountId);

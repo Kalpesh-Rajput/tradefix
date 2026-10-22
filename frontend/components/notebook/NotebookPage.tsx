@@ -23,6 +23,7 @@ import {
 } from "@/components/notebook/types";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { localIso, parseLocalIso } from "@/lib/dateLocal";
 import { useCalendar } from "@/lib/hooks/useAnalytics";
 import { useDayNotes } from "@/lib/hooks/useDayNotes";
@@ -35,6 +36,7 @@ export function NotebookPage() {
   const router = useRouter();
   const params = useSearchParams();
   const { formatMoney, activeAccount, loading: accountsLoading } = useAccountPrefs();
+  const confirm = useConfirm();
   const accountId = activeAccount?.id;
   const [mobilePane, setMobilePane] = useState<NotebookPane>("list");
   const [dirty, setDirty] = useState(false);
@@ -121,10 +123,16 @@ export function NotebookPage() {
   });
   const day = calendar?.days.find((d) => d.date.slice(0, 10) === selectedDate);
 
-  const guard = useCallback(() => {
+  const guard = useCallback(async () => {
     if (!dirty) return true;
-    return window.confirm("Discard unsaved changes?");
-  }, [dirty]);
+    return confirm({
+      title: "Discard unsaved changes?",
+      description: "Your edits to this note have not been saved.",
+      confirmLabel: "Discard",
+      cancelLabel: "Keep editing",
+      tone: "danger",
+    });
+  }, [confirm, dirty]);
 
   function push(next: URLSearchParams) {
     router.push(`/notebook?${next.toString()}`, { scroll: false });
@@ -137,12 +145,12 @@ export function NotebookPage() {
     return qs;
   }
 
-  function selectFolder(next: NotebookFolderId) {
+  async function selectFolder(next: NotebookFolderId) {
     if (next === folder) {
       setMobilePane("list");
       return;
     }
-    if (!guard()) return;
+    if (!(await guard())) return;
     const qs = folderParams(next);
     if (next === "trades") {
       if (selectedTradeId) qs.set("trade", selectedTradeId);
@@ -156,12 +164,12 @@ export function NotebookPage() {
     push(qs);
   }
 
-  function selectDate(date: string, nextFolder: NotebookFolderId = folder === "trades" ? "daily" : folder) {
+  async function selectDate(date: string, nextFolder: NotebookFolderId = folder === "trades" ? "daily" : folder) {
     if (date === selectedDate && folder === nextFolder && !showingTrade) {
       setMobilePane("editor");
       return;
     }
-    if (!guard()) return;
+    if (!(await guard())) return;
     setDirty(false);
     setMobilePane("editor");
     const qs = folderParams(nextFolder === "trades" ? "daily" : nextFolder);
@@ -169,12 +177,12 @@ export function NotebookPage() {
     push(qs);
   }
 
-  function selectTrade(id: string, nextFolder: NotebookFolderId = folder === "all" ? "all" : "trades") {
+  async function selectTrade(id: string, nextFolder: NotebookFolderId = folder === "all" ? "all" : "trades") {
     if (id === selectedTradeId && (folder === "trades" || folder === "all") && showingTrade) {
       setMobilePane("editor");
       return;
     }
-    if (!guard()) return;
+    if (!(await guard())) return;
     setDirty(false);
     setMobilePane("editor");
     const qs = folderParams(nextFolder);

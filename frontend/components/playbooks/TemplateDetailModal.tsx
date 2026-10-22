@@ -1,5 +1,6 @@
 "use client";
 
+import { Square } from "lucide-react";
 import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 
@@ -86,8 +87,9 @@ export function TemplateDetailModal({
               <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Checklist</h3>
               <ul className="mt-2 space-y-1.5">
                 {template.checklist.map((item) => (
-                  <li key={item.id} className="text-[13px] text-[var(--color-text-secondary)]">
-                    ☐ {item.label}
+                  <li key={item.id} className="flex items-start gap-2 text-[13px] text-[var(--color-text-secondary)]">
+                    <Square className="mt-[3px] h-3.5 w-3.5 shrink-0 text-[var(--color-text-muted)]" strokeWidth={1.75} aria-hidden />
+                    {item.label}
                   </li>
                 ))}
               </ul>

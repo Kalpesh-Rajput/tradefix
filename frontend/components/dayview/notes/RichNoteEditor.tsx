@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { EditorToolbar } from "@/components/dayview/notes/EditorToolbar";
+import { useToast } from "@/components/ui/Toast";
 
 type SpeechRec = {
   start: () => void;
@@ -29,6 +30,7 @@ export function RichNoteEditor({
   onToggleFullscreen: () => void;
   layout?: "fill" | "document";
 }) {
+  const toast = useToast();
   const ref = useRef<HTMLDivElement>(null);
   const [block, setBlock] = useState("H3");
   const [font, setFont] = useState("Arial");
@@ -88,7 +90,7 @@ export function RichNoteEditor({
     ).SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: new () => SpeechRec }).webkitSpeechRecognition;
 
     if (!Ctor) {
-      window.alert("Voice input is not supported in this browser.");
+      toast.warning("Voice input isn’t available", "This browser does not support speech recognition. Try Chrome or Edge.");
       return;
     }
     if (micOn) {

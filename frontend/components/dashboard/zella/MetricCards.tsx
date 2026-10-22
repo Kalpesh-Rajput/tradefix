@@ -281,19 +281,19 @@ export function MetricCards({
         </div>
       </KpiShell>
 
-      <KpiShell className="justify-start">
+      <KpiShell className="justify-start !py-3">
         <div className="min-w-0">
           <LabelRow label={t("dashboard.avgWinLoss")} hint={t("dashboard.hint.avgWinLoss")} />
-          <p className="mb-2 text-[18px] font-semibold leading-6 tracking-tight text-[var(--color-text-kpi)]">
+          <p className="text-[18px] font-semibold leading-6 tracking-tight text-[var(--color-text-kpi)]">
             {avgRatio ? avgRatio.toFixed(2) : "—"}
           </p>
         </div>
         <div className="mt-auto">
-          <div className="mb-1 flex h-1.5 overflow-hidden rounded-[4px] bg-[var(--color-gauge-track)]">
+          <div className="mb-0.5 flex h-1.5 overflow-hidden rounded-[4px] bg-[var(--color-gauge-track)]">
             <div style={{ width: `${winBar}%`, backgroundColor: BAR_PROFIT_HEX }} />
             <div className="flex-1" style={{ backgroundColor: BAR_LOSS_HEX }} />
           </div>
-          <div className="flex justify-between text-[10px] font-medium tabular-nums">
+          <div className="flex justify-between text-[10px] font-medium leading-3 tabular-nums">
             <span style={{ color: BAR_PROFIT_HEX }}>{formatMoney(avgWin, { signed: false, digits: 0 })}</span>
             <span style={{ color: BAR_LOSS_HEX }}>{formatMoney(-Math.abs(avgLoss), { signed: true, digits: 0 })}</span>
           </div>

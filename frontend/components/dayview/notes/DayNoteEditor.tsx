@@ -14,6 +14,7 @@ import { NotebookDayPerformance } from "@/components/notebook/NotebookDayPerform
 import { NotebookTemplatePills } from "@/components/notebook/NotebookTemplatePills";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { ScreenshotGrid } from "@/components/media/ScreenshotGrid";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import type { CalendarDay, NotebookFolder } from "@/lib/types";
@@ -58,6 +59,7 @@ export function DayNoteEditor({
   variant?: "modal" | "page";
 }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const { locale } = useLocale();
   const router = useRouter();
   const date = target.date.slice(0, 10);
@@ -127,9 +129,13 @@ export function DayNoteEditor({
     }
   }, [accountId, assignedFolderId, date, favorite, html, templateId, toast, upsert]);
 
-  function applyTemplate(template: NoteTemplate) {
+  async function applyTemplate(template: NoteTemplate) {
     if (!isNoteContentEmpty(html) && html !== defaultNoteHtml()) {
-      const ok = window.confirm("Replace the current note with this template? Unsaved wording will be lost.");
+      const ok = await confirm({
+        title: "Replace note with template?",
+        description: "Unsaved wording in the current note will be lost.",
+        confirmLabel: "Replace",
+      });
       if (!ok) return;
     }
     const next = renderTemplateHtml(template);
@@ -138,10 +144,21 @@ export function DayNoteEditor({
     setRevision((n) => n + 1);
   }
 
-  const requestClose = useCallback(() => {
-    if (dirtyRef.current && !window.confirm("Discard unsaved changes?")) return;
+  const requestClose = useCallback(async () => {
+    if (
+      dirtyRef.current &&
+      !(await confirm({
+        title: "Discard unsaved changes?",
+        description: "Your edits to this note have not been saved.",
+        confirmLabel: "Discard",
+        cancelLabel: "Keep editing",
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
     onClose?.();
-  }, [onClose]);
+  }, [confirm, onClose]);
 
   useEffect(() => {
     if (variant !== "modal") return;
@@ -259,7 +276,13 @@ export function DayNoteEditor({
       setMenuOpen(false);
       return;
     }
-    if (!window.confirm("Delete this day’s note?")) return;
+    const ok = await confirm({
+      title: "Delete this day’s note?",
+      description: "The note and its screenshots will be removed. This cannot be undone.",
+      confirmLabel: "Delete note",
+      tone: "danger",
+    });
+    if (!ok) return;
     try {
       await remove.mutateAsync({ id: existing.id, accountId });
       toast.success("Note deleted");

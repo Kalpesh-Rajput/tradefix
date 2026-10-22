@@ -9,6 +9,7 @@ import { ScreenshotGrid } from "@/components/media/ScreenshotGrid";
 import { useAccountPrefs } from "@/components/providers/AccountProvider";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { useMasters } from "@/lib/hooks/useMasters";
 import { masterNames } from "@/lib/masters";
@@ -67,6 +68,7 @@ export function RecapForm({
   onDeleteScreenshot?: (url: string) => Promise<void>;
 }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const { formatMoney } = useAccountPrefs();
   const { data: mistakeMasters = [] } = useMasters("mistake");
 
@@ -261,7 +263,13 @@ export function RecapForm({
 
   const handleDelete = async () => {
     if (!onDelete) return;
-    if (!window.confirm("Delete this recap? This cannot be undone.")) return;
+    const ok = await confirm({
+      title: "Delete this recap?",
+      description: "This cannot be undone.",
+      confirmLabel: "Delete recap",
+      tone: "danger",
+    });
+    if (!ok) return;
     setDeleting(true);
     try {
       await onDelete();

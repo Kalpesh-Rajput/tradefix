@@ -6,7 +6,9 @@ import Link from "next/link";
 import { HubEmpty } from "@/components/backtest/hub/HubEmpty";
 import { HubPanel } from "@/components/backtest/hub/HubPanel";
 import { pnlClass } from "@/components/backtest/hub/pnl";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
 import { pairLabel } from "@/lib/backtest/hubStats";
 import { useBacktestRuns, useDeleteRun, type BacktestRun } from "@/lib/hooks/useBacktestRuns";
 
@@ -22,6 +24,8 @@ const STATUS: Record<BacktestRun["status"], { label: string; tone: string }> = {
 export function RunsList() {
   const runs = useBacktestRuns();
   const remove = useDeleteRun();
+  const confirm = useConfirm();
+  const toast = useToast();
 
   if (runs.isLoading) {
     return (
@@ -93,8 +97,19 @@ export function RunsList() {
                     aria-label={`Delete run ${run.name}`}
                     title="Delete"
                     className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-[var(--color-danger-bg)] hover:text-[var(--color-danger-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none"
-                    onClick={() => {
-                      if (window.confirm("Delete this run?")) void remove.mutate(run.id);
+                    disabled={remove.isPending && remove.variables === run.id}
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Delete this run?",
+                        description: `${run.name} and its simulated trades will be removed. This cannot be undone.`,
+                        confirmLabel: "Delete run",
+                        tone: "danger",
+                      });
+                      if (!ok) return;
+                      remove.mutate(run.id, {
+                        onSuccess: () => toast.success("Run deleted"),
+                        onError: (error) => toast.error("Couldn’t delete run", error instanceof Error ? error.message : undefined),
+                      });
                     }}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden />

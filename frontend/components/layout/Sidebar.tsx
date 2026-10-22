@@ -17,8 +17,10 @@ import {
   Sun,
   Target,
 } from "lucide-react";
+import { LayoutGroup, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useId } from "react";
 
 import { NavCollapseButton } from "@/components/layout/NavCollapseButton";
 import { useAppearance } from "@/components/providers/AppearanceProvider";
@@ -29,28 +31,26 @@ import type { MessageKey } from "@/lib/i18n";
 import { isSidebarNavActive } from "@/lib/nav";
 
 const NAV_WIDTH = "w-[188px]";
-const ACTIVE_ICON = "#A78BFA";
 
 const NAV: {
   href: string;
   labelKey: MessageKey;
   icon: typeof LayoutDashboard;
   testId: string;
-  iconColor: string;
 }[] = [
-  { href: "/today", labelKey: "nav.today", icon: LayoutDashboard, testId: "nav-today", iconColor: "#7C5CBF" },
-  { href: "/tradefiz-ai", labelKey: "nav.tradefizAi", icon: Sparkles, testId: "nav-tradefiz-ai", iconColor: "#A78BFA" },
-  { href: "/day", labelKey: "nav.dayView", icon: Sun, testId: "nav-dayView", iconColor: "#F59E0B" },
-  { href: "/trades", labelKey: "nav.tradeLog", icon: ClipboardList, testId: "nav-tradeLog", iconColor: "#EC4899" },
-  { href: "/notebook", labelKey: "nav.notebook", icon: BookOpen, testId: "nav-notebook", iconColor: "#8B5CF6" },
-  { href: "/analytics", labelKey: "nav.analytics", icon: BarChart3, testId: "nav-analytics", iconColor: "#10B981" },
-  { href: "/progress-tracker", labelKey: "nav.progressTracker", icon: Target, testId: "nav-progressTracker", iconColor: "#14B8A6" },
-  { href: "/calendar", labelKey: "nav.calendar", icon: CalendarDays, testId: "nav-calendar", iconColor: "#6366F1" },
-  { href: "/market-sessions", labelKey: "nav.marketSessions", icon: Globe, testId: "nav-marketSessions", iconColor: "#3B82F6" },
-  { href: "/playbooks", labelKey: "nav.tradingPlan", icon: ListChecks, testId: "nav-playbooks", iconColor: "#F97316" },
-  { href: "/mindset", labelKey: "nav.mindset", icon: Brain, testId: "nav-mindset", iconColor: "#A855F7" },
-  { href: "/news", labelKey: "nav.news", icon: Newspaper, testId: "nav-news", iconColor: "#64748B" },
-  { href: "/portfolio", labelKey: "nav.portfolio", icon: Briefcase, testId: "nav-portfolio", iconColor: "#0EA5E9" },
+  { href: "/today", labelKey: "nav.today", icon: LayoutDashboard, testId: "nav-today" },
+  { href: "/tradefiz-ai", labelKey: "nav.tradefizAi", icon: Sparkles, testId: "nav-tradefiz-ai" },
+  { href: "/day", labelKey: "nav.dayView", icon: Sun, testId: "nav-dayView" },
+  { href: "/trades", labelKey: "nav.tradeLog", icon: ClipboardList, testId: "nav-tradeLog" },
+  { href: "/notebook", labelKey: "nav.notebook", icon: BookOpen, testId: "nav-notebook" },
+  { href: "/analytics", labelKey: "nav.analytics", icon: BarChart3, testId: "nav-analytics" },
+  { href: "/progress-tracker", labelKey: "nav.progressTracker", icon: Target, testId: "nav-progressTracker" },
+  { href: "/calendar", labelKey: "nav.calendar", icon: CalendarDays, testId: "nav-calendar" },
+  { href: "/market-sessions", labelKey: "nav.marketSessions", icon: Globe, testId: "nav-marketSessions" },
+  { href: "/playbooks", labelKey: "nav.tradingPlan", icon: ListChecks, testId: "nav-playbooks" },
+  { href: "/mindset", labelKey: "nav.mindset", icon: Brain, testId: "nav-mindset" },
+  { href: "/news", labelKey: "nav.news", icon: Newspaper, testId: "nav-news" },
+  { href: "/portfolio", labelKey: "nav.portfolio", icon: Briefcase, testId: "nav-portfolio" },
 ];
 
 export function Sidebar({
@@ -68,6 +68,7 @@ export function Sidebar({
   const { setMobileOpen } = useSidebar();
   const { resolvedTheme, semanticChrome } = useAppearance();
   const original = resolvedTheme === "tradefix-purple" && !semanticChrome;
+  const groupId = useId();
 
   void forceExpanded;
   void showEdgeToggle;
@@ -103,57 +104,67 @@ export function Sidebar({
             openFlow();
             setMobileOpen(false);
           }}
-          className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-primary text-[13px] font-semibold text-primary-foreground text-on-accent transition-colors duration-150 hover:bg-primary-hover"
-          title={t("common.addTrade")}
+          className="group inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-primary text-[13px] font-semibold text-primary-foreground text-on-accent shadow-[inset_0_1px_0_rgb(255_255_255/0.14)] transition-[background-color,transform] duration-150 hover:bg-primary-hover active:scale-[0.98] motion-reduce:active:scale-100"
           aria-label={t("common.addTrade")}
+          data-testid="sidebar-add-trade"
         >
-          <Plus className="h-4 w-4" strokeWidth={2.5} />
+          <Plus className="tf-icon-plus h-4 w-4" strokeWidth={2.25} aria-hidden />
           {t("common.addTrade")}
         </button>
       </div>
 
-      <nav className="nav-column flex w-full flex-1 flex-col gap-px overflow-y-auto px-1.5">
-        {NAV.map((item) => {
-          const Icon = item.icon;
-          const label = t(item.labelKey);
-          const active = isSidebarNavActive(pathname, item.href);
+      <LayoutGroup id={groupId}>
+        <nav className="nav-column flex w-full flex-1 flex-col gap-px overflow-y-auto px-1.5" aria-label="Journal">
+          {NAV.map((item) => {
+            const Icon = item.icon;
+            const label = t(item.labelKey);
+            const active = isSidebarNavActive(pathname, item.href);
 
-          return (
-            <Link
-              key={item.testId}
-              href={item.href}
-              title={label}
-              data-testid={item.testId}
-              aria-current={active ? "page" : undefined}
-              onClick={() => setMobileOpen(false)}
-              className={clsx(
-                "relative flex w-full items-center gap-2 rounded-md px-2 py-[6px] text-left text-[13px] font-medium transition-[color,background-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
-                active
-                  ? original
-                    ? "bg-[#7C5CBF]/25 font-semibold text-white shadow-[inset_2px_0_0_#A78BFA]"
-                    : "nav-active-label bg-sidebar-active font-semibold shadow-[inset_2px_0_0_var(--color-sidebar-indicator,var(--color-primary))]"
-                  : original
-                    ? "text-[#b8b4d4] hover:bg-white/[0.06] hover:text-white"
-                    : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground"
-              )}
-            >
-              <Icon
-                className="h-[17px] w-[17px] shrink-0 transition-colors duration-200 ease-out"
-                style={
-                  original
-                    ? { color: active ? ACTIVE_ICON : item.iconColor }
-                    : semanticChrome
-                      ? { color: "var(--color-sidebar-icon)" }
-                      : undefined
-                }
-                strokeWidth={active ? 2 : 1.75}
-                aria-hidden
-              />
-              <span className="truncate">{label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+            return (
+              <Link
+                key={item.testId}
+                href={item.href}
+                data-testid={item.testId}
+                aria-current={active ? "page" : undefined}
+                onClick={() => setMobileOpen(false)}
+                className={clsx(
+                  "group relative isolate flex w-full items-center gap-2 rounded-md px-2 py-[6px] text-left text-[13px] font-medium transition-colors duration-200 ease-out motion-reduce:transition-none",
+                  active
+                    ? original
+                      ? "font-semibold text-white"
+                      : "nav-active-label font-semibold"
+                    : original
+                      ? "text-[#b8b4d4] hover:bg-white/[0.06] hover:text-white"
+                      : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground"
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="journal-nav-active"
+                    aria-hidden
+                    className={clsx(
+                      "absolute inset-0 -z-10 rounded-md",
+                      original ? "bg-[#7C5CBF]/25" : "bg-sidebar-active"
+                    )}
+                    transition={{ type: "spring", stiffness: 520, damping: 44, mass: 0.7 }}
+                  >
+                    <span className="absolute inset-y-1.5 left-0 w-[2px] rounded-full bg-[var(--color-sidebar-indicator,var(--color-primary))] shadow-[0_0_10px_var(--color-sidebar-indicator,var(--color-primary))]" />
+                  </motion.span>
+                )}
+                <Icon
+                  className={clsx(
+                    "h-[17px] w-[17px] shrink-0 transition-[color,transform] duration-200 ease-out group-hover:scale-105 motion-reduce:group-hover:scale-100",
+                    active ? "text-[var(--color-sidebar-indicator,var(--color-primary))]" : "text-[var(--color-sidebar-icon)] group-hover:text-current"
+                  )}
+                  strokeWidth={active ? 2 : 1.75}
+                  aria-hidden
+                />
+                <span className="truncate">{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </LayoutGroup>
     </aside>
   );
 }

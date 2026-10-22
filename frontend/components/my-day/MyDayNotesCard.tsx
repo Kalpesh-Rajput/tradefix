@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { RichNoteEditor } from "@/components/dayview/notes/RichNoteEditor";
 import { NotebookTemplatePills } from "@/components/notebook/NotebookTemplatePills";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { ApiError } from "@/lib/api";
 import {
@@ -18,6 +19,7 @@ import { useDayNote, useUpsertDayNote } from "@/lib/hooks/useDayNotes";
 
 export function MyDayNotesCard({ accountId, date }: { accountId: string; date: string }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const { data: existing, isLoading, isError, refetch } = useDayNote(accountId, date);
   const upsert = useUpsertDayNote();
   const [html, setHtml] = useState("");
@@ -74,9 +76,13 @@ export function MyDayNotesCard({ accountId, date }: { accountId: string; date: s
     return () => window.clearTimeout(timer);
   }, [dirty, html, save]);
 
-  function applyTemplate(template: NoteTemplate) {
+  async function applyTemplate(template: NoteTemplate) {
     if (!isNoteContentEmpty(html) && html !== renderTemplateHtml(getNoteTemplate(SESSION_PLAN_TEMPLATE_ID))) {
-      const ok = window.confirm("Replace the current note with this template? Unsaved wording will be lost.");
+      const ok = await confirm({
+        title: "Replace note with template?",
+        description: "Unsaved wording in the current note will be lost.",
+        confirmLabel: "Replace",
+      });
       if (!ok) return;
     }
     const next = renderTemplateHtml(template);

@@ -8,6 +8,7 @@ import { BrokerFileImportPanel } from "@/components/broker/BrokerFileImportPanel
 import { BrokerMark } from "@/components/broker/BrokerMark";
 import { SyncRangeField } from "@/components/broker/SyncRangeField";
 import { Button } from "@/components/ui/Button";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { PasswordInput } from "@/components/ui/Input";
 import { api } from "@/lib/api";
 import {
@@ -45,6 +46,7 @@ export function BrokerConnectScreen({
   onChangeProvider,
 }: BrokerConnectScreenProps) {
   const { openModal } = useAddTradeModal();
+  const confirm = useConfirm();
   const connectionsQuery = useBrokerConnections();
   const connect = useConnectProvider();
   const sync = useSyncConnection();
@@ -156,7 +158,13 @@ export function BrokerConnectScreen({
 
   async function onDisconnect() {
     if (!connectionId) return;
-    if (!window.confirm("Disconnecting stops future synchronization. Existing journal trades stay.")) return;
+    const ok = await confirm({
+      title: `Disconnect ${provider.display_name}?`,
+      description: "Disconnecting stops future synchronization. Existing journal trades stay.",
+      confirmLabel: "Disconnect",
+      tone: "danger",
+    });
+    if (!ok) return;
     setError(null);
     try {
       await disconnect.mutateAsync(connectionId);

@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { NoteTemplateSelector } from "@/components/dayview/notes/NoteTemplateSelector";
 import { RichNoteEditor } from "@/components/dayview/notes/RichNoteEditor";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { isNoteContentEmpty, renderTemplateHtml, type NoteTemplate } from "@/lib/day-notes/templates";
@@ -70,6 +71,7 @@ function SubBtn({
 
 function TradeNoteEditor({ trade }: { trade: Trade }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const update = useUpdateTrade();
   const [html, setHtml] = useState(trade.notes ?? "");
   const [revision, setRevision] = useState(0);
@@ -108,8 +110,15 @@ function TradeNoteEditor({ trade }: { trade: Trade }) {
     }
   }
 
-  function applyTemplate(template: NoteTemplate) {
-    if (!isNoteContentEmpty(html) && !window.confirm("Replace the current trade note with this template?")) {
+  async function applyTemplate(template: NoteTemplate) {
+    if (
+      !isNoteContentEmpty(html) &&
+      !(await confirm({
+        title: "Replace trade note?",
+        description: "The current trade note will be replaced with this template.",
+        confirmLabel: "Replace",
+      }))
+    ) {
       return;
     }
     const next = renderTemplateHtml(template);
@@ -142,6 +151,7 @@ function TradeNoteEditor({ trade }: { trade: Trade }) {
 
 function DailyJournalPane({ accountId, date }: { accountId: string; date: string }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const { data: note, isLoading, isError, refetch } = useDayNote(accountId, date);
   const upsert = useUpsertDayNote();
   const [html, setHtml] = useState("");
@@ -185,8 +195,15 @@ function DailyJournalPane({ accountId, date }: { accountId: string; date: string
     }, 700);
   }
 
-  function applyTemplate(template: NoteTemplate) {
-    if (!isNoteContentEmpty(html) && !window.confirm("Replace the current daily journal with this template?")) {
+  async function applyTemplate(template: NoteTemplate) {
+    if (
+      !isNoteContentEmpty(html) &&
+      !(await confirm({
+        title: "Replace daily journal?",
+        description: "The current daily journal will be replaced with this template.",
+        confirmLabel: "Replace",
+      }))
+    ) {
       return;
     }
     const next = renderTemplateHtml(template);

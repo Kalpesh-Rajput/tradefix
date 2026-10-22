@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { RuleGroup } from "@/components/backtest/strategy/RuleGroup";
 import { TemplatePicker } from "@/components/backtest/strategy/TemplatePicker";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { ApiError, api } from "@/lib/api";
 import {
@@ -26,6 +27,7 @@ function toLocal(ms: number) {
 export function StrategyForm({ strategyId, initial }: { strategyId?: string; initial?: StrategyDefinition }) {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const instruments = useMarketInstruments();
   const create = useCreateStrategy();
   const update = useUpdateStrategy();
@@ -109,7 +111,14 @@ export function StrategyForm({ strategyId, initial }: { strategyId?: string; ini
   }
 
   async function onDelete() {
-    if (!strategyId || !window.confirm("Delete this strategy?")) return;
+    if (!strategyId) return;
+    const ok = await confirm({
+      title: "Delete this strategy?",
+      description: `${definition.name} will be removed. This cannot be undone.`,
+      confirmLabel: "Delete strategy",
+      tone: "danger",
+    });
+    if (!ok) return;
     setBusy("delete");
     try {
       await remove.mutateAsync(strategyId);

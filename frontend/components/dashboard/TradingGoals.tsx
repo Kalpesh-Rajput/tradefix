@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -80,7 +81,7 @@ export function TradingGoals({ journalDone }: { journalDone?: boolean }) {
                       : "border-white/[0.12] bg-transparent text-transparent"
                   }`}
                 >
-                  ✓
+                  <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
                 </span>
                 <span className={`text-sm ${g.done ? "text-muted line-through" : "text-white"}`}>{g.label}</span>
               </button>

@@ -20,6 +20,7 @@ import { TradeFixAIWidget } from "@/components/tradefix-ai/assistant/TradeFixAIW
 import { TradeFixAssistantProvider } from "@/components/tradefix-ai/assistant/TradeFixAssistantProvider";
 import { AddTradesFlow } from "@/components/add-trades/AddTradesFlow";
 import { AddTradeModal } from "@/components/trade/AddTradeModal";
+import { Spinner } from "@/components/ui/Spinner";
 import { MonthlyGoalPrompt } from "@/components/goals/MonthlyGoalPrompt";
 import { useLiveAccount } from "@/lib/hooks/useLiveAccount";
 import { isJournalPath } from "@/lib/nav";
@@ -47,6 +48,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isProgressTracker = pathname === "/progress-tracker" || pathname?.startsWith("/progress-tracker/");
   const isPlaybooks = pathname === "/playbooks" || pathname?.startsWith("/playbooks/");
   const isMarketSessions = pathname === "/market-sessions" || pathname?.startsWith("/market-sessions/");
+  const isNews = pathname === "/news" || pathname?.startsWith("/news/");
   const isChat = pathname === "/chat" || pathname?.startsWith("/chat/");
   const isTradeFiz = pathname === "/tradefiz-ai" || pathname?.startsWith("/tradefiz-ai/");
   const isTradeFizAgent = pathname === "/tradefiz-ai/chat" || pathname?.startsWith("/tradefiz-ai/chat/");
@@ -65,10 +67,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (loading || !user || !user.onboarding_completed_at) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-background" role="status" aria-live="polite">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-pulse rounded-full border-2 border-primary/40 border-t-primary" />
-          <p className="text-sm text-zinc-500">{t("common.loading")}</p>
+          <Spinner className="h-7 w-7 border-[2.5px] text-primary" />
+          <p className="text-[13px] font-medium text-muted">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -97,6 +99,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 isProgressTracker={isProgressTracker}
                 isPlaybooks={isPlaybooks}
                 isMarketSessions={isMarketSessions}
+                isNews={isNews}
                 isChat={isChat}
                 isTradeFiz={isTradeFiz}
                 isTradeFizAgent={isTradeFizAgent}
@@ -135,6 +138,7 @@ function AppShell({
   isProgressTracker,
   isPlaybooks,
   isMarketSessions,
+  isNews,
   isChat,
   isTradeFiz,
   isTradeFizAgent,
@@ -154,6 +158,7 @@ function AppShell({
   isProgressTracker: boolean;
   isPlaybooks: boolean;
   isMarketSessions: boolean;
+  isNews: boolean;
   isChat: boolean;
   isTradeFiz: boolean;
   isTradeFizAgent: boolean;
@@ -185,7 +190,7 @@ function AppShell({
               {!isTradesLog && !isTradeFizAgent && <AppHeader />}
               <main
                 className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
-                  sessionDesk || isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions || isChat || isTradeFiz
+                  sessionDesk || isDashboard || isDayView || isHome || isSettings || isTradesLog || isCalendar || isDiary || isMyDay || isNotebook || isReports || isProgressTracker || isPlaybooks || isMarketSessions || isNews || isChat || isTradeFiz
                     ? ""
                     : "overflow-y-auto p-6 sm:p-8"
                 } ${isSettings || isHome ? "overflow-y-auto" : ""} ${sessionDesk ? "overflow-hidden bg-background p-3 sm:p-4" : ""}`}

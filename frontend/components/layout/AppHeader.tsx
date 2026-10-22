@@ -30,8 +30,9 @@ export function AppHeader() {
       <div className="flex min-w-[10.5rem] max-w-full flex-1 items-center gap-2">
         <button
           type="button"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--color-text-secondary)] transition-colors hover:bg-black/[0.05] hover:text-[var(--color-text-primary)] md:hidden"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-text-secondary)] transition-colors hover:bg-foreground/[0.06] hover:text-[var(--color-text-primary)] md:hidden"
           aria-label={mobileOpen ? t("common.closeMenu") : t("common.openMenu")}
+          aria-expanded={mobileOpen}
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
