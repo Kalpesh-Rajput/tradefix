@@ -103,6 +103,7 @@ If any adapter times out, hits a rate limit, or is disabled, the service logs a 
 - `frontend/components/news/NewsFilterToolbar.tsx` — Debounced search, date range, source, sentiment, and sort controls.
 - `frontend/components/news/FeaturedStoryCard.tsx` — Featured story highlight card.
 - `frontend/components/news/NewsArticleCard.tsx` — Compact, scannable financial news card.
+- `frontend/components/news/NewsArticleDrawer.tsx` — Right-hand slide-over drawer showing the story summary, related instruments, publisher attribution, related stories in the feed, and an "Open Full Article in New Tab" CTA.
 - `frontend/components/news/NewsTerminalWorkspace.tsx` — Main News Terminal workspace with loading, empty, stale, partial-degraded, and error states.
 - `frontend/scripts/test-news.ts` — Frontend unit test suite.
 

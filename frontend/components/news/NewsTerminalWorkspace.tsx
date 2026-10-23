@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { HeaderActions } from "@/components/layout/HeaderActions";
 import { FeaturedStoryCard } from "@/components/news/FeaturedStoryCard";
 import { NewsArticleCard } from "@/components/news/NewsArticleCard";
+import { NewsArticleDrawer } from "@/components/news/NewsArticleDrawer";
 import { NewsCategoryTabs } from "@/components/news/NewsCategoryTabs";
 import { NewsFilterToolbar } from "@/components/news/NewsFilterToolbar";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -50,6 +51,7 @@ export function NewsTerminalWorkspace() {
   const [page, setPage] = useState(1);
   const [accumulatedArticles, setAccumulatedArticles] = useState<NewsArticle[]>([]);
   const [savedView, setSavedView] = useState(false);
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
 
   const feed = useNewsFeed(filters, page, PAGE_SIZE);
   const bookmarksQuery = useNewsBookmarks();
@@ -158,6 +160,26 @@ export function NewsTerminalWorkspace() {
         is_bookmarked: bookmarkedIds.has(a.id),
       }));
   }, [savedView, bookmarksQuery.data, accumulatedArticles, feed.data?.articles, featured, bookmarkedIds]);
+
+  const allNavigableArticles = useMemo(() => {
+    const list: NewsArticle[] = [];
+    if (featured) list.push(featured);
+    for (const item of displayedArticles) {
+      if (!list.some((x) => x.id === item.id)) {
+        list.push(item);
+      }
+    }
+    return list;
+  }, [featured, displayedArticles]);
+
+  const selectedArticle = useMemo(() => {
+    if (!selectedArticleId) return null;
+    const inNav = allNavigableArticles.find((a) => a.id === selectedArticleId);
+    if (inNav) return inNav;
+    const inSaved = (bookmarksQuery.data ?? []).find((a) => a.id === selectedArticleId);
+    if (inSaved) return { ...inSaved, is_bookmarked: true };
+    return null;
+  }, [selectedArticleId, allNavigableArticles, bookmarksQuery.data]);
 
   const freshnessInfo = meta ? newsFreshnessBadge(meta.freshness) : null;
   const partialProviderDegraded = useMemo(() => {
@@ -387,7 +409,9 @@ export function NewsTerminalWorkspace() {
             <FeaturedStoryCard
               article={featured}
               timezone={userTimezone}
+              isSelected={selectedArticle?.id === featured.id}
               isBookmarkPending={toggleBookmark.isPending}
+              onSelectArticle={(item) => setSelectedArticleId(item.id)}
               onToggleBookmark={handleToggleBookmark}
               onSelectSymbol={handleSelectSymbol}
             />
@@ -401,7 +425,9 @@ export function NewsTerminalWorkspace() {
                   key={article.id}
                   article={article}
                   timezone={userTimezone}
+                  isSelected={selectedArticle?.id === article.id}
                   isBookmarkPending={toggleBookmark.isPending}
+                  onSelectArticle={(item) => setSelectedArticleId(item.id)}
                   onToggleBookmark={handleToggleBookmark}
                   onSelectSymbol={handleSelectSymbol}
                 />
@@ -413,7 +439,7 @@ export function NewsTerminalWorkspace() {
           {!savedView && feed.data && (featured || displayedArticles.length > 0) && (
             <div className="mt-1 flex flex-col items-center justify-between gap-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-4 py-3 sm:flex-row">
               <p className="text-[11px] text-[var(--color-text-tertiary)]">
-                Headlines and excerpts are provided for market context and link directly to original publishers. Sentiment and tags are informational, not trading advice.
+                Click any story to open its summary panel, or open directly on the publisher’s site. Sentiment and tags are informational, not trading advice.
               </p>
 
               <div className="flex shrink-0 items-center gap-2">
@@ -440,6 +466,18 @@ export function NewsTerminalWorkspace() {
           )}
         </div>
       </div>
+
+      {/* Right-hand Summary & Details Slide-over Drawer */}
+      <NewsArticleDrawer
+        article={selectedArticle}
+        articles={allNavigableArticles}
+        timezone={userTimezone}
+        isBookmarkPending={toggleBookmark.isPending}
+        onClose={() => setSelectedArticleId(null)}
+        onSelectArticle={(item) => setSelectedArticleId(item.id)}
+        onToggleBookmark={handleToggleBookmark}
+        onSelectSymbol={handleSelectSymbol}
+      />
     </div>
   );
 }

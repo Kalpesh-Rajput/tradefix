@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { Bookmark, BookmarkCheck, Clock, ExternalLink, Sparkles } from "lucide-react";
+import { Bookmark, BookmarkCheck, Clock, ExternalLink, PanelRightOpen, Sparkles } from "lucide-react";
 
 import {
   categoryLabel,
@@ -14,7 +14,9 @@ import type { NewsArticle } from "@/lib/news/types";
 interface FeaturedStoryCardProps {
   article: NewsArticle;
   timezone?: string;
+  isSelected?: boolean;
   isBookmarkPending?: boolean;
+  onSelectArticle: (article: NewsArticle) => void;
   onToggleBookmark: (article: NewsArticle) => void;
   onSelectSymbol: (symbol: string) => void;
 }
@@ -22,7 +24,9 @@ interface FeaturedStoryCardProps {
 export function FeaturedStoryCard({
   article,
   timezone,
+  isSelected,
   isBookmarkPending,
+  onSelectArticle,
   onToggleBookmark,
   onSelectSymbol,
 }: FeaturedStoryCardProps) {
@@ -32,7 +36,20 @@ export function FeaturedStoryCard({
 
   return (
     <article
-      className="dash-card tf-hero-card relative overflow-hidden p-4 sm:p-5"
+      onClick={() => onSelectArticle(article)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelectArticle(article);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`View summary for featured story: ${article.title}`}
+      className={clsx(
+        "dash-card tf-hero-card group relative cursor-pointer overflow-hidden p-4 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 sm:p-5",
+        isSelected && "border-primary/60 ring-1 ring-primary/30"
+      )}
       data-testid="news-featured-card"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -77,7 +94,10 @@ export function FeaturedStoryCard({
 
         <button
           type="button"
-          onClick={() => onToggleBookmark(article)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleBookmark(article);
+          }}
           disabled={isBookmarkPending}
           aria-label={article.is_bookmarked ? "Remove from saved stories" : "Save story"}
           data-testid="news-featured-bookmark"
@@ -96,19 +116,8 @@ export function FeaturedStoryCard({
         </button>
       </div>
 
-      <h2 className="mt-2.5 text-[17px] font-semibold leading-snug tracking-tight text-[var(--color-text-primary)] sm:text-[19px]">
-        {safeHref ? (
-          <a
-            href={safeHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-colors hover:text-[var(--color-primary)]"
-          >
-            {article.title}
-          </a>
-        ) : (
-          article.title
-        )}
+      <h2 className="mt-2.5 text-[17px] font-semibold leading-snug tracking-tight text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)] sm:text-[19px]">
+        {article.title}
       </h2>
 
       {article.summary && (
@@ -124,7 +133,10 @@ export function FeaturedStoryCard({
               <button
                 key={sym}
                 type="button"
-                onClick={() => onSelectSymbol(sym)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectSymbol(sym);
+                }}
                 className="fx-chip text-[11px]"
                 title={`Filter news by ${sym}`}
               >
@@ -138,18 +150,34 @@ export function FeaturedStoryCard({
           )}
         </div>
 
-        {safeHref && (
-          <a
-            href={safeHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="news-featured-read-link"
-            className="dash-btn-primary h-8 px-3 text-[12px]"
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectArticle(article);
+            }}
+            data-testid="news-featured-summary-btn"
+            className="dash-btn-secondary h-8 px-3 text-[12px]"
           >
-            <span>Read at {article.source}</span>
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-          </a>
-        )}
+            <PanelRightOpen className="h-3.5 w-3.5" aria-hidden />
+            <span>View Summary</span>
+          </button>
+
+          {safeHref && (
+            <a
+              href={safeHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              data-testid="news-featured-read-link"
+              className="dash-btn-primary h-8 px-3 text-[12px]"
+            >
+              <span>Open in New Tab</span>
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+            </a>
+          )}
+        </div>
       </div>
     </article>
   );

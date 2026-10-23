@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { Bookmark, BookmarkCheck, Clock, ExternalLink } from "lucide-react";
+import { Bookmark, BookmarkCheck, Clock, ExternalLink, PanelRightOpen } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -15,7 +15,9 @@ import type { NewsArticle } from "@/lib/news/types";
 interface NewsArticleCardProps {
   article: NewsArticle;
   timezone?: string;
+  isSelected?: boolean;
   isBookmarkPending?: boolean;
+  onSelectArticle: (article: NewsArticle) => void;
   onToggleBookmark: (article: NewsArticle) => void;
   onSelectSymbol: (symbol: string) => void;
 }
@@ -23,7 +25,9 @@ interface NewsArticleCardProps {
 export function NewsArticleCard({
   article,
   timezone,
+  isSelected,
   isBookmarkPending,
+  onSelectArticle,
   onToggleBookmark,
   onSelectSymbol,
 }: NewsArticleCardProps) {
@@ -35,7 +39,20 @@ export function NewsArticleCard({
 
   return (
     <article
-      className="dash-card ms-card-hover flex h-full flex-col justify-between p-4"
+      onClick={() => onSelectArticle(article)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelectArticle(article);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`View summary for ${article.title}`}
+      className={clsx(
+        "dash-card ms-card-hover group flex h-full cursor-pointer flex-col justify-between p-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+        isSelected && "border-primary/60 ring-1 ring-primary/30"
+      )}
       data-testid="news-article-card"
     >
       <div>
@@ -77,7 +94,10 @@ export function NewsArticleCard({
 
           <button
             type="button"
-            onClick={() => onToggleBookmark(article)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleBookmark(article);
+            }}
             disabled={isBookmarkPending}
             aria-label={article.is_bookmarked ? "Remove bookmark" : "Bookmark article"}
             data-testid={`news-bookmark-btn-${article.id}`}
@@ -98,19 +118,8 @@ export function NewsArticleCard({
 
         <div className="mt-2.5 flex gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="text-[14px] font-semibold leading-snug text-[var(--color-text-primary)]">
-              {safeHref ? (
-                <a
-                  href={safeHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="transition-colors hover:text-[var(--color-primary)]"
-                >
-                  {article.title}
-                </a>
-              ) : (
-                article.title
-              )}
+            <h3 className="text-[14px] font-semibold leading-snug text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
+              {article.title}
             </h3>
 
             {article.summary && (
@@ -140,7 +149,10 @@ export function NewsArticleCard({
               <button
                 key={sym}
                 type="button"
-                onClick={() => onSelectSymbol(sym)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectSymbol(sym);
+                }}
                 className="fx-chip px-2 py-0.5 text-[10px]"
                 title={`Filter news by ${sym}`}
               >
@@ -154,18 +166,25 @@ export function NewsArticleCard({
           )}
         </div>
 
-        {safeHref && (
-          <a
-            href={safeHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open article on ${article.source} in new tab`}
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-primary)] transition-opacity hover:opacity-80"
-          >
-            <span>Open source</span>
-            <ExternalLink className="h-3 w-3" aria-hidden />
-          </a>
-        )}
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-tertiary)] transition-colors group-hover:text-[var(--color-primary)]">
+            <PanelRightOpen className="h-3 w-3" aria-hidden />
+            <span>Summary</span>
+          </span>
+          {safeHref && (
+            <a
+              href={safeHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Open article on ${article.source} in new tab`}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-primary)] transition-opacity hover:opacity-80"
+            >
+              <span>New tab</span>
+              <ExternalLink className="h-3 w-3" aria-hidden />
+            </a>
+          )}
+        </div>
       </div>
     </article>
   );
